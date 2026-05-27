@@ -83,7 +83,7 @@ export default function Business() {
         </div>
       </ScrollReveal>
 
-      {/* Card 2: D2Cブランド運営 */}
+      {/* Card 2: 自社ブランドの運営 */}
       <ScrollReveal delay={0.2}>
         <motion.div
           whileHover={{ y: -4, boxShadow: "0 12px 40px rgba(0,0,0,0.08)" }}
@@ -93,7 +93,7 @@ export default function Business() {
           <div className="w-13 h-13 rounded-[14px] flex items-center justify-center text-[26px] mb-5 bg-[#fef9e7]">
             🏠
           </div>
-          <h3 className="text-lg font-bold mb-3">D2Cブランド運営</h3>
+          <h3 className="text-lg font-bold mb-3">自社ブランドの運営</h3>
           <p className="text-sm text-[#666] leading-relaxed">
             シーリングスタンプ専門店「HOMU」を企画・運営しています。オリジナルデザインのスタンプヘッドやワックスの製造から販売まで、一気通貫で手がけています。
           </p>
