@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+  color: #1a1a1a;
+  background: #faf9f7;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #fff0f3;
+  color: #e85d75;
+}
