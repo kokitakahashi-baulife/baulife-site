@@ -15,9 +15,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "BAULIFE — キャラクターとブランドに付加価値を与え、世の中に届ける",
+  title: "BAULIFE — 心を通わせる、そのあいだに。",
   description:
-    "BAULIFEはクリエイターのパートナーとして、キャラクターのブランド設計からライセンス展開まで一貫してプロデュースします。",
+    "人と人を繋ぐ媒介物を、クリエイターと共に生み出し、世界に届けます。",
 };
 
 export default function RootLayout({

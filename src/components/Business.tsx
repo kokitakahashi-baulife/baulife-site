@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
 
 const touchpoints = [
-  "グッズ企画・製造",
-  "イベント出店",
-  "ブランドコラボ",
-  "SNS運用支援",
-  "公式ストア構築",
-  "カプセルトイ展開",
-  "卸売・流通",
   "ライセンス管理",
+  "グッズ企画・製造",
+  "ブランド設計",
+  "イベント企画",
+  "コラボレーション",
+  "公式ストア構築",
+  "卸売・流通",
+  "IP戦略立案",
 ];
 
 export default function Business() {
@@ -35,9 +35,9 @@ export default function Business() {
               <div className="w-13 h-13 rounded-[14px] flex items-center justify-center text-[26px] mb-5 bg-[#fff0f3]">
                 🎨
               </div>
-              <h3 className="text-lg font-bold mb-3">キャラクタープロデュース</h3>
+              <h3 className="text-lg font-bold mb-3">IPライセンス事業</h3>
               <p className="text-sm text-[#666] leading-relaxed">
-                クリエイターの収益化や認知拡大を支援するパートナーとして、トータルブランディングの支援を行います。ライセンス管理、グッズ販売、イベント出店、企業案件獲得等、キャラクターの価値を最大化するために一貫してプロデュースします。
+                人と人を繋ぐ「媒介物」としてのIPを、クリエイターと共に生み出し、その価値を最大化します。キャラクター、ブランド、空間など様々なカタチのIPについて、ブランド設計からライセンス管理、グッズ展開、イベント企画まで一貫してプロデュースします。
               </p>
             </div>
 
@@ -46,8 +46,7 @@ export default function Business() {
               <div className="absolute rounded-full border border-dashed border-[#e0d8d4]" style={{ inset: 20 }} />
 
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] rounded-full bg-gradient-to-br from-[#e85d75] to-[#f5a0b0] flex flex-col items-center justify-center text-white shadow-lg shadow-[#e85d75]/20 z-10">
-                <span className="text-[9px] font-bold tracking-wider">キャラクター</span>
-                <span className="text-[9px] font-bold tracking-wider">IP</span>
+                <span className="text-[11px] font-bold tracking-wider">IP</span>
               </div>
 
               {touchpoints.map((label, i, arr) => {
