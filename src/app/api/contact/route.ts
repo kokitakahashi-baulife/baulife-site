@@ -12,9 +12,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type ContactBody = {
   name?: string;
+  company?: string; // 会社名・団体名（任意）
   email?: string;
   message?: string;
-  company?: string; // honeypot（人間は空のまま）
+  website?: string; // honeypot（人間は空のまま）
 };
 
 export async function POST(request: Request) {
@@ -29,11 +30,12 @@ export async function POST(request: Request) {
   }
 
   // ハニーポット：ボットが埋めたら成功を装って黙って破棄
-  if (body.company && body.company.trim() !== "") {
+  if (body.website && body.website.trim() !== "") {
     return Response.json({ ok: true });
   }
 
   const name = (body.name || "").trim();
+  const company = (body.company || "").trim();
   const email = (body.email || "").trim();
   const message = (body.message || "").trim();
 
@@ -74,6 +76,8 @@ export async function POST(request: Request) {
     "BAULIFE公式サイトのお問い合わせフォームから新しいメッセージが届きました。",
     "",
     `■ お名前\n${name}`,
+    "",
+    `■ 会社名・団体名\n${company || "（未記入）"}`,
     "",
     `■ メールアドレス\n${email}`,
     "",

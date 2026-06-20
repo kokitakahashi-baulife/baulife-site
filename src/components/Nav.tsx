@@ -7,8 +7,8 @@ const links = [
   { href: "#business", label: "事業内容" },
   { href: "#homu", label: "HOMU" },
   { href: "#news", label: "ニュース" },
+  { href: "#recruit", label: "採用" },
   { href: "#company", label: "会社概要" },
-  { href: "/recruit", label: "採用" },
   { href: "#contact", label: "お問い合わせ" },
 ];
 

@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="py-8 px-6 text-center border-t border-[#eee] bg-white text-[13px] text-[#aaa]">
       <div className="mb-3 flex justify-center flex-wrap gap-x-6 gap-y-2">
         <Link
-          href="/recruit"
+          href="/#recruit"
           className="text-[#888] hover:text-[#1a1a1a] transition-colors"
         >
           採用情報

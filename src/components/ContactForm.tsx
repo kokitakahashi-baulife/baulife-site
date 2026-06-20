@@ -66,8 +66,8 @@ export default function ContactForm() {
       {/* honeypot */}
       <div className="absolute -left-[9999px]" aria-hidden="true">
         <label>
-          会社名
-          <input type="text" name="company" tabIndex={-1} autoComplete="off" />
+          ウェブサイト
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
 
@@ -81,6 +81,18 @@ export default function ContactForm() {
           required
           className={inputClass}
           placeholder="例：山田 太郎"
+        />
+      </div>
+
+      <div>
+        <label className={labelClass} htmlFor="contact-company">
+          会社名・団体名 <span className="text-[12px] text-[#999] font-normal">任意</span>
+        </label>
+        <input
+          id="contact-company"
+          name="company"
+          className={inputClass}
+          placeholder="例：株式会社〇〇"
         />
       </div>
 
