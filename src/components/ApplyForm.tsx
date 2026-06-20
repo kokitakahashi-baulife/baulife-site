@@ -10,7 +10,7 @@ const inputClass =
 const labelClass = "block text-[14px] font-bold text-[#333] mb-2";
 const hintClass = "text-[12px] text-[#999] font-normal";
 
-export default function ApplyForm() {
+export default function ApplyForm({ position }: { position?: string }) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -66,6 +66,9 @@ export default function ApplyForm() {
       onSubmit={handleSubmit}
       className="bg-white border border-[#eee] rounded-2xl px-6 sm:px-8 py-8 text-left space-y-6"
     >
+      {/* 応募職種（hidden） */}
+      {position && <input type="hidden" name="position" value={position} />}
+
       {/* honeypot（人間には見えない。ボット除け） */}
       <div className="absolute -left-[9999px]" aria-hidden="true">
         <label>

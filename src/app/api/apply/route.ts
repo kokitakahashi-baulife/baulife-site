@@ -13,6 +13,7 @@ const FROM = process.env.RESEND_FROM || "HOMU採用 <recruit@baulife.world>";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type ApplyBody = {
+  position?: string;
   name?: string;
   contact?: string;
   sns?: string;
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: true });
   }
 
+  const position = (body.position || "").trim();
   const name = (body.name || "").trim();
   const contact = (body.contact || "").trim();
   const sns = (body.sns || "").trim();
@@ -78,7 +80,8 @@ export async function POST(request: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const lines = [
-    "HOMU コラボプロデューサー募集に新しい応募が届きました。",
+    `HOMU 採用に新しい応募が届きました。`,
+    `応募職種: ${position || "（未指定）"}`,
     "",
     `■ お名前 / 連絡先\n${name}\n${contact}`,
     "",
@@ -99,7 +102,9 @@ export async function POST(request: Request) {
       to: RECIPIENTS,
       // 連絡先がメールアドレスなら、受信メールに返信＝応募者へ直接届く
       replyTo: EMAIL_RE.test(contact) ? contact : undefined,
-      subject: `【HOMU採用応募】${name} さん`,
+      subject: position
+        ? `【HOMU採用応募】${position} / ${name} さん`
+        : `【HOMU採用応募】${name} さん`,
       text: lines.join("\n"),
     });
 

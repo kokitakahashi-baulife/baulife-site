@@ -1,8 +1,8 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import Business from "@/components/Business";
-import Philosophy from "@/components/Philosophy";
 import Homu from "@/components/Homu";
+import IPs from "@/components/IPs";
 import News from "@/components/News";
 import Company from "@/components/Company";
 import Contact from "@/components/Contact";
@@ -14,8 +14,8 @@ export default function Home() {
       <Nav />
       <Hero />
       <Business />
-      <Philosophy />
       <Homu />
+      <IPs />
       <News />
       <Company />
       <Contact />
