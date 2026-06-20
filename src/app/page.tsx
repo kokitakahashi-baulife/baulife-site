@@ -2,7 +2,6 @@ import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import Business from "@/components/Business";
 import Homu from "@/components/Homu";
-import IPs from "@/components/IPs";
 import News from "@/components/News";
 import Company from "@/components/Company";
 import Contact from "@/components/Contact";
@@ -15,7 +14,6 @@ export default function Home() {
       <Hero />
       <Business />
       <Homu />
-      <IPs />
       <News />
       <Company />
       <Contact />

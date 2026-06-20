@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 const links = [
   { href: "#business", label: "事業内容" },
   { href: "#homu", label: "HOMU" },
-  { href: "#ips", label: "所属IP" },
   { href: "#news", label: "ニュース" },
   { href: "#company", label: "会社概要" },
   { href: "/recruit", label: "採用" },
