@@ -16,11 +16,13 @@ type ApplyBody = {
   position?: string;
   name?: string;
   contact?: string;
-  sns?: string;
+  stationery?: string;
+  character?: string;
+  snsExperience?: string;
+  snsUrl?: string;
   reason?: string;
   commission?: string;
   availability?: string;
-  favorite?: string;
   company?: string; // honeypot（人間は空のまま）
 };
 
@@ -43,18 +45,22 @@ export async function POST(request: Request) {
   const position = (body.position || "").trim();
   const name = (body.name || "").trim();
   const contact = (body.contact || "").trim();
-  const sns = (body.sns || "").trim();
+  const stationery = (body.stationery || "").trim();
+  const character = (body.character || "").trim();
+  const snsExperience = (body.snsExperience || "").trim();
+  const snsUrl = (body.snsUrl || "").trim();
   const reason = (body.reason || "").trim();
   const commission = (body.commission || "").trim();
   const availability = (body.availability || "").trim();
-  const favorite = (body.favorite || "").trim();
 
   // 必須項目の検証
   const missing: string[] = [];
   if (!name) missing.push("お名前");
   if (!contact) missing.push("連絡先");
-  if (!sns) missing.push("SNSの実績");
-  if (!reason) missing.push("興味を持った理由");
+  if (!stationery) missing.push("シーリング・文具への関心");
+  if (!character) missing.push("SNS発キャラクターへの詳しさ");
+  if (!snsExperience) missing.push("SNS運用・発信の経験");
+  if (!reason) missing.push("志望理由");
   if (!commission) missing.push("成果報酬の確認");
   if (!availability) missing.push("月の稼働量");
 
@@ -85,15 +91,19 @@ export async function POST(request: Request) {
     "",
     `■ お名前 / 連絡先\n${name}\n${contact}`,
     "",
-    `■ SNSで反応・売上をつくった事例\n${sns}`,
+    `■ シーリングスタンプ・文具への関わり\n${stationery}`,
     "",
-    `■ 興味を持った理由\n${reason}`,
+    `■ SNS発キャラクターへの詳しさ\n${character}`,
+    "",
+    `■ SNSの運用・発信の経験\n${snsExperience}${
+      snsUrl ? `\nアカウント: ${snsUrl}` : ""
+    }`,
+    "",
+    `■ 志望理由\n${reason}`,
     "",
     `■ 成果報酬（固定給なし）で問題ないか\n${commission}`,
     "",
     `■ 月にどれくらい動けそうか\n${availability}`,
-    "",
-    `■ 好きなクリエイター・キャラ（任意）\n${favorite || "（未記入）"}`,
   ];
 
   try {

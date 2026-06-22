@@ -10,6 +10,44 @@ const inputClass =
 const labelClass = "block text-[14px] font-bold text-[#333] mb-2";
 const hintClass = "text-[12px] text-[#999] font-normal";
 
+function RadioGroup({
+  name,
+  label,
+  hint,
+  options,
+}: {
+  name: string;
+  label: string;
+  hint?: string;
+  options: string[];
+}) {
+  return (
+    <div>
+      <span className={labelClass}>
+        {label} <span className="text-[#e85d75]">*</span>
+        {hint && <span className={` ${hintClass}`}> {hint}</span>}
+      </span>
+      <div className="space-y-2">
+        {options.map((opt) => (
+          <label
+            key={opt}
+            className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-[#e3ddd9] bg-white px-4 py-3 text-[15px] text-[#333] has-[:checked]:border-[#e85d75] has-[:checked]:bg-[#fff7f8] transition-colors"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={opt}
+              required
+              className="accent-[#e85d75] shrink-0"
+            />
+            {opt}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ApplyForm({ position }: { position?: string }) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -81,7 +119,13 @@ export default function ApplyForm({ position }: { position?: string }) {
         <label className={labelClass} htmlFor="name">
           お名前 <span className="text-[#e85d75]">*</span>
         </label>
-        <input id="name" name="name" required className={inputClass} placeholder="例：高橋 明日香" />
+        <input
+          id="name"
+          name="name"
+          required
+          className={inputClass}
+          placeholder="例：山田 太郎"
+        />
       </div>
 
       <div>
@@ -98,25 +142,48 @@ export default function ApplyForm({ position }: { position?: string }) {
         />
       </div>
 
-      <div>
-        <label className={labelClass} htmlFor="sns">
-          SNSで反応・売上をつくった事例 <span className="text-[#e85d75]">*</span>{" "}
-          <span className={hintClass}>アカウントURLでもOK</span>
-        </label>
-        <textarea
-          id="sns"
-          name="sns"
-          required
-          rows={3}
+      <RadioGroup
+        name="stationery"
+        label="シーリングスタンプや文具は好きですか？"
+        options={[
+          "大好き・自分でも集めたり使ったりする",
+          "好き・興味がある",
+          "これから知っていきたい",
+        ]}
+      />
+
+      <RadioGroup
+        name="character"
+        label="SNS発のキャラクターに詳しいですか？"
+        hint="X・Instagram発のキャラクターなど"
+        options={[
+          "詳しい・よく追っている",
+          "ある程度は知っている",
+          "これから知っていきたい",
+        ]}
+      />
+
+      <div className="space-y-3">
+        <RadioGroup
+          name="snsExperience"
+          label="SNSの運用・発信の経験はありますか？"
+          options={[
+            "仕事・依頼として運用したことがある",
+            "自分のアカウントを継続して運用している",
+            "これから挑戦したい",
+          ]}
+        />
+        <input
+          name="snsUrl"
           className={inputClass}
-          placeholder="運用したアカウントのURL、または「どんな反応・売上をつくったか」を1つ"
+          placeholder="運用しているSNSアカウントのURL（あれば・任意）"
         />
       </div>
 
       <div>
         <label className={labelClass} htmlFor="reason">
-          この募集に興味を持った理由 <span className="text-[#e85d75]">*</span>{" "}
-          <span className={hintClass}>3行ほどで</span>
+          志望理由 <span className="text-[#e85d75]">*</span>{" "}
+          <span className={hintClass}>簡単で大丈夫です</span>
         </label>
         <textarea
           id="reason"
@@ -128,29 +195,11 @@ export default function ApplyForm({ position }: { position?: string }) {
         />
       </div>
 
-      <div>
-        <span className={labelClass}>
-          成果報酬（固定給なし）で問題ないですか？{" "}
-          <span className="text-[#e85d75]">*</span>
-        </span>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {["はい", "相談したい"].map((opt) => (
-            <label
-              key={opt}
-              className="flex items-center gap-2.5 flex-1 cursor-pointer rounded-xl border border-[#e3ddd9] bg-white px-4 py-3 text-[15px] text-[#333] has-[:checked]:border-[#e85d75] has-[:checked]:bg-[#fff7f8] transition-colors"
-            >
-              <input
-                type="radio"
-                name="commission"
-                value={opt}
-                required
-                className="accent-[#e85d75]"
-              />
-              {opt}
-            </label>
-          ))}
-        </div>
-      </div>
+      <RadioGroup
+        name="commission"
+        label="成果報酬（固定給なし）で問題ないですか？"
+        options={["はい", "相談したい"]}
+      />
 
       <div>
         <label className={labelClass} htmlFor="availability">
@@ -164,13 +213,6 @@ export default function ApplyForm({ position }: { position?: string }) {
           className={inputClass}
           placeholder="例：週に5〜10時間／平日夜と週末 など"
         />
-      </div>
-
-      <div>
-        <label className={labelClass} htmlFor="favorite">
-          好きなクリエイター・キャラ <span className={hintClass}>任意</span>
-        </label>
-        <input id="favorite" name="favorite" className={inputClass} placeholder="" />
       </div>
 
       {status === "error" && (
