@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ScrollReveal from "@/components/ScrollReveal";
+import AboutHomu from "@/components/AboutHomu";
 import ApplyForm from "@/components/ApplyForm";
 import Footer from "@/components/Footer";
 import { jobs, getJob } from "@/data/jobs";
@@ -82,6 +83,9 @@ export default async function JobDetail({
           </ScrollReveal>
         </div>
       </section>
+
+      {/* HOMUってどんなブランド？（応募者向けの紹介） */}
+      <AboutHomu />
 
       {/* 募集要項（1本の記事としてコンパクトに） */}
       <article className="max-w-[680px] mx-auto px-5 sm:px-6 py-14">
