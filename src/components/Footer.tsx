@@ -22,6 +22,12 @@ export default function Footer() {
         >
           利用規約
         </Link>
+        <a
+          href="/tools"
+          className="text-[#aaa] hover:text-[#1a1a1a] transition-colors"
+        >
+          社内ポータル
+        </a>
       </div>
       <div>&copy; 2026 BAULIFE Inc. All rights reserved.</div>
     </footer>
