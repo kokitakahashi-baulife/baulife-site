@@ -76,8 +76,24 @@
   .price-card .pr{font-size:15pt;color:var(--red);margin-top:4px;}
   .price-card .dsc{font-size:9pt;color:var(--gray);}
 
+  /* ---------- list (案件一覧) ---------- */
+  #listScreen{max-width:1040px;margin:0 auto;padding:40px 24px 80px;}
+  .list-head h1{font-size:20px;color:var(--red);margin:0 0 6px;font-weight:700;}
+  .list-head p{font-size:13px;color:var(--gray);margin:0 0 24px;}
+  .list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .card{border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:16px;
+    cursor:pointer;min-height:118px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s;}
+  .card:hover{border-color:var(--red);}
+  .card .c-name{font-size:15px;font-weight:700;color:var(--ink);}
+  .card .c-theme{font-size:12px;color:var(--gray);flex:1;overflow:hidden;}
+  .card .c-meta{font-size:11px;color:#b3a895;border-top:1px solid var(--line);padding-top:8px;}
+  .card.new{align-items:center;justify-content:center;color:var(--red);font-weight:700;
+    border-style:dashed;font-size:15px;background:transparent;}
+  .save-status{font-size:12px;color:var(--gray);margin-left:6px;white-space:nowrap;}
+
   @media print{
     @page{size:A4;margin:0;}
+    #listScreen{display:none !important;}
     .toolbar,.pane-form{display:none !important;}
     .app{display:block;height:auto;}
     .pane-preview{display:block;padding:0;background:#fff;overflow:visible;}
@@ -89,25 +105,34 @@
 </style>
 </head>
 <body>
-<div class="toolbar">
-  <h1>HOMU コラボ企画書エディター</h1>
-  <div class="seg" id="seg">
-    <button data-doc="offer" class="active">オファー資料</button>
-    <button data-doc="plan">企画書</button>
+<div id="listScreen">
+  <div class="list-head">
+    <h1>HOMU コラボ企画書エディター</h1>
+    <p>共有ドライブ「株式会社BAULIFE ／ HOMUコラボ企画書」に自動保存されます。カードを選んで開くか、新規作成してください。</p>
   </div>
-  <div class="spacer"></div>
-  <button class="btn" onclick="loadFile()">読み込み</button>
-  <button class="btn" onclick="saveFile()">保存(.json)</button>
-  <button class="btn primary" onclick="exportPDF()">PDF出力</button>
-  <input type="file" id="fileInput" accept="application/json" style="display:none">
+  <div id="listGrid" class="list-grid"></div>
 </div>
 
-<div class="app">
-  <div class="pane-form" id="form"></div>
-  <div class="pane-preview">
-    <div id="scaler" style="width:210mm">
-      <div class="doc" id="doc-offer"><div class="sheet" id="pv-offer"></div></div>
-      <div class="doc" id="doc-plan" style="display:none"><div class="sheet" id="pv-plan"></div></div>
+<div id="editScreen" style="display:none">
+  <div class="toolbar">
+    <button class="btn" onclick="backToList()">← 一覧</button>
+    <div class="seg" id="seg">
+      <button data-doc="offer" class="active">オファー資料</button>
+      <button data-doc="plan">企画書</button>
+    </div>
+    <span id="saveStatus" class="save-status"></span>
+    <div class="spacer"></div>
+    <button class="btn" onclick="saveFile()">バックアップDL(.json)</button>
+    <button class="btn primary" onclick="exportPDF()">PDF出力</button>
+  </div>
+
+  <div class="app">
+    <div class="pane-form" id="form"></div>
+    <div class="pane-preview">
+      <div id="scaler" style="width:210mm">
+        <div class="doc" id="doc-offer"><div class="sheet" id="pv-offer"></div></div>
+        <div class="doc" id="doc-plan" style="display:none"><div class="sheet" id="pv-plan"></div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -133,22 +158,101 @@ function defaultData(){
 }
 let data = defaultData();
 
-/* ---------- persistence ---------- */
-const LS="homu_kikaku_v1";
-function autosave(){ try{localStorage.setItem(LS,JSON.stringify(data));}catch(e){} }
-function loadLS(){ try{const s=localStorage.getItem(LS); if(s) data=Object.assign(defaultData(),JSON.parse(s));}catch(e){} }
-function saveFile(){
-  const name=(data.creator||"コラボ")+"_企画書.json";
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+/* ---------- 共有ドライブ保存 ---------- */
+let currentId=null;
+let saveTimer=null, saving=false, dirtyAgain=false;
+function setStatus(t){ const e=document.getElementById("saveStatus"); if(e) e.textContent=t; }
+function hhmm(d){ return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+function metaOf(){ return { creator:(data.creator||""), theme:(data.overall&&data.overall.theme)||"" }; }
+function fileBase(){ return ((data.creator&&data.creator.trim())||"無題")+"_企画書"; }
+
+/* 入力変更時に各所から呼ばれる → デバウンスして自動保存 */
+function autosave(){
+  if(!currentId) return;
+  setStatus("保存中…");
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveNow,1200);
 }
-function loadFile(){ document.getElementById("fileInput").click(); }
-document.getElementById("fileInput").addEventListener("change",e=>{
-  const f=e.target.files[0]; if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{ try{ data=Object.assign(defaultData(),JSON.parse(r.result)); buildForm(); render(); autosave(); }catch(err){alert("読み込みに失敗しました");} };
-  r.readAsText(f);
-});
+async function saveNow(){
+  if(!currentId) return;
+  if(saving){ dirtyAgain=true; return; }
+  saving=true;
+  try{
+    const res=await fetch("/api/tools/projects/"+currentId,{method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:fileBase(),content:data,meta:metaOf()})});
+    if(!res.ok) throw new Error(await res.text());
+    setStatus("保存しました "+hhmm(new Date()));
+  }catch(e){ console.error(e); setStatus("⚠ 保存に失敗。再試行中…"); setTimeout(saveNow,4000); }
+  finally{ saving=false; if(dirtyAgain){ dirtyAgain=false; autosave(); } }
+}
+/* ローカルにバックアップDL（任意） */
+function saveFile(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fileBase()+".json"; a.click();
+}
+
+/* ---------- 一覧・開く・新規・戻る ---------- */
+function fmtTime(iso){ try{ const d=new Date(iso); return (d.getMonth()+1)+"/"+d.getDate()+" "+hhmm(d); }catch(e){ return ""; } }
+async function fetchProjects(){
+  const grid=document.getElementById("listGrid");
+  grid.innerHTML='<div style="color:var(--gray);font-size:13px">読み込み中…</div>';
+  try{
+    const res=await fetch("/api/tools/projects");
+    if(!res.ok) throw new Error(await res.text());
+    const j=await res.json(); renderList(j.files||[]);
+  }catch(e){ console.error(e);
+    grid.innerHTML='<div style="color:var(--red);font-size:13px">一覧の取得に失敗しました。再読み込みしてください。<br>'+esc(String(e.message||e))+'</div>'; }
+}
+function renderList(files){
+  const grid=document.getElementById("listGrid"); grid.innerHTML="";
+  const nw=el("div","card new"); nw.textContent="＋ 新規作成"; nw.onclick=newProject; grid.appendChild(nw);
+  files.forEach(f=>{
+    const ap=f.appProperties||{};
+    const c=el("div","card");
+    c.innerHTML='<div class="c-name">'+esc(ap.creator||"（無題）")+'</div>'+
+      '<div class="c-theme">'+esc(ap.theme||"テーマ未記入")+'</div>'+
+      '<div class="c-meta">更新：'+esc(fmtTime(f.modifiedTime))+
+        (f.lastModifyingUser&&f.lastModifyingUser.displayName?(" ・ "+esc(f.lastModifyingUser.displayName)):"")+'</div>';
+    c.onclick=()=>openProject(f.id);
+    grid.appendChild(c);
+  });
+}
+function showEdit(){
+  document.getElementById("listScreen").style.display="none";
+  document.getElementById("editScreen").style.display="block";
+}
+async function openProject(id){
+  setStatus("");
+  try{
+    const res=await fetch("/api/tools/projects/"+id);
+    if(!res.ok) throw new Error(await res.text());
+    const j=await res.json();
+    data=Object.assign(defaultData(),j.content||{});
+    currentId=id;
+    showEdit(); buildForm(); render(); fitPreview();
+  }catch(e){ alert("開けませんでした: "+(e.message||e)); }
+}
+async function newProject(){
+  const fresh=defaultData();
+  try{
+    const res=await fetch("/api/tools/projects",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:"無題_企画書",content:fresh,meta:{creator:"",theme:""}})});
+    if(!res.ok) throw new Error(await res.text());
+    const f=await res.json();
+    data=fresh; currentId=f.id;
+    showEdit(); buildForm(); render(); fitPreview(); setStatus("新規作成しました");
+  }catch(e){ alert("新規作成に失敗: "+(e.message||e)); }
+}
+async function backToList(){
+  if(currentId){ clearTimeout(saveTimer); await saveNow(); }
+  currentId=null;
+  document.getElementById("editScreen").style.display="none";
+  document.getElementById("listScreen").style.display="block";
+  fetchProjects();
+}
+function initApp(){ fetchProjects(); }
 
 /* ---------- doc switch & print ---------- */
 document.getElementById("seg").addEventListener("click",e=>{
@@ -359,7 +463,7 @@ function fitPreview(){
 }
 window.addEventListener("resize",fitPreview);
 
-loadLS(); buildForm(); render(); fitPreview();
+initApp();
 </script>
 </body>
 </html>
