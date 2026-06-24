@@ -81,9 +81,12 @@
   .list-head h1{font-size:20px;color:var(--red);margin:0 0 6px;font-weight:700;}
   .list-head p{font-size:13px;color:var(--gray);margin:0 0 24px;}
   .list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
-  .card{border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:16px;
+  .card{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:16px;
     cursor:pointer;min-height:118px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s;}
   .card:hover{border-color:var(--red);}
+  .card-del{position:absolute;top:8px;right:8px;border:0;background:transparent;color:#c4b8a6;
+    font-size:11px;cursor:pointer;padding:3px 6px;border-radius:6px;line-height:1;}
+  .card-del:hover{background:#fbe3dd;color:var(--red);}
   .card .c-name{font-size:15px;font-weight:700;color:var(--ink);}
   .card .c-theme{font-size:12px;color:var(--gray);flex:1;overflow:hidden;}
   .card .c-meta{font-size:11px;color:#b3a895;border-top:1px solid var(--line);padding-top:8px;}
@@ -128,6 +131,7 @@
     </div>
     <span id="saveStatus" class="save-status"></span>
     <div class="spacer"></div>
+    <button class="btn" onclick="deleteCurrent()">削除</button>
     <button class="btn" onclick="saveFile()">バックアップDL(.json)</button>
     <button class="btn primary" onclick="exportPDF()">PDF出力</button>
   </div>
@@ -305,6 +309,9 @@ function renderList(files){
       '<div class="c-meta">更新：'+esc(fmtTime(f.modifiedTime))+
         (f.lastModifyingUser&&f.lastModifyingUser.displayName?(" ・ "+esc(f.lastModifyingUser.displayName)):"")+'</div>';
     c.onclick=function(){ openProject(f.id, f.modifiedTime); };
+    const del=el("button","card-del"); del.textContent="削除"; del.title="この案件を削除（ゴミ箱へ）";
+    del.addEventListener("click",function(ev){ ev.stopPropagation(); deleteProject(f.id, ap.creator||""); });
+    c.appendChild(del);
     grid.appendChild(c);
   });
 }
@@ -346,6 +353,24 @@ async function backToList(){
   document.getElementById("listScreen").style.display="block";
   fetchProjects();
 }
+
+/* ---------- 削除（ゴミ箱へ・復元可能） ---------- */
+async function deleteProject(id, label){
+  if(!id) return;
+  const nm=(label&&label.trim())||"この案件";
+  if(!confirm("「"+nm+"」を削除しますか？\n共有ドライブのゴミ箱に移動します（30日以内なら復元できます）。")) return;
+  try{
+    const res=await fetch("/api/tools/projects/"+id,{method:"DELETE"});
+    if(!res.ok) throw new Error(await res.text());
+    if(currentId===id){
+      currentId=null; baseModified=null; pendingDirty=false; saveFailCount=0; hideConflict(); hideSaveError();
+      document.getElementById("editScreen").style.display="none";
+      document.getElementById("listScreen").style.display="block";
+    }
+    fetchProjects();
+  }catch(e){ alert("削除に失敗しました: "+(e.message||e)); }
+}
+function deleteCurrent(){ if(currentId) deleteProject(currentId, (data&&data.creator)||""); }
 
 /* ---------- #3 閉じる前にデータを失わない ---------- */
 window.addEventListener("beforeunload",function(e){
