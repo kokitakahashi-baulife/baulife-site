@@ -93,6 +93,8 @@
   .card.new{align-items:center;justify-content:center;color:var(--red);font-weight:700;
     border-style:dashed;font-size:15px;background:transparent;}
   .save-status{font-size:12px;color:var(--gray);margin-left:6px;white-space:nowrap;}
+  .fname-input{border:1px solid var(--line);border-radius:7px;padding:5px 9px;font-size:13px;
+    font-family:inherit;color:var(--ink);background:#fff;width:220px;max-width:34vw;}
   #conflictBar{display:none;align-items:center;gap:10px;padding:8px 16px;background:#fbe3dd;
     border-bottom:1px solid var(--line);font-size:13px;color:var(--red);flex-wrap:wrap;}
   #conflictBar .msg{flex:1;min-width:200px;}
@@ -129,6 +131,7 @@
       <button data-doc="offer" class="active">オファー資料</button>
       <button data-doc="plan">企画書</button>
     </div>
+    <input id="fileNameInput" class="fname-input" placeholder="ファイル名（空欄なら自動）" title="共有ドライブ上のファイル名">
     <span id="saveStatus" class="save-status"></span>
     <div class="spacer"></div>
     <button class="btn" onclick="deleteCurrent()">削除</button>
@@ -176,6 +179,7 @@ const CIRCLED=["①","②","③","④","⑤","⑥"];
 function blankConcept(){return {title:"",genga:"",stamp:"",wax:"",postcard:""};}
 function defaultData(){
   return {
+    fileName:"",
     creator:"", ip:"", staff:"",
     contractDate:"",
     boxCount:1,
@@ -211,7 +215,13 @@ let scheduleOpen=false;      // スケジュール日数の調整トグル（既
 function setStatus(t){ const e=document.getElementById("saveStatus"); if(e) e.textContent=t; }
 function hhmm(d){ return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
 function metaOf(){ return { creator:(data.creator||""), theme:((data.overall&&data.overall.core)||"").replace(/\s+/g," ").trim().slice(0,40) }; }
-function fileBase(){ return ((data.creator&&data.creator.trim())||"無題")+"_企画書"; }
+function fileBase(){
+  const fn=(data.fileName||"").trim();
+  if(fn) return fn;
+  return ((data.creator&&data.creator.trim())||"無題")+"_企画書";
+}
+function setUrl(id){ try{ history.replaceState(null,"",location.pathname+"?id="+encodeURIComponent(id)); }catch(e){} }
+function clearUrl(){ try{ history.replaceState(null,"",location.pathname); }catch(e){} }
 
 /* 入力変更時に各所から呼ばれる → デバウンスして自動保存 */
 function autosave(){
@@ -324,14 +334,16 @@ function renderList(files){
   const nw=el("div","card new"); nw.textContent="＋ 新規作成"; nw.onclick=newProject; grid.appendChild(nw);
   files.forEach(function(f){
     const ap=f.appProperties||{};
+    const nm=(f.name||"").replace(/\.json$/i,"");
+    const sub=[ap.creator,ap.theme].filter(Boolean).join("／")||"（内容未記入）";
     const c=el("div","card");
-    c.innerHTML='<div class="c-name">'+esc(ap.creator||"（無題）")+'</div>'+
-      '<div class="c-theme">'+esc(ap.theme||"テーマ未記入")+'</div>'+
+    c.innerHTML='<div class="c-name">'+esc(nm||"（無題）")+'</div>'+
+      '<div class="c-theme">'+esc(sub)+'</div>'+
       '<div class="c-meta">更新：'+esc(fmtTime(f.modifiedTime))+
         (f.lastModifyingUser&&f.lastModifyingUser.displayName?(" ・ "+esc(f.lastModifyingUser.displayName)):"")+'</div>';
     c.onclick=function(){ openProject(f.id, f.modifiedTime); };
     const del=el("button","card-del"); del.textContent="削除"; del.title="この案件を削除（ゴミ箱へ）";
-    del.addEventListener("click",function(ev){ ev.stopPropagation(); deleteProject(f.id, ap.creator||""); });
+    del.addEventListener("click",function(ev){ ev.stopPropagation(); deleteProject(f.id, nm||ap.creator||""); });
     c.appendChild(del);
     grid.appendChild(c);
   });
@@ -340,20 +352,32 @@ function showEdit(){
   document.getElementById("listScreen").style.display="none";
   document.getElementById("editScreen").style.display="block";
 }
+function goList(){
+  currentId=null; baseModified=null; pendingDirty=false; saveFailCount=0; hideConflict(); hideSaveError();
+  clearUrl();
+  const fni=document.getElementById("fileNameInput"); if(fni) fni.value="";
+  document.getElementById("editScreen").style.display="none";
+  document.getElementById("listScreen").style.display="block";
+  fetchProjects();
+}
 async function openProject(id, modifiedTime){
   setStatus(""); hideConflict(); hideSaveError(); saveFailCount=0;
   try{
     const res=await fetch("/api/tools/projects/"+id);
-    if(res.status===422){ const j=await res.json().catch(function(){return {};}); alert(j.error||"このファイルは企画書の形式ではないため開けません。"); return; }
+    if(res.status===422){ const j=await res.json().catch(function(){return {};}); alert(j.error||"このファイルは企画書の形式ではないため開けません。"); goList(); return; }
     if(!res.ok) throw new Error(await res.text());
     const j=await res.json();
     // #2 想定外/壊れた中身でも落とさない
     const c=(j.content&&typeof j.content==="object"&&!Array.isArray(j.content))?j.content:null;
     if(c===null){ alert("このファイルは企画書の形式ではない可能性があります。新しい空の企画書として開きます。"); }
     data=Object.assign(defaultData(), c||{});
-    currentId=id; baseModified=modifiedTime||null; pendingDirty=false;
+    currentId=id; pendingDirty=false;
+    if(modifiedTime){ baseModified=modifiedTime; }
+    else { baseModified=null; try{ const mr=await fetch("/api/tools/projects/"+id+"?meta=1"); if(mr.ok){ const mj=await mr.json(); baseModified=mj.meta&&mj.meta.modifiedTime; } }catch(e){} }
+    setUrl(id);
+    const fni=document.getElementById("fileNameInput"); if(fni) fni.value=data.fileName||"";
     showEdit(); buildForm(); render(); fitPreview();
-  }catch(e){ alert("開けませんでした: "+(e.message||e)); }
+  }catch(e){ alert("開けませんでした: "+(e.message||e)); goList(); }
 }
 async function newProject(){
   const fresh=defaultData();
@@ -364,15 +388,14 @@ async function newProject(){
     if(!res.ok) throw new Error(await res.text());
     const f=await res.json();
     data=fresh; currentId=f.id; baseModified=f.modifiedTime||null; pendingDirty=false; saveFailCount=0; hideSaveError();
+    setUrl(f.id);
+    const fni=document.getElementById("fileNameInput"); if(fni) fni.value="";
     showEdit(); buildForm(); render(); fitPreview(); setStatus("新規作成しました");
   }catch(e){ alert("新規作成に失敗しました: "+(e.message||e)); }
 }
 async function backToList(){
   if(currentId && pendingDirty && !conflictActive){ clearTimeout(saveTimer); await saveNow(false); }
-  currentId=null; baseModified=null; pendingDirty=false; saveFailCount=0; hideConflict(); hideSaveError();
-  document.getElementById("editScreen").style.display="none";
-  document.getElementById("listScreen").style.display="block";
-  fetchProjects();
+  goList();
 }
 
 /* ---------- 削除（ゴミ箱へ・復元可能） ---------- */
@@ -383,12 +406,8 @@ async function deleteProject(id, label){
   try{
     const res=await fetch("/api/tools/projects/"+id,{method:"DELETE"});
     if(!res.ok) throw new Error(await res.text());
-    if(currentId===id){
-      currentId=null; baseModified=null; pendingDirty=false; saveFailCount=0; hideConflict(); hideSaveError();
-      document.getElementById("editScreen").style.display="none";
-      document.getElementById("listScreen").style.display="block";
-    }
-    fetchProjects();
+    if(currentId===id){ goList(); }
+    else { fetchProjects(); }
   }catch(e){ alert("削除に失敗しました: "+(e.message||e)); }
 }
 function deleteCurrent(){ if(currentId) deleteProject(currentId, (data&&data.creator)||""); }
@@ -405,7 +424,13 @@ document.addEventListener("visibilitychange",function(){
   }
 });
 
-function initApp(){ fetchProjects(); }
+function initApp(){
+  const fni=document.getElementById("fileNameInput");
+  if(fni) fni.addEventListener("input",function(){ data.fileName=fni.value; autosave(); });
+  const id=new URLSearchParams(location.search).get("id");
+  if(id){ openProject(id); }
+  else { fetchProjects(); }
+}
 
 /* ---------- doc switch & print ---------- */
 document.getElementById("seg").addEventListener("click",e=>{
