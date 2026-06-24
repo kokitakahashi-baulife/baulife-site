@@ -440,6 +440,12 @@ function numField(label,key,obj){
   inp.oninput=()=>{obj[key]=parseInt(inp.value)||0;buildForm();render();autosave();};
   const w=el("div"); w.appendChild(l); w.appendChild(inp); return w;
 }
+// コンプリートセット単価 ＝ ブラインド単価 × 種類数（自動計算）
+function computeComplete(){
+  const n=parseInt(String(data.blindPrice||"").replace(/[^0-9]/g,""),10);
+  const cnt=parseInt(data.boxCount,10)||0;
+  data.completePrice = (n && cnt) ? String(n*cnt) : "";
+}
 
 function conceptForm(c,title,secret){
   const box=el("div","concept-form"+(secret?" secret":"")); box.appendChild(el("div","fl",title));
@@ -467,7 +473,17 @@ function buildForm(){
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"オファー資料：販売方法"));
   fs.appendChild(numField("コンセプトボックス 種類数（通常）","boxCount",data));
-  r=el("div","row"); r.append(field("ブラインドBOX 単価","blindPrice",data),field("コンプリートセット 単価","completePrice",data)); fs.appendChild(r);
+  const blindDiv=el("div"); blindDiv.appendChild(el("label","fl","ブラインドBOX 単価"));
+  const blindInp=el("input"); blindInp.type="text"; blindInp.value=data.blindPrice||"";
+  const compDiv=el("div"); compDiv.appendChild(el("label","fl","コンプリートセット 単価（自動計算）"));
+  const compInp=el("input"); compInp.type="text"; compInp.readOnly=true;
+  compInp.style.background="#f1ede4"; compInp.style.color="var(--gray)";
+  function refreshComplete(){ computeComplete(); compInp.value=data.completePrice||""; }
+  blindInp.oninput=function(){ data.blindPrice=blindInp.value; refreshComplete(); render(); autosave(); };
+  refreshComplete();
+  blindDiv.appendChild(blindInp);
+  compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 種類数（通常）"));
+  r=el("div","row"); r.append(blindDiv,compDiv); fs.appendChild(r);
   fs.appendChild(field("プレゼント企画メモ","presentNote",data));
   F.appendChild(fs);
 
