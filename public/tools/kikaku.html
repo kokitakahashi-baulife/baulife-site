@@ -172,18 +172,19 @@ const SCHED = [
   {label:"配送開始",                     days:90},
 ];
 
+const CIRCLED=["①","②","③","④","⑤","⑥"];
 function blankConcept(){return {title:"",genga:"",stamp:"",wax:"",postcard:""};}
 function defaultData(){
   return {
-    creator:"", ip:"", staff:"", createDate:"",
+    creator:"", ip:"", staff:"",
     contractDate:"",
-    boxCount:4,
+    boxCount:1,
     secretEnabled:true, secretRate:"",
     blindPrice:"", completePrice:"", presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
     sales:{blind:true, complete:true, single:false, assort:false},
     schedule:SCHED.map(s=>({label:s.label, days:s.days})),
-    overall:{goal:"",wow:"",charm:"",season:"",theme:""},
-    package:"", packageNote:"パッケージ用ポストカード（AI生成／任意でクリエイター自主制作可・納期2週間）",
+    overall:{coreCharm:"",target:"",wow:"",theme:"",homuTie:"",hook:"",season:""},
+    package:"", packageNote:"このメインビジュアルはポストカードに印刷され、さらにパッケージにも使用されます。（AI生成／任意でクリエイター自主制作可・納期2週間）",
     concepts:[blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept()],
     secret:blankConcept()
   };
@@ -448,9 +449,10 @@ function imgSlot(label, getVal, setVal){
 
 /* ---------- form builder ---------- */
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;}
-function field(label,key,obj,ta){
+function field(label,key,obj,ta,ph){
   const l=el("label","fl",label); const inp=ta?el("textarea"):el("input");
   if(!ta)inp.type="text"; inp.value=obj[key]||"";
+  if(ph) inp.placeholder=ph;
   inp.oninput=()=>{obj[key]=inp.value;render();autosave();};
   const w=el("div"); w.appendChild(l); w.appendChild(inp); return w;
 }
@@ -468,12 +470,12 @@ function computeComplete(){
 
 function conceptForm(c,title,secret){
   const box=el("div","concept-form"+(secret?" secret":"")); box.appendChild(el("div","fl",title));
-  if(!secret) box.appendChild(field("コンセプトタイトル","title",c));
-  box.appendChild(el("div","fl","① 使用したい原画（IP登録）"));
-  box.appendChild(imgSlot(secret?"シークレット画像":"原画画像",()=>c.genga,v=>c.genga=v));
+  if(!secret) box.appendChild(field("商品名","title",c));
+  box.appendChild(el("div","fl","① 使用したい原画"));
+  box.appendChild(imgSlot(secret?"シークレット画像":"使用したい原画",()=>c.genga,v=>c.genga=v));
   box.appendChild(el("div","fl","② 商品化イメージ"));
   const g=el("div","row");
-  [["完成スタンプ","stamp"],["ワックスカラー","wax"],["ポストカード","postcard"]].forEach(([nm,k])=>{
+  [["スタンプヘッド","stamp"],["ワックスカラー","wax"],["ポストカード","postcard"]].forEach(([nm,k])=>{
     const d=el("div"); d.appendChild(el("div","hint",nm)); d.appendChild(imgSlot(nm,()=>c[k],v=>c[k]=v)); g.appendChild(d);
   });
   box.appendChild(g);
@@ -487,12 +489,11 @@ function buildForm(){
   fs.appendChild(field("クリエイター名","creator",data));
   fs.appendChild(field("IP / キャラ名","ip",data));
   fs.appendChild(field("担当","staff",data));
-  fs.appendChild(field("企画書 作成日","createDate",data));
   F.appendChild(fs);
 
   // 販売方法・販売するものの定義（オファー資料／企画書 共通）
   fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法（オファー資料／企画書 共通）"));
-  fs.appendChild(numField("コンセプトボックス 種類数（通常）","boxCount",data));
+  fs.appendChild(el("div","hint","コンセプトボックス 種類数（通常）：現在 "+data.boxCount+"種（下の「コンセプト案」で追加・削除できます）"));
   const secW=el("label","chk"); const secC=el("input"); secC.type="checkbox"; secC.checked=!!data.secretEnabled;
   secC.onchange=function(){ data.secretEnabled=secC.checked; buildForm(); render(); autosave(); };
   secW.append(secC, document.createTextNode("シークレットあり")); fs.appendChild(secW);
@@ -544,21 +545,40 @@ function buildForm(){
   refreshSchedule();
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：全体コンセプト"));
-  fs.appendChild(field("コラボによって何を形にしたいのか？","goal",data.overall,true));
-  fs.appendChild(field("手に取るお客様にどんなWOWを届けたいのか？","wow",data.overall,true));
-  fs.appendChild(field("クリエイターの魅力はどこか？どういう体験に落とすか？","charm",data.overall,true));
-  fs.appendChild(field("季節やトレンドの要素を加えるか？","season",data.overall,true));
-  fs.appendChild(field("全体のコンセプトのテーマ","theme",data.overall,true));
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：全体コンセプト（コラボの土台）"));
+  fs.appendChild(el("div","hint","担当者とクリエイターが“同じ絵”を共有し、良いものづくり→消費者の喜びにつなげるための土台です。"));
+  fs.appendChild(field("① このクリエイター／IPの核の魅力（ファンが一番好きなところ）","coreCharm",data.overall,true,"例：独特の色使い・ゆるさ・物語性。これを薄めず活かすのが最重要。"));
+  fs.appendChild(field("② ファン（買う人）はどんな人？何を求めている？","target",data.overall,true,"例：20代女性・推し活・収集欲。どんな瞬間に欲しくなるか。"));
+  fs.appendChild(field("③ 手に取った人に届けたい体験・感情（WOW）","wow",data.overall,true,"例：開封のワクワク、飾る／使う／贈る、夢中になれる創作。"));
+  fs.appendChild(field("④ 全体を貫くテーマ・世界観（各ブラインドボックスをつなぐ軸）","theme",data.overall,true,"例：『夜の散歩』『四季の魔法』。1行で言える共通の物語。"));
+  fs.appendChild(field("⑤ HOMUらしさとの接続（封蝋・創作・想いを届ける）","homuTie",data.overall,true,"例：なぜ封蝋スタンプで成立するか。押す体験にどう繋がるか。"));
+  fs.appendChild(field("⑥ 記憶に残る・差別化のフック（一番の見せ場／SNSで語りたくなる点）","hook",data.overall,true,"例：他のグッズと違う、思わず話したくなる一点。"));
+  fs.appendChild(field("⑦ 季節・トレンドの要素（任意）","season",data.overall,true,"例：クリスマス、新生活。なければ空欄でOK。"));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：全体ビジュアル（パッケージ）"));
-  fs.appendChild(imgSlot("パッケージ用ポストカード画像",()=>data.package,v=>data.package=v));
-  fs.appendChild(field("メモ","packageNote",data));
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：本コラボのメインビジュアル"));
+  fs.appendChild(el("div","hint","このメインビジュアルがポストカードに印刷され、さらにパッケージにも使われます。"));
+  fs.appendChild(imgSlot("メインビジュアル画像",()=>data.package,v=>data.package=v));
+  fs.appendChild(field("補足メモ","packageNote",data,true));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：コンセプト案"));
-  for(let i=0;i<data.boxCount;i++) fs.appendChild(conceptForm(data.concepts[i],"コンセプト"+(i+1)));
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：コンセプト案（ブラインドボックスの中身）"));
+  for(let i=0;i<data.boxCount;i++){
+    const block=conceptForm(data.concepts[i],"ブラインドボックス"+CIRCLED[i]);
+    if(data.boxCount>1){
+      const rm=el("button","btn"); rm.type="button"; rm.textContent="このブラインドボックスを削除";
+      rm.style.cssText="font-size:11px;margin-top:6px;";
+      (function(idx){ rm.onclick=function(){ data.concepts.splice(idx,1); data.concepts.push(blankConcept()); data.boxCount--; buildForm(); render(); autosave(); }; })(i);
+      block.appendChild(rm);
+    }
+    fs.appendChild(block);
+  }
+  if(data.boxCount<6){
+    const add=el("button","btn primary"); add.type="button"; add.textContent="＋ ブラインドボックスを追加";
+    add.style.cssText="margin-top:10px;";
+    add.onclick=function(){ if(data.boxCount<6){ data.boxCount++; buildForm(); render(); autosave(); } };
+    fs.appendChild(add);
+  }
   if(data.secretEnabled) fs.appendChild(conceptForm(data.secret,"シークレット枠",true));
   F.appendChild(fs);
 }
@@ -605,16 +625,17 @@ function renderOffer(){
 
     <h3>3. スケジュール</h3>
     ${data.schedule.map(s=>`<div class="sched"><span>${esc(s.label)}${s.days===0?"（基準日）":("（+"+s.days+"日）")}</span><span class="muted">${esc(addDays(data.contractDate,s.days))||"____/__/__"}</span></div>`).join("")}
+    <p class="muted" style="margin-top:8px">※ 上記の日付はあくまで目安・概算です。実際の日程は状況により前後します。</p>
   `;
 }
 function conceptPV(c,title,secret){
   return `<div class="pcard${secret?" secret":""}">
-    <div class="ph">${title}${secret?'（中身は非公開／レア枠）':'：'+(esc(c.title)||"________（タイトル未記入）")}</div>
-    <h4>① 使用したい原画（IP登録）</h4>
+    <div class="ph">${title}${secret?'（中身は非公開／レア枠）':'：'+(esc(c.title)||"________（商品名未記入）")}</div>
+    <h4>① 使用したい原画</h4>
     <div style="width:46%">${pvImg(c.genga, secret?"シークレット":"使用したい原画")}</div>
     <h4>② 商品化イメージ</h4>
     <div class="grid3">
-      <div>${pvImg(c.stamp,"完成スタンプ")}</div>
+      <div>${pvImg(c.stamp,"スタンプヘッド")}</div>
       <div>${pvImg(c.wax,"ワックスカラー")}</div>
       <div>${pvImg(c.postcard,"ポストカード")}</div>
     </div>
@@ -622,25 +643,28 @@ function conceptPV(c,title,secret){
 }
 function renderPlan(){
   const total=data.boxCount;
-  let concepts=""; for(let i=0;i<total;i++) concepts+=conceptPV(data.concepts[i],"コンセプト"+(i+1),false);
+  let concepts=""; for(let i=0;i<total;i++) concepts+=conceptPV(data.concepts[i],"ブラインドボックス"+CIRCLED[i],false);
   if(data.secretEnabled) concepts+=conceptPV(data.secret,"シークレット",true);
   document.getElementById("pv-plan").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
     <h2 class="tt">コラボ企画書</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} × HOMU ／ 作成日：${esc(data.createDate)||"____"}</div>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} × HOMU</div>
 
     <h3>1. 今回のコラボで販売するものを定義する</h3>
     ${renderSalesDef()}
 
-    <h3>2. 今回のコラボ全体コンセプト</h3>
-    <div class="qa"><div class="q">コラボによって何を形にしたいのか？</div>${ans(data.overall.goal)}</div>
-    <div class="qa"><div class="q">手に取るお客様にどんなWOWを届けたいのか？</div>${ans(data.overall.wow)}</div>
-    <div class="qa"><div class="q">クリエイターの魅力はどこか？ どういう体験に落とすのか？</div>${ans(data.overall.charm)}</div>
-    <div class="qa"><div class="q">季節やトレンドの要素を加えるか？</div>${ans(data.overall.season)}</div>
-    <div class="qa"><div class="q">全体のコンセプトのテーマ</div>${ans(data.overall.theme)}</div>
+    <h3>2. 今回のコラボ全体コンセプト（土台）</h3>
+    <div class="qa"><div class="q">① クリエイター／IPの核の魅力（ファンが一番好きなところ）</div>${ans(data.overall.coreCharm)}</div>
+    <div class="qa"><div class="q">② ファン（買う人）はどんな人？何を求めている？</div>${ans(data.overall.target)}</div>
+    <div class="qa"><div class="q">③ 手に取った人に届けたい体験・感情（WOW）</div>${ans(data.overall.wow)}</div>
+    <div class="qa"><div class="q">④ 全体を貫くテーマ・世界観</div>${ans(data.overall.theme)}</div>
+    <div class="qa"><div class="q">⑤ HOMUらしさとの接続（封蝋・創作・想いを届ける）</div>${ans(data.overall.homuTie)}</div>
+    <div class="qa"><div class="q">⑥ 記憶に残る・差別化のフック</div>${ans(data.overall.hook)}</div>
+    <div class="qa"><div class="q">⑦ 季節・トレンドの要素（任意）</div>${ans(data.overall.season)}</div>
 
-    <h3>3. 全体コンセプトのビジュアル（パッケージイメージ）</h3>
-    <div style="width:60%">${pvImg(data.package,"全体コンセプトのビジュアル／パッケージ用ポストカード")}</div>
+    <h3>3. 本コラボのメインビジュアル</h3>
+    <p>このメインビジュアル画像が<b>ポストカードに印刷</b>され、さらに<b>パッケージにも使用</b>されます。</p>
+    <div style="width:60%">${pvImg(data.package,"メインビジュアル（ポストカード・パッケージに使用）")}</div>
     <p class="muted">${esc(data.packageNote)}</p>
 
     <h3>4. コンセプト案</h3>
