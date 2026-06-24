@@ -47,7 +47,8 @@
 <script type="importmap">
 {"imports":{
  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
- "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+ "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/",
+ "cannon-es":"https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
 }}
 </script>
 <script type="module">
@@ -55,6 +56,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import * as CANNON from 'cannon-es';
 
 const canvas=document.getElementById('c');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
@@ -71,11 +73,11 @@ scene.background=new THREE.Color('#f6f6f6');
 const pmrem=new THREE.PMREMGenerator(renderer);
 scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
 
-const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.1,100);
-camera.position.set(0,14,7.5);
+const camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,0.1,100);
+camera.position.set(0,8,13);
 
 const controls=new OrbitControls(camera,canvas);
-controls.target.set(0,0.1,0);
+controls.target.set(0,0.6,0);
 controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
@@ -369,7 +371,16 @@ function addPlanarUV(geo){ geo.computeBoundingBox(); const bb=geo.boundingBox;
   const sx=(bb.max.x-bb.min.x)||1, sz=(bb.max.z-bb.min.z)||1, pos=geo.attributes.position, uv=new Float32Array(pos.count*2);
   for(let i=0;i<pos.count;i++){ uv[i*2]=(pos.getX(i)-bb.min.x)/sx; uv[i*2+1]=(pos.getZ(i)-bb.min.z)/sz; }
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); return geo; }
-[geoOcta,geoStar,geoFlower,geoBlossom,geoClover,geoFan,geoBee].forEach(addPlanarUV);
+// 物理用に：原点を重心へ寄せ、コライダー寸法（半径・半高）を算出＋UV付与
+function finalizeGeo(g){
+  g.computeBoundingBox(); let b=g.boundingBox;
+  g.translate(-(b.min.x+b.max.x)/2, -(b.min.y+b.max.y)/2, -(b.min.z+b.max.z)/2);
+  g.computeBoundingBox(); b=g.boundingBox;
+  g.userData.radius=Math.max(b.max.x-b.min.x, b.max.z-b.min.z)/2;
+  g.userData.halfH=Math.max(0.06,(b.max.y-b.min.y)/2);
+  addPlanarUV(g);
+}
+[geoOcta,geoStar,geoFlower,geoBlossom,geoClover,geoFan,geoBee].forEach(finalizeGeo);
 
 // ---- 蝋らしさ＋4仕上げ：手続き生成テクスチャ ----
 function makeBump(size,blobs,contrast,soft,rep){
@@ -458,16 +469,36 @@ function rebuild(){
   const beads=[]; mix.forEach((m,i)=>{ if(m.ratio>0){ for(let k=0;k<counts[i];k++) beads.push(m); } });
   const r=mkRng(seed);
   for(let i=beads.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [beads[i],beads[j]]=[beads[j],beads[i]]; }
-  const placed=[], Rdisc=3.0+beads.length*0.06, minD=1.5;
-  beads.forEach(m=>{
-    let x=0,z=0,ok=false,tr=0;
-    while(!ok && tr<240){ tr++; const ang=r()*Math.PI*2, rad=Math.sqrt(r())*Rdisc; x=Math.cos(ang)*rad; z=Math.sin(ang)*rad;
-      ok=!placed.some(p=>((p.x-x)**2+(p.z-z)**2)<minD*minD); }
-    placed.push({x,z});
-    const g=SHAPES[m.shape].geo, s=0.82+r()*0.14;
-    const me=new THREE.Mesh(g,getMat(m.finish,m.color)); me.scale.setScalar(s);
-    me.position.set(x,(g.userData.rest||0.3)*s,z); me.rotation.y=r()*Math.PI*2; me.castShadow=true; group.add(me);
+  // 物理：上から落として衝突・傾き・積み重なりで自然に安定させる
+  const world=new CANNON.World({gravity:new CANNON.Vec3(0,-12,0)});
+  world.solver.iterations=22;
+  world.defaultContactMaterial.friction=0.6;
+  world.defaultContactMaterial.restitution=0.0;
+  const floor=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
+  floor.quaternion.setFromEuler(-Math.PI/2,0,0); world.addBody(floor);
+  const R=3.4; // こぼれないよう囲う見えない壁（内側が開）
+  [[-1,0,R,0],[1,0,-R,0],[0,-1,0,R],[0,1,0,-R]].forEach(([nx,nz,px,pz])=>{
+    const w=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
+    w.quaternion.setFromVectors(new CANNON.Vec3(0,0,1), new CANNON.Vec3(nx,0,nz));
+    w.position.set(px,0,pz); world.addBody(w);
   });
+  const bodies=[], meshes=[];
+  beads.forEach((m,idx)=>{
+    const g=SHAPES[m.shape].geo, s=0.82+r()*0.14;
+    const hx=g.userData.radius*s*0.9, hy=g.userData.halfH*s;
+    const body=new CANNON.Body({mass:1, shape:new CANNON.Box(new CANNON.Vec3(hx,hy,hx))});
+    const ang=r()*Math.PI*2, rad=r()*1.7;
+    body.position.set(Math.cos(ang)*rad, 0.8+idx*0.5, Math.sin(ang)*rad);
+    body.quaternion.setFromEuler((r()-0.5)*0.7, r()*Math.PI*2, (r()-0.5)*0.7);
+    body.angularDamping=0.4; body.linearDamping=0.05;
+    world.addBody(body);
+    const me=new THREE.Mesh(g,getMat(m.finish,m.color)); me.scale.setScalar(s); me.castShadow=true;
+    group.add(me); bodies.push(body); meshes.push(me);
+  });
+  const steps=170+beads.length*7;
+  for(let st=0; st<steps; st++) world.step(1/60);
+  bodies.forEach((b,i)=>{ meshes[i].position.set(b.position.x,b.position.y,b.position.z);
+    meshes[i].quaternion.set(b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w); });
 }
 
 // ===== 比率：合計100%を維持（按分式） =====
@@ -507,13 +538,14 @@ function renderUI(){
     fSel.disabled=SHAPES[m.shape].fin.length<2;
     fSel.onchange=()=>{ m.finish=fSel.value; rebuild(); };
     const col=document.createElement('input'); col.type='color'; col.value=m.color;
-    col.oninput=()=>{ m.color=col.value; rebuild(); };
+    col.oninput=()=>{ m.color=col.value; }; col.onchange=()=>{ m.color=col.value; rebuild(); };
     const del=document.createElement('button'); del.className='del'; del.textContent='✕';
     del.onclick=()=>{ if(mix.length<=1)return; mix.splice(idx,1); normalize(); renderUI(); rebuild(); };
     const rng=document.createElement('input'); rng.type='range'; rng.min=0; rng.max=100; rng.value=Math.round(m.ratio);
     const rv=document.createElement('span'); rv.className='rv';
     const cnt=document.createElement('span'); cnt.className='cnt';
-    rng.oninput=()=>{ setRatio(idx,+rng.value); updateValues(); rebuild(); };
+    rng.oninput=()=>{ setRatio(idx,+rng.value); updateValues(); };
+    rng.onchange=()=>{ setRatio(idx,+rng.value); updateValues(); rebuild(); };
     const top=document.createElement('div'); top.className='mr-top'; top.append(sSel,fSel,col,del);
     const bot=document.createElement('div'); bot.className='mr-bot'; bot.append(rng,rv,cnt);
     row.append(top,bot); panel.appendChild(row); rowRefs.push({rng,rv,cnt});
@@ -523,7 +555,8 @@ function renderUI(){
 document.getElementById('addBtn').onclick=()=>{ const w=100/(mix.length+1); mix.forEach(m=>m.ratio*=(100-w)/100); mix.push({shape:'octa',finish:'matte',color:'#7E9C5B',ratio:w}); renderUI(); rebuild(); };
 document.getElementById('shuffleBtn').onclick=()=>{ seed=(seed*16807+1)&0x7fffffff; rebuild(); };
 const totalRange=document.getElementById('totalRange'), totalVal=document.getElementById('totalVal');
-totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); rebuild(); };
+totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); };
+totalRange.onchange=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); rebuild(); };
 document.getElementById('saveBtn').onclick=()=>{ renderer.render(scene,camera); const a=document.createElement('a'); a.download='wax-mix.png'; a.href=renderer.domElement.toDataURL('image/png'); a.click(); };
 renderUI(); rebuild();
 
