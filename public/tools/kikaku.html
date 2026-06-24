@@ -160,24 +160,43 @@
 </div>
 
 <script>
-const SCHED = ["オファー提示","非独占的ライセンス契約の締結","企画書完成",
-  "スタンプヘッドの試作（確認のみ・修正は大きな意義がない限り不可）",
-  "サンプル到着後アンバサダーへ展開","予約販売の告知","予約販売開始","生産開始","配送開始"];
+// スケジュール：契約締結予定日を基準(0日)に、各工程の日数オフセット（編集可）
+const SCHED = [
+  {label:"非独占的ライセンス契約の締結", days:0},
+  {label:"企画書の提示・合意",           days:3},
+  {label:"スタンプヘッド試作品の確認",     days:14},
+  {label:"アンバサダー展開",             days:30},
+  {label:"予約販売の告知",               days:45},
+  {label:"予約販売開始",                 days:60},
+  {label:"生産開始",                     days:75},
+  {label:"配送開始",                     days:90},
+];
 
 function blankConcept(){return {title:"",genga:"",stamp:"",wax:"",postcard:""};}
 function defaultData(){
   return {
-    creator:"", ip:"", offerDate:"", staff:"", createDate:"",
+    creator:"", ip:"", staff:"", createDate:"",
+    contractDate:"",
     boxCount:4,
+    secretEnabled:true, secretRate:"",
     blindPrice:"", completePrice:"", presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
-    schedule:SCHED.map(l=>({label:l,date:""})),
-    sales:{blind:true,single:false,assort:false},
+    sales:{blind:true, complete:true, single:false, assort:false},
+    schedule:SCHED.map(s=>({label:s.label, days:s.days})),
     overall:{goal:"",wow:"",charm:"",season:"",theme:""},
     package:"", packageNote:"パッケージ用ポストカード（AI生成／任意でクリエイター自主制作可・納期2週間）",
     concepts:[blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept()],
     secret:blankConcept()
   };
 }
+// 基準日(YYYY-MM-DD)＋日数 → YYYY/MM/DD
+function addDays(isoDate, days){
+  if(!isoDate) return "";
+  const d=new Date(isoDate+"T00:00:00");
+  if(isNaN(d.getTime())) return "";
+  d.setDate(d.getDate()+(parseInt(days,10)||0));
+  return d.getFullYear()+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+("0"+d.getDate()).slice(-2);
+}
+function secretCount(){ return data.secretEnabled?1:0; }
 let data = defaultData();
 
 /* ---------- 共有ドライブ保存 ---------- */
@@ -467,12 +486,28 @@ function buildForm(){
   let fs=el("fieldset"); fs.appendChild(el("legend",null,"案件情報（共通）"));
   fs.appendChild(field("クリエイター名","creator",data));
   fs.appendChild(field("IP / キャラ名","ip",data));
-  let r=el("div","row"); r.append(field("オファー提示日","offerDate",data),field("担当","staff",data)); fs.appendChild(r);
+  fs.appendChild(field("担当","staff",data));
   fs.appendChild(field("企画書 作成日","createDate",data));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"オファー資料：販売方法"));
+  // 販売方法・販売するものの定義（オファー資料／企画書 共通）
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法（オファー資料／企画書 共通）"));
   fs.appendChild(numField("コンセプトボックス 種類数（通常）","boxCount",data));
+  const secW=el("label","chk"); const secC=el("input"); secC.type="checkbox"; secC.checked=!!data.secretEnabled;
+  secC.onchange=function(){ data.secretEnabled=secC.checked; buildForm(); render(); autosave(); };
+  secW.append(secC, document.createTextNode("シークレットあり")); fs.appendChild(secW);
+  if(data.secretEnabled){
+    const rateW=el("div"); rateW.appendChild(el("label","fl","シークレット当選確率（1/n の n）"));
+    const rateI=el("input"); rateI.type="number"; rateI.min="1"; rateI.placeholder="例）10"; rateI.value=data.secretRate||"";
+    rateI.oninput=function(){ data.secretRate=rateI.value; render(); autosave(); };
+    rateW.appendChild(rateI); rateW.appendChild(el("div","hint","当選確率 1/n（例：10 なら 1/10）"));
+    fs.appendChild(rateW);
+  }
+  [["blind","ブラインドボックス"],["complete","コンプリートセット（全種・被りなし）"],["single","単品販売"],["assort","アソートボックス販売"]].forEach(function(p){
+    const w=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=!!data.sales[p[0]];
+    c.onchange=function(){ data.sales[p[0]]=c.checked; render(); autosave(); };
+    w.append(c, document.createTextNode(p[1])); fs.appendChild(w);
+  });
   const blindDiv=el("div"); blindDiv.appendChild(el("label","fl","ブラインドBOX 単価"));
   const blindInp=el("input"); blindInp.type="text"; blindInp.value=data.blindPrice||"";
   const compDiv=el("div"); compDiv.appendChild(el("label","fl","コンプリートセット 単価（自動計算）"));
@@ -483,23 +518,30 @@ function buildForm(){
   refreshComplete();
   blindDiv.appendChild(blindInp);
   compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 種類数（通常）"));
-  r=el("div","row"); r.append(blindDiv,compDiv); fs.appendChild(r);
+  const priceRow=el("div","row"); priceRow.append(blindDiv,compDiv); fs.appendChild(priceRow);
   fs.appendChild(field("プレゼント企画メモ","presentNote",data));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"オファー資料：スケジュール"));
-  data.schedule.forEach((s,i)=>{
-    const w=el("div"); w.appendChild(el("label","fl",s.label));
-    const inp=el("input"); inp.type="text"; inp.placeholder="例）2026/07/01"; inp.value=s.date;
-    inp.oninput=()=>{s.date=inp.value;render();autosave();}; w.appendChild(inp); fs.appendChild(w);
+  // スケジュール（契約締結予定日から自動計算・日数編集可）
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"オファー資料：スケジュール（自動計算）"));
+  const cdW=el("div"); cdW.appendChild(el("label","fl","契約締結予定日（基準日）"));
+  const cdInp=el("input"); cdInp.type="date"; cdInp.value=data.contractDate||"";
+  const dateSpans=[];
+  function refreshSchedule(){ data.schedule.forEach(function(s,i){ if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,s.days) || "（基準日を入力）"; }); }
+  cdInp.oninput=function(){ data.contractDate=cdInp.value; refreshSchedule(); render(); autosave(); };
+  cdW.appendChild(cdInp); fs.appendChild(cdW);
+  fs.appendChild(el("div","hint","各工程の「日数」を変えると日付が自動で更新されます（基準日からの日数）。"));
+  data.schedule.forEach(function(s,i){
+    const row=el("div"); row.style.cssText="display:flex;align-items:center;gap:8px;margin:8px 0;";
+    const lab=el("div"); lab.style.cssText="flex:1;font-size:12px;color:var(--ink);"; lab.textContent=s.label;
+    const dInp=el("input"); dInp.type="number"; dInp.value=s.days; dInp.style.width="64px"; dInp.title="基準日からの日数";
+    dInp.oninput=function(){ s.days=parseInt(dInp.value,10)||0; refreshSchedule(); render(); autosave(); };
+    const unit=el("span","hint"); unit.textContent="日後";
+    const dateSpan=el("span","hint"); dateSpan.style.cssText="min-width:96px;text-align:right;color:var(--gray);";
+    dateSpans[i]=dateSpan;
+    row.append(lab,dInp,unit,dateSpan); fs.appendChild(row);
   });
-  F.appendChild(fs);
-
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：販売するものの定義"));
-  [["blind","ブラインドボックス（通常＋シークレット）"],["single","単品販売"],["assort","アソートボックス販売"]].forEach(([k,lb])=>{
-    const w=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=data.sales[k];
-    c.onchange=()=>{data.sales[k]=c.checked;render();autosave();}; w.append(c,document.createTextNode(lb)); fs.appendChild(w);
-  });
+  refreshSchedule();
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：全体コンセプト"));
@@ -517,7 +559,7 @@ function buildForm(){
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：コンセプト案"));
   for(let i=0;i<data.boxCount;i++) fs.appendChild(conceptForm(data.concepts[i],"コンセプト"+(i+1)));
-  fs.appendChild(conceptForm(data.secret,"シークレット枠",true));
+  if(data.secretEnabled) fs.appendChild(conceptForm(data.secret,"シークレット枠",true));
   F.appendChild(fs);
 }
 
@@ -529,30 +571,40 @@ function pvImg(v,cap){
 }
 function ans(v){ return v? `<span class="a">${esc(v)}</span>` : `<span class="a empty">（未記入）</span>`; }
 
+// 販売するものの定義（オファー資料・企画書 共通の表示）
+function renderSalesDef(){
+  const total=data.boxCount, sc=secretCount();
+  let blindDesc = "全"+(total+sc)+"種"+(sc? "（通常"+total+"種＋シークレット"+sc+"種）":"")+"・1箱共通価格";
+  if(sc && data.secretRate) blindDesc += "／シークレット当選確率 1/"+esc(data.secretRate);
+  const modes=[];
+  if(data.sales.blind)    modes.push({nm:"ブラインドボックス", dsc:blindDesc, pr:data.blindPrice});
+  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+total+"種・"+total+"点セット（被りなし）", pr:data.completePrice});
+  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"コンセプトセットを1点から購入できる", pr:""});
+  if(data.sales.assort)   modes.push({nm:"アソートボックス販売", dsc:"複数のコンセプトをまとめた詰め合わせ", pr:""});
+  const cards = modes.length
+    ? '<div class="price-cards">'+modes.map(function(m){ return '<div class="price-card"><div class="nm">'+esc(m.nm)+'</div><div class="dsc">'+m.dsc+'</div>'+(m.pr?'<div class="pr">¥'+esc(m.pr)+'</div>':'')+'</div>'; }).join('')+'</div>'
+    : '<p class="muted">（販売方法を選択してください）</p>';
+  return cards
+    + '<p>必要なコンセプトボックスは <b>'+(total+sc)+'種</b>'+(sc?'（通常'+total+'種＋シークレット'+sc+'種）':'')+'。</p>'
+    + '<p class="muted">※ '+esc(data.presentNote)+'</p>';
+}
+
 function renderOffer(){
-  const total=data.boxCount;
+  const total=data.boxCount, sc=secretCount();
   document.getElementById("pv-offer").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
     <h2 class="tt">コラボレーション オファー</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} 様 ／ 提示日：${esc(data.offerDate)||"____"} ／ 担当：${esc(data.staff)||"____"}</div>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} 様 ／ 担当：${esc(data.staff)||"____"}</div>
 
     <h3>1. HOMUのコラボで作る商品＝「コンセプトボックス」</h3>
     <p>HOMUのコラボ商品は、クリエイターさんの世界観を一つのテーマに落とし込んだ「コンセプトボックス」が単位です。1つのコンセプトボックスには、スタンプヘッド・コラボワックス・ポストカード（背景台紙）がセットで入ります。</p>
-    <p>今回のコラボでは、このコンセプトボックスを <b>${total}種＋シークレット1種</b> つくることを前提に進めます。</p>
+    <p>今回のコラボでは、このコンセプトボックスを <b>${total}種${sc?("＋シークレット"+sc+"種"):""}</b> つくることを前提に進めます。</p>
 
     <h3>2. 販売方法</h3>
-    <div class="price-cards">
-      <div class="price-card"><div class="nm">ブラインドボックス</div>
-        <div class="dsc">全${total}種＋シークレット1種・1箱共通価格</div>
-        <div class="pr">${data.blindPrice?("¥"+esc(data.blindPrice)):"¥____"}</div></div>
-      <div class="price-card"><div class="nm">コンプリートセット</div>
-        <div class="dsc">全${total}種・被りなし${total}点</div>
-        <div class="pr">${data.completePrice?("¥"+esc(data.completePrice)):"¥____"}</div></div>
-    </div>
-    <p class="muted">※ ${esc(data.presentNote)}</p>
+    ${renderSalesDef()}
 
     <h3>3. スケジュール</h3>
-    ${data.schedule.map(s=>`<div class="sched"><span>${esc(s.label)}</span><span class="muted">${esc(s.date)||"____/__/__"}</span></div>`).join("")}
+    ${data.schedule.map(s=>`<div class="sched"><span>${esc(s.label)}${s.days===0?"（基準日）":("（+"+s.days+"日）")}</span><span class="muted">${esc(addDays(data.contractDate,s.days))||"____/__/__"}</span></div>`).join("")}
   `;
 }
 function conceptPV(c,title,secret){
@@ -570,20 +622,15 @@ function conceptPV(c,title,secret){
 }
 function renderPlan(){
   const total=data.boxCount;
-  const modes=[];
-  if(data.sales.blind)modes.push(`ブラインドボックス（${total}種＋シークレット1種の計${total+1}種）`);
-  if(data.sales.single)modes.push("単品販売");
-  if(data.sales.assort)modes.push("アソートボックス販売");
   let concepts=""; for(let i=0;i<total;i++) concepts+=conceptPV(data.concepts[i],"コンセプト"+(i+1),false);
-  concepts+=conceptPV(data.secret,"シークレット",true);
+  if(data.secretEnabled) concepts+=conceptPV(data.secret,"シークレット",true);
   document.getElementById("pv-plan").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
     <h2 class="tt">コラボ企画書</h2>
     <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} × HOMU ／ 作成日：${esc(data.createDate)||"____"}</div>
 
     <h3>1. 今回のコラボで販売するものを定義する</h3>
-    <ul>${modes.length?modes.map(m=>`<li>${m}</li>`).join(""):'<li class="muted">（販売方法を選択）</li>'}</ul>
-    <p>必要なコンセプトボックスは <b>${total+1}種</b>（通常${total}種＋シークレット1種）。</p>
+    ${renderSalesDef()}
 
     <h3>2. 今回のコラボ全体コンセプト</h3>
     <div class="qa"><div class="q">コラボによって何を形にしたいのか？</div>${ans(data.overall.goal)}</div>
