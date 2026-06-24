@@ -92,6 +92,20 @@ export async function readProject(token: string, id: string) {
   }
 }
 
+// 削除：ゴミ箱へ移動（永久削除ではなく復元可能）
+export async function trashProject(token: string, id: string) {
+  const res = await fetch(`${API}/files/${id}?supportsAllDrives=true&fields=id`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ trashed: true }),
+  });
+  if (!res.ok) throw new Error(`trash ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 // 競合検知用：内容を取らずに更新時刻・更新者だけ取得
 export async function getMeta(token: string, id: string) {
   const params = new URLSearchParams({
