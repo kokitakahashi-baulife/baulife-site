@@ -162,14 +162,14 @@
 <script>
 // スケジュール：契約締結予定日を基準(0日)に、各工程の日数オフセット（編集可）
 const SCHED = [
-  {label:"非独占的ライセンス契約の締結", days:0},
-  {label:"企画書の提示・合意",           days:3},
-  {label:"スタンプヘッド試作品の確認",     days:14},
-  {label:"アンバサダー展開",             days:30},
-  {label:"予約販売の告知",               days:45},
-  {label:"予約販売開始",                 days:60},
-  {label:"生産開始",                     days:75},
-  {label:"配送開始",                     days:90},
+  {label:"非独占的ライセンス契約の締結", interval:0},   // 基準日
+  {label:"企画書の提示・合意",           interval:3},   // 前工程から
+  {label:"スタンプヘッド試作品の確認",     interval:11},
+  {label:"アンバサダー展開",             interval:16},
+  {label:"予約販売の告知",               interval:15},
+  {label:"予約販売開始",                 interval:15},
+  {label:"生産開始",                     interval:15},
+  {label:"配送開始",                     interval:15},
 ];
 
 const CIRCLED=["①","②","③","④","⑤","⑥"];
@@ -182,7 +182,7 @@ function defaultData(){
     secretEnabled:true, secretRate:"",
     blindPrice:"", completePrice:"", presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
     sales:{blind:true, complete:true, single:false, assort:false},
-    schedule:SCHED.map(s=>({label:s.label, days:s.days})),
+    schedule:SCHED.map(s=>({label:s.label, interval:s.interval})),
     overall:{concept:""},
     package:"", packageNote:"このメインビジュアルはポストカードに印刷され、さらにパッケージにも使用されます。（AI生成／任意でクリエイター自主制作可・納期2週間）",
     concepts:[blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept()],
@@ -207,6 +207,7 @@ let saveTimer=null, saving=false, dirtyAgain=false;
 let pendingDirty=false;      // 未保存の変更があるか（閉じる前保存の判定）
 let conflictActive=false;    // 競合解決待ち
 let saveFailCount=0;         // 連続保存失敗回数（#5 案内のため）
+let scheduleOpen=false;      // スケジュール日数の調整トグル（既定で閉じる）
 function setStatus(t){ const e=document.getElementById("saveStatus"); if(e) e.textContent=t; }
 function hhmm(d){ return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
 function metaOf(){ return { creator:(data.creator||""), theme:((data.overall&&data.overall.concept)||"").replace(/\s+/g," ").trim().slice(0,40) }; }
@@ -528,21 +529,33 @@ function buildForm(){
   const cdW=el("div"); cdW.appendChild(el("label","fl","契約締結予定日（基準日）"));
   const cdInp=el("input"); cdInp.type="date"; cdInp.value=data.contractDate||"";
   const dateSpans=[];
-  function refreshSchedule(){ data.schedule.forEach(function(s,i){ if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,s.days) || "（基準日を入力）"; }); }
+  function refreshSchedule(){ let cum=0; data.schedule.forEach(function(s,i){ cum+=parseInt(s.interval,10)||0; if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,cum) || "（基準日を入力）"; }); }
   cdInp.oninput=function(){ data.contractDate=cdInp.value; refreshSchedule(); render(); autosave(); };
   cdW.appendChild(cdInp); fs.appendChild(cdW);
-  fs.appendChild(el("div","hint","各工程の「日数」を変えると日付が自動で更新されます（基準日からの日数）。"));
+  // 日数調整：基本は全案件で共通なので既定で閉じる
+  const toggle=el("button","btn"); toggle.type="button"; toggle.style.cssText="margin:10px 0 4px;font-size:12px;";
+  const editWrap=el("div");
+  function syncToggle(){ toggle.textContent=(scheduleOpen?"▾":"▸")+" 各工程の日数を調整（基本は全案件で共通）"; editWrap.style.display=scheduleOpen?"block":"none"; }
+  toggle.onclick=function(){ scheduleOpen=!scheduleOpen; syncToggle(); };
+  fs.appendChild(toggle);
+  editWrap.appendChild(el("div","hint","各工程に「前の工程から何日後か」を入力します（変えると日付が自動更新）。"));
   data.schedule.forEach(function(s,i){
     const row=el("div"); row.style.cssText="display:flex;align-items:center;gap:8px;margin:8px 0;";
     const lab=el("div"); lab.style.cssText="flex:1;font-size:12px;color:var(--ink);"; lab.textContent=s.label;
-    const dInp=el("input"); dInp.type="number"; dInp.value=s.days; dInp.style.width="64px"; dInp.title="基準日からの日数";
-    dInp.oninput=function(){ s.days=parseInt(dInp.value,10)||0; refreshSchedule(); render(); autosave(); };
-    const unit=el("span","hint"); unit.textContent="日後";
-    const dateSpan=el("span","hint"); dateSpan.style.cssText="min-width:96px;text-align:right;color:var(--gray);";
-    dateSpans[i]=dateSpan;
-    row.append(lab,dInp,unit,dateSpan); fs.appendChild(row);
+    const dateSpan=el("span","hint"); dateSpan.style.cssText="min-width:96px;text-align:right;color:var(--gray);"; dateSpans[i]=dateSpan;
+    if(i===0){
+      const base=el("span","hint"); base.textContent="基準日";
+      row.append(lab,base,dateSpan);
+    } else {
+      const dInp=el("input"); dInp.type="number"; dInp.value=s.interval; dInp.style.width="64px"; dInp.title="前の工程からの日数";
+      dInp.oninput=function(){ s.interval=parseInt(dInp.value,10)||0; refreshSchedule(); render(); autosave(); };
+      const unit=el("span","hint"); unit.textContent="日後（前工程から）";
+      row.append(lab,dInp,unit,dateSpan);
+    }
+    editWrap.appendChild(row);
   });
-  refreshSchedule();
+  refreshSchedule(); syncToggle();
+  fs.appendChild(editWrap);
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：全体コンセプト（コラボの土台）"));
@@ -618,10 +631,13 @@ function renderSalesDef(){
 
 function renderOffer(){
   const total=data.boxCount, sc=secretCount();
+  let cum=0;
+  const schedHtml=data.schedule.map(function(s,i){ cum+=parseInt(s.interval,10)||0; const note=i===0?"（基準日）":("（前工程＋"+s.interval+"日）"); return '<div class="sched"><span>'+esc(s.label)+note+'</span><span class="muted">'+(esc(addDays(data.contractDate,cum))||"____/__/__")+'</span></div>'; }).join("");
+  const ipx=data.ip?("（IP："+esc(data.ip)+"）"):"";
   document.getElementById("pv-offer").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
     <h2 class="tt">コラボレーション オファー</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} 様 ／ 担当：${esc(data.staff)||"____"}</div>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} 様${ipx} ／ 担当：${esc(data.staff)||"____"}</div>
 
     <h3>1. HOMUのコラボで作る商品＝「コンセプトボックス」</h3>
     <p>HOMUのコラボ商品は、クリエイターさんの世界観を一つのテーマに落とし込んだ「コンセプトボックス」が単位です。1つのコンセプトボックスには、スタンプヘッド・コラボワックス・ポストカード（背景台紙）がセットで入ります。</p>
@@ -631,7 +647,7 @@ function renderOffer(){
     ${renderSalesDef()}
 
     <h3>3. スケジュール</h3>
-    ${data.schedule.map(s=>`<div class="sched"><span>${esc(s.label)}${s.days===0?"（基準日）":("（+"+s.days+"日）")}</span><span class="muted">${esc(addDays(data.contractDate,s.days))||"____/__/__"}</span></div>`).join("")}
+    ${schedHtml}
     <p class="muted" style="margin-top:8px">※ 上記の日付はあくまで目安・概算です。実際の日程は状況により前後します。</p>
   `;
 }
@@ -650,12 +666,13 @@ function conceptPV(c,title,secret){
 }
 function renderPlan(){
   const total=data.boxCount;
+  const ipx=data.ip?("（IP："+esc(data.ip)+"）"):"";
   let concepts=""; for(let i=0;i<total;i++) concepts+=conceptPV(data.concepts[i],"ブラインドボックス"+CIRCLED[i],false);
   if(data.secretEnabled) concepts+=conceptPV(data.secret,"シークレット",true);
   document.getElementById("pv-plan").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
     <h2 class="tt">コラボ企画書</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} × HOMU</div>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx} × HOMU</div>
 
     <h3>1. 今回のコラボで販売するものを定義する</h3>
     ${renderSalesDef()}
@@ -670,7 +687,7 @@ function renderPlan(){
 
     <h3>4. コンセプト案</h3>
     ${concepts}
-    <p class="muted" style="border-top:1px solid var(--line);padding-top:8px;margin-top:14px">※ 本企画書は提案であり、確定ではありません。ポストカード等はAI生成を基本とし、任意でクリエイター自主制作も可能です（納期2週間）。</p>
+    <p class="muted" style="border-top:1px solid var(--line);padding-top:8px;margin-top:14px">※ 本企画書は提案であり、確定ではありません。</p>
   `;
 }
 function render(){ renderOffer(); renderPlan(); }
