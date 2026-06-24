@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WAX 3D 検証（八角型）</title>
+<style>
+  html,body{margin:0;height:100%;background:#f4f2ee;overflow:hidden;font-family:system-ui,sans-serif;}
+  #c{display:block;width:100vw;height:100vh;}
+  #ui{position:fixed;left:300px;top:12px;background:rgba(255,255,255,.7);padding:8px 11px;border-radius:8px;font-size:12px;color:#333;line-height:1.5;}
+  #panel{position:fixed;left:0;top:0;width:280px;height:100vh;overflow-y:auto;background:rgba(255,255,255,.94);
+    box-shadow:2px 0 12px rgba(0,0,0,.08);padding:14px;box-sizing:border-box;font-size:13px;color:#2a2a2a;}
+  #panel h2{font-size:14px;margin:0 0 4px;color:#7a5c3a;}
+  #panel .sub{font-size:11px;color:#888;margin:0 0 12px;line-height:1.5;}
+  .mix-row{border:1px solid #e7e2d8;border-radius:8px;padding:8px;margin-bottom:8px;background:#fff;}
+  .mr-top{display:flex;gap:5px;align-items:center;}
+  .mr-top select{flex:1;font-size:12px;padding:3px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;min-width:0;}
+  .mr-top input[type=color]{width:30px;height:26px;padding:0;border:1px solid #d8d2c6;border-radius:5px;background:#fff;}
+  .mr-top .del{width:24px;height:26px;border:none;background:#f0ece3;border-radius:5px;cursor:pointer;color:#a55;font-size:12px;}
+  .mr-bot{display:flex;gap:8px;align-items:center;margin-top:6px;}
+  .mr-bot input[type=range]{flex:1;}
+  .rv{font-size:11px;color:#666;width:30px;text-align:right;}
+  .cnt{font-size:11px;color:#8a9a7a;width:34px;text-align:right;}
+  .hint100{font-size:11px;color:#999;margin:2px 0 8px;}
+  .btnrow{display:flex;gap:6px;margin:6px 0;}
+  #panel button.act{flex:1;padding:7px;border:none;border-radius:7px;background:#7a5c3a;color:#fff;font-size:12px;cursor:pointer;}
+  #panel button.act.ghost{background:#ece7dd;color:#5a4a32;}
+  .totalrow{display:flex;gap:8px;align-items:center;margin:10px 0 4px;font-size:12px;}
+  .totalrow input{flex:1;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">混ぜた見た目を判断するツール（即時出力）／ ドラッグで視点回転・ホイールでズーム</div>
+<div id="panel">
+  <h2>WAX MIX シミュレーター</h2>
+  <p class="sub">形・仕上げ・色・比率を指定 → 白床にMIX配置を即時出力。<br>形ごとに選べる仕上げが決まっています（星＝超光沢ラメ等）。</p>
+  <div id="mixList"></div>
+  <div class="hint100">合計は常に100%（1つ動かすと他が自動で按分されます）</div>
+  <div class="btnrow">
+    <button class="act ghost" id="addBtn">＋ 配合を追加</button>
+    <button class="act ghost" id="shuffleBtn">再配置</button>
+  </div>
+  <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="8" max="30" value="18"><span id="totalVal">18</span></div>
+  <div class="btnrow"><button class="act" id="saveBtn">PNGで保存</button></div>
+</div>
+<script type="importmap">
+{"imports":{
+ "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.0;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#f6f6f6');
+
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.1,100);
+camera.position.set(0,14,7.5);
+
+const controls=new OrbitControls(camera,canvas);
+controls.target.set(0,0.1,0);
+controls.enableDamping=true;
+controls.maxPolarAngle=Math.PI*0.49;
+
+// lights
+const key=new THREE.DirectionalLight(0xffffff,2.4);
+key.position.set(5,9,4);
+key.castShadow=true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.near=1;key.shadow.camera.far=40;
+key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;
+key.shadow.bias=-0.0003;
+key.shadow.radius=7;
+scene.add(key);
+const fill=new THREE.DirectionalLight(0xffffff,0.6); fill.position.set(-6,4,-3); scene.add(fill);
+scene.add(new THREE.HemisphereLight(0xffffff,0x666058,0.5));
+
+// ground (catch soft shadow only, keep bg color)
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.16}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+// ---- 形のジオメトリ（八角・星 共通の立体化）----
+function solidify(shape,H,BEV,dome,Rtop){
+  const geo=new THREE.ExtrudeGeometry(shape,{
+    depth:H, bevelEnabled:true, bevelThickness:BEV, bevelSize:BEV, bevelSegments:9, curveSegments:8
+  });
+  geo.rotateX(-Math.PI/2); geo.center();
+  // 天面・底面をドーム状にふくらませる（ぷっくり感）
+  const pos=geo.attributes.position;
+  let maxY=-1e9,minY=1e9;
+  for(let i=0;i<pos.count;i++){const y=pos.getY(i);maxY=Math.max(maxY,y);minY=Math.min(minY,y);}
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    const r2=Math.min(1,(x*x+z*z)/(Rtop*Rtop));
+    if(y>maxY-1e-3) pos.setY(i, y+dome*(1-r2));
+    else if(y<minY+1e-3) pos.setY(i, y-dome*0.5*(1-r2));
+  }
+  pos.needsUpdate=true; geo.computeVertexNormals();
+  geo.computeBoundingBox(); geo.userData.rest=-geo.boundingBox.min.y;
+  return geo;
+}
+function octaShape(R){const s=new THREE.Shape();for(let i=0;i<8;i++){const a=Math.PI/8+i*Math.PI/4;const x=Math.cos(a)*R,y=Math.sin(a)*R;i===0?s.moveTo(x,y):s.lineTo(x,y);}s.closePath();return s;}
+// 角を丸めた星（ぷっくり星用）
+function roundedStarShape(Ro,Ri,pts,round){
+  const n=pts*2, V=[];
+  for(let i=0;i<n;i++){const a=-Math.PI/2+i*Math.PI/pts;const r=(i%2===0)?Ro:Ri;V.push([Math.cos(a)*r,Math.sin(a)*r]);}
+  const s=new THREE.Shape();
+  for(let i=0;i<n;i++){
+    const p=V[(i-1+n)%n], c=V[i], q=V[(i+1)%n];
+    const d1=[p[0]-c[0],p[1]-c[1]], d2=[q[0]-c[0],q[1]-c[1]];
+    const l1=Math.hypot(d1[0],d1[1])||1, l2=Math.hypot(d2[0],d2[1])||1;
+    const rr=Math.min(round, l1*0.45, l2*0.45);
+    const a1=[c[0]+d1[0]/l1*rr, c[1]+d1[1]/l1*rr];
+    const a2=[c[0]+d2[0]/l2*rr, c[1]+d2[1]/l2*rr];
+    i===0?s.moveTo(a1[0],a1[1]):s.lineTo(a1[0],a1[1]);
+    s.quadraticCurveTo(c[0],c[1],a2[0],a2[1]);
+  }
+  s.closePath(); return s;
+}
+
+// アウトラインを中心がぷっくり膨らむクッション状に立体化（風船インフレート）
+function puffGeo(outline, peakTop, peakBot, J, I){
+  const B=outline.map(p=>({a:Math.atan2(p.y,p.x), r:Math.hypot(p.x,p.y)})).sort((u,v)=>u.a-v.a);
+  function bR(a){
+    a=((a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+    if(a<=B[0].a||a>=B[B.length-1].a){ const c=B[B.length-1], n=B[0], span=(n.a+2*Math.PI)-c.a;
+      const f=((a<B[0].a?a+2*Math.PI:a)-c.a)/span; return c.r+(n.r-c.r)*f; }
+    for(let i=0;i<B.length-1;i++){ if(a>=B[i].a&&a<=B[i+1].a){ const f=(a-B[i].a)/((B[i+1].a-B[i].a)||1); return B[i].r+(B[i+1].r-B[i].r)*f; } }
+    return B[0].r;
+  }
+  const pos=[], idx=[];
+  function surf(sign,peak){
+    const base=pos.length/3;
+    pos.push(0,sign*peak,0);
+    for(let j=1;j<=J;j++){
+      const t=j/J, prof=Math.sqrt(Math.max(0,1-t*t)), y=sign*peak*prof;
+      for(let i=0;i<I;i++){ const a=i/I*Math.PI*2, R=bR(a)*t; pos.push(Math.cos(a)*R, y, Math.sin(a)*R); }
+    }
+    const c0=base;
+    for(let i=0;i<I;i++){ const b=base+1+i, c=base+1+(i+1)%I; sign>0?idx.push(c0,c,b):idx.push(c0,b,c); }
+    for(let j=1;j<J;j++){ const r0=base+1+(j-1)*I, r1=base+1+j*I;
+      for(let i=0;i<I;i++){ const i2=(i+1)%I, A=r0+i,Bb=r0+i2,C=r1+i,D=r1+i2;
+        sign>0?idx.push(A,Bb,C,Bb,D,C):idx.push(A,C,Bb,Bb,C,D); } }
+  }
+  surf(1,peakTop); surf(-1,peakBot);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  g.computeBoundingBox(); g.userData.rest=-g.boundingBox.min.y;
+  return g;
+}
+
+// 向日葵（花びらの縁＋中央の種ディスク）
+function sunflowerGeo(opts){
+  const o=Object.assign({P:16,Rtip:1.06,Rvalley:0.82,petalAmp:0.30,centerAmp:0.16,bodyTop:0.13,peakBot:0.34,J:32,I:320},opts||{});
+  const bRad=a=> o.Rvalley + (o.Rtip-o.Rvalley)*(0.5+0.5*Math.cos(o.P*a));
+  const edgeRound=t=>Math.max(0,Math.min(1,(1-t)/0.16));                     // 縁を丸める＝厚みのある外周
+  function topY(t,a){
+    const pr=Math.sin(Math.PI*Math.min(1,Math.max(0,(t-0.30)/0.70)));        // 花びらの稜線（外周帯）
+    const mask=0.5+0.5*Math.cos(o.P*a);                                       // 花びら山＞谷
+    const petal=o.petalAmp*pr*(0.45+0.55*mask);
+    let disc=0; if(t<0.40){ const u=t/0.40; disc=o.centerAmp*(1-u*u); }       // 中央の種ディスク
+    return edgeRound(t)*(o.bodyTop+petal+disc);                               // 全体に厚み＋縁丸め
+  }
+  const pos=[], idx=[];
+  function surf(sign){
+    const base=pos.length/3;
+    pos.push(0, sign>0?topY(0,0):-o.peakBot, 0);
+    for(let j=1;j<=o.J;j++){ const t=j/o.J;
+      for(let i=0;i<o.I;i++){ const a=i/o.I*Math.PI*2, R=bRad(a)*t;
+        const y= sign>0? topY(t,a) : -o.peakBot*edgeRound(t);
+        pos.push(Math.cos(a)*R, y, Math.sin(a)*R); } }
+    const c0=base;
+    for(let i=0;i<o.I;i++){ const b=base+1+i,c=base+1+(i+1)%o.I; sign>0?idx.push(c0,c,b):idx.push(c0,b,c); }
+    for(let j=1;j<o.J;j++){ const r0=base+1+(j-1)*o.I,r1=base+1+j*o.I;
+      for(let i=0;i<o.I;i++){ const i2=(i+1)%o.I,A=r0+i,Bb=r0+i2,C=r1+i,D=r1+i2;
+        sign>0?idx.push(A,Bb,C,Bb,D,C):idx.push(A,C,Bb,Bb,C,D); } }
+  }
+  surf(1); surf(-1);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  g.computeBoundingBox(); g.userData.rest=-g.boundingBox.min.y;
+  return g;
+}
+
+// 桜っぽい5弁花（太く丸い花びら＋中央の小さな突起）
+function blossomGeo(opts){
+  const o=Object.assign({P:4,Rtip:1.0,Rvalley:0.5,bodyTop:0.34,domeAmp:0.09,knobAmp:0.15,veinAmp:0.05,veinsPer:6,peakBot:0.28,J:44,I:380},opts||{});
+  const mfn=a=>0.5+0.5*Math.cos(o.P*a);
+  const bRad=a=> o.Rvalley + (o.Rtip-o.Rvalley)*Math.pow(mfn(a),0.32);  // 幅広・隣とほぼ接する4花びら
+  const edgeRound=t=>Math.max(0,Math.min(1,(1-t)/0.13));
+  function topY(t,a){
+    const pm=Math.pow(mfn(a),0.5);                                      // 花びら＞谷（谷＝花びら間の溝）
+    const flat=o.bodyTop*(0.22+0.78*pm);                                // 平たい花びら面（谷は低い）
+    const dome=o.domeAmp*Math.max(0,1-Math.pow((t-0.55)/0.55,2))*pm;    // ごく緩い凸
+    const band=Math.max(0,Math.min(1,(t-0.16)/0.20))*Math.max(0,Math.min(1,(0.95-t)/0.2));
+    const vein=o.veinAmp*(0.5+0.5*Math.cos(o.P*o.veinsPer*a))*band*pm;  // 放射状の葉脈の筋
+    let knob=0; if(t<0.15){ const u=t/0.15; knob=o.knobAmp*(1-u*u); }   // 中央のしべ
+    return edgeRound(t)*(flat+dome+vein+knob);
+  }
+  const pos=[], idx=[];
+  function surf(sign){
+    const base=pos.length/3;
+    pos.push(0, sign>0?topY(0,0):-o.peakBot, 0);
+    for(let j=1;j<=o.J;j++){ const t=j/o.J;
+      for(let i=0;i<o.I;i++){ const a=i/o.I*Math.PI*2, R=bRad(a)*t;
+        const y= sign>0? topY(t,a) : -o.peakBot*edgeRound(t);
+        pos.push(Math.cos(a)*R, y, Math.sin(a)*R); } }
+    const c0=base;
+    for(let i=0;i<o.I;i++){ const b=base+1+i,c=base+1+(i+1)%o.I; sign>0?idx.push(c0,c,b):idx.push(c0,b,c); }
+    for(let j=1;j<o.J;j++){ const r0=base+1+(j-1)*o.I,r1=base+1+j*o.I;
+      for(let i=0;i<o.I;i++){ const i2=(i+1)%o.I,A=r0+i,Bb=r0+i2,C=r1+i,D=r1+i2;
+        sign>0?idx.push(A,Bb,C,Bb,D,C):idx.push(A,C,Bb,Bb,C,D); } }
+  }
+  surf(1); surf(-1);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  g.computeBoundingBox(); g.userData.rest=-g.boundingBox.min.y;
+  return g;
+}
+
+const geoOcta=solidify(octaShape(0.78), 0.52, 0.2, 0.12, 0.58);
+const geoStar=puffGeo(roundedStarShape(1.5,0.9,5,0.22).getPoints(180), 0.62, 0.5, 20, 160);
+const geoFlower=sunflowerGeo();
+const geoBlossom=blossomGeo();
+
+// --- 絵柄シルエットを八角と同じ要領で「描いて押し出す」 ---
+function ellipseShape(rx,ry,cx,cy){ const s=new THREE.Shape(); const N=56;
+  for(let i=0;i<=N;i++){const a=i/N*Math.PI*2,x=(cx||0)+Math.cos(a)*rx,y=(cy||0)+Math.sin(a)*ry; i===0?s.moveTo(x,y):s.lineTo(x,y);} return s; }
+function extrudeFlat(shape,H,BEV){ const g=new THREE.ExtrudeGeometry(shape,{depth:H,bevelEnabled:true,bevelThickness:BEV,bevelSize:BEV,bevelSegments:6,curveSegments:6}); g.rotateX(-Math.PI/2); return g; }
+function domeFinish(geo,dome){
+  geo.computeBoundingBox(); const bb=geo.boundingBox;
+  const cx=(bb.min.x+bb.max.x)/2, cz=(bb.min.z+bb.max.z)/2, span=Math.max(bb.max.x-bb.min.x,bb.max.z-bb.min.z)/2;
+  const pos=geo.attributes.position, maxY=bb.max.y, minY=bb.min.y;
+  for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    const r2=Math.min(1,((x-cx)**2+(z-cz)**2)/((span*span)||1));
+    if(y>maxY-1e-3) pos.setY(i,y+dome*(1-r2)); else if(y<minY+1e-3) pos.setY(i,y-dome*0.5*(1-r2)); }
+  pos.needsUpdate=true; geo.computeVertexNormals();
+  geo.computeBoundingBox(); geo.userData.rest=-geo.boundingBox.min.y; return geo;
+}
+// 四つ葉のクローバー（丸い4葉）
+function cloverShape(){ const s=new THREE.Shape(); const N=220, Rmin=0.3, Rmax=1.0;
+  for(let i=0;i<=N;i++){ const a=i/N*Math.PI*2, r=Rmin+(Rmax-Rmin)*Math.pow(Math.abs(Math.cos(2*a)),0.5);
+    const x=Math.cos(a)*r, y=Math.sin(a)*r; i===0?s.moveTo(x,y):s.lineTo(x,y);} s.closePath(); return s; }
+// 扇（要から広がる扇型・上辺スカラップ）
+function fanShape(){ const s=new THREE.Shape(); const A=[0,-1.0], L=1.95, span=1.05, blades=5, N=90;
+  s.moveTo(A[0],A[1]);
+  for(let i=0;i<=N;i++){ const t=i/N, ang=Math.PI/2 - span/2 + span*t;
+    const sc=1-0.09*(0.5+0.5*Math.cos(2*Math.PI*blades*t));
+    s.lineTo(A[0]+Math.cos(ang)*L*sc, A[1]+Math.sin(ang)*L*sc); }
+  s.closePath(); return s; }
+// ミツバチ（体＋頭＋羽を合成して押し出し）
+function beeGeo(){
+  const H=0.4, BEV=0.12, P=[];
+  P.push(extrudeFlat(ellipseShape(0.5,0.72,0,-0.05),H,BEV));   // 体
+  P.push(extrudeFlat(ellipseShape(0.3,0.3,0,0.78),H,BEV));     // 頭
+  const wl=extrudeFlat(ellipseShape(0.44,0.24),H,BEV); wl.rotateY(0.55); wl.translate(-0.52,0,-0.2); P.push(wl);
+  const wr=extrudeFlat(ellipseShape(0.44,0.24),H,BEV); wr.rotateY(-0.55); wr.translate(0.52,0,-0.2); P.push(wr);
+  const g=mergeGeometries(P,false); g.center();
+  return domeFinish(g,0.13);
+}
+// 四つ葉（細密ポーラー面＋各葉の中央に葉脈の溝）
+function cloverGeo(opts){
+  const o=Object.assign({Rmin:0.42,Rmax:1.0,bodyTop:0.32,veinDepth:0.07,peakBot:0.26,J:46,I:420},opts||{});
+  const lobe=a=>Math.pow(Math.abs(Math.cos(2*a)),0.5);                 // 4葉：0/90/180/270°が頂点
+  const leafDist=a=>{ const m=((a%(Math.PI/2))+Math.PI/2)%(Math.PI/2); return Math.min(m,Math.PI/2-m); };
+  const bRad=a=>{ const notch=0.5*Math.exp(-Math.pow(leafDist(a)/0.14,2)); // 葉先のハートの切れ込み
+    return o.Rmin + (o.Rmax-o.Rmin)*lobe(a)*(1-notch); };
+  const edgeRound=t=>Math.max(0,Math.min(1,(1-t)/0.13));
+  function topY(t,a){
+    const lm=Math.pow(lobe(a),0.5);
+    const flat=o.bodyTop*(0.2+0.8*lm);
+    const m=((a%(Math.PI/2))+Math.PI/2)%(Math.PI/2), d=Math.min(m,Math.PI/2-m); // 最寄りの葉軸までの角距離
+    const veinLine=Math.exp(-Math.pow(d/0.10,2));
+    const band=Math.max(0,Math.min(1,(t-0.15)/0.2))*Math.max(0,Math.min(1,(0.95-t)/0.22));
+    const vein=-o.veinDepth*veinLine*band*lm;                          // 葉の中央に溝
+    return edgeRound(t)*(flat+vein);
+  }
+  const pos=[], idx=[];
+  function surf(sign){
+    const base=pos.length/3;
+    pos.push(0, sign>0?topY(0,0):-o.peakBot, 0);
+    for(let j=1;j<=o.J;j++){ const t=j/o.J;
+      for(let i=0;i<o.I;i++){ const a=i/o.I*Math.PI*2, R=bRad(a)*t;
+        const y=sign>0?topY(t,a):-o.peakBot*edgeRound(t);
+        pos.push(Math.cos(a)*R,y,Math.sin(a)*R); } }
+    const c0=base;
+    for(let i=0;i<o.I;i++){ const b=base+1+i,c=base+1+(i+1)%o.I; sign>0?idx.push(c0,c,b):idx.push(c0,b,c); }
+    for(let j=1;j<o.J;j++){ const r0=base+1+(j-1)*o.I,r1=base+1+j*o.I;
+      for(let i=0;i<o.I;i++){ const i2=(i+1)%o.I,A=r0+i,Bb=r0+i2,C=r1+i,D=r1+i2;
+        sign>0?idx.push(A,Bb,C,Bb,D,C):idx.push(A,C,Bb,Bb,C,D); } }
+  }
+  surf(1); surf(-1);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  g.computeBoundingBox(); g.userData.rest=-g.boundingBox.min.y; return g;
+}
+// 扇（要から放射するセクター面＋骨リブの溝）
+function fanGeo(opts){
+  const o=Object.assign({L:1.95,span:1.05,ribs:6,bodyTop:0.32,ribDepth:0.06,peakBot:0.22,blades:5,scallop:0.09,Nv:34,Nu:120},opts||{});
+  const apex=[0,-1.0];
+  const scAt=u=>1 - o.scallop*(0.5+0.5*Math.cos(2*Math.PI*o.blades*u));
+  function P(u,v){ const ang=Math.PI/2 - o.span/2 + o.span*u, r=v*o.L*scAt(u);
+    return [apex[0]+Math.cos(ang)*r, -(apex[1]+Math.sin(ang)*r)]; }
+  const eu=u=>Math.max(0,Math.min(1,Math.min(u/0.05,(1-u)/0.05)));
+  const ev=v=>Math.max(0,Math.min(1,Math.min(v/0.06,(1-v)/0.1)));
+  function topY(u,v){ const edge=eu(u)*ev(v);
+    const rib=-o.ribDepth*Math.pow(0.5+0.5*Math.cos(2*Math.PI*o.ribs*u),2);  // 要から放射する骨の溝
+    const band=Math.max(0,Math.min(1,(v-0.12)/0.18));
+    return edge*(o.bodyTop+rib*band); }
+  const pos=[], idx=[], W=o.Nu+1;
+  function surf(sign){ const base=pos.length/3;
+    for(let j=0;j<=o.Nv;j++){ const v=j/o.Nv;
+      for(let i=0;i<=o.Nu;i++){ const u=i/o.Nu, p=P(u,v);
+        const y=sign>0?topY(u,v):-o.peakBot*eu(u)*ev(v);
+        pos.push(p[0],y,p[1]); } }
+    for(let j=0;j<o.Nv;j++){ for(let i=0;i<o.Nu;i++){
+      const A=base+j*W+i,B=base+j*W+i+1,C=base+(j+1)*W+i,D=base+(j+1)*W+i+1;
+      sign>0?idx.push(A,C,B,B,C,D):idx.push(A,B,C,B,D,C); } }
+  }
+  surf(1); surf(-1);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx); g.computeVertexNormals(); g.center();
+  g.computeBoundingBox(); g.userData.rest=-g.boundingBox.min.y; return g;
+}
+const geoClover=cloverGeo();
+const geoFan=fanGeo();
+const geoBee=beeGeo();
+
+// ワックス材質（色だけ差し替え＝形コード×色コード）
+function makeWax(hex){ return new THREE.MeshPhysicalMaterial({
+  color:new THREE.Color(hex), roughness:0.4,
+  clearcoat:0.5, clearcoatRoughness:0.3,
+  sheen:0.6, sheenRoughness:0.5, sheenColor:new THREE.Color('#ffffff'),
+  transmission:0.08, thickness:0.6, ior:1.46, envMapIntensity:1.0 }); }
+// 実物のシーリングワックスに近い5色
+const PALETTE=[
+  {n:'ワインレッド', c:'#7E2D34'},
+  {n:'ネイビー',     c:'#2B3D63'},
+  {n:'ティール',     c:'#3C8C82'},
+  {n:'ダスティピンク',c:'#CE969B'},
+  {n:'アイボリー',   c:'#ECE4D3'},
+];
+const MATS=PALETTE.map(p=>makeWax(p.c));
+
+// 自作ジオメトリにUVが無いとマップが効かない → 上面投影でUV付与
+function addPlanarUV(geo){ geo.computeBoundingBox(); const bb=geo.boundingBox;
+  const sx=(bb.max.x-bb.min.x)||1, sz=(bb.max.z-bb.min.z)||1, pos=geo.attributes.position, uv=new Float32Array(pos.count*2);
+  for(let i=0;i<pos.count;i++){ uv[i*2]=(pos.getX(i)-bb.min.x)/sx; uv[i*2+1]=(pos.getZ(i)-bb.min.z)/sz; }
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); return geo; }
+[geoOcta,geoStar,geoFlower,geoBlossom,geoClover,geoFan,geoBee].forEach(addPlanarUV);
+
+// ---- 蝋らしさ＋4仕上げ：手続き生成テクスチャ ----
+function makeBump(size,blobs,contrast,soft,rep){
+  const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d');
+  x.fillStyle='#808080'; x.fillRect(0,0,size,size);
+  for(let i=0;i<blobs;i++){ const r=soft*(0.4+Math.random())*size, px=Math.random()*size, py=Math.random()*size,
+    col=Math.round(128+(Math.random()*2-1)*contrast), g=x.createRadialGradient(px,py,0,px,py,r);
+    g.addColorStop(0,`rgba(${col},${col},${col},0.55)`); g.addColorStop(1,'rgba(128,128,128,0)');
+    x.fillStyle=g; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep||2,rep||2); return t;
+}
+function makeSparkle(size,dots,rep){
+  const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d');
+  x.fillStyle='#000'; x.fillRect(0,0,size,size);
+  for(let i=0;i<dots;i++){ const px=Math.random()*size,py=Math.random()*size,r=Math.random()*1.6+0.4;
+    x.fillStyle=`rgba(255,255,255,${0.6+Math.random()*0.4})`; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep||3,rep||3); return t;
+}
+const microBump=makeBump(256,600,40,0.05,2);     // 蝋の微細な表面ゆらぎ
+const crinkleBump=makeBump(256,1000,95,0.028,2); // マットの皺
+const sparkleTex=makeSparkle(256,800,3);         // ラメの細片
+
+// ラメ用：反転スパークル（粒だけ低ラフネス＝ツヤ）＆マーブル色マップ
+const sparkleRough=(function(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
+  x.fillStyle='#fff'; x.fillRect(0,0,256,256);
+  for(let i=0;i<900;i++){ const px=Math.random()*256,py=Math.random()*256,r=Math.random()*1.6+0.4;
+    x.fillStyle='rgba(0,0,0,0.95)'; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,3); return t; })();
+function makeMarble(cols,size){ size=size||512; const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d');
+  const hx=h=>{h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
+  x.fillStyle=cols[0]; x.fillRect(0,0,size,size);
+  for(let i=0;i<170;i++){ const rgb=hx(cols[1+Math.floor(Math.random()*(cols.length-1))]);
+    const px=Math.random()*size, py=Math.random()*size, rr=size*(0.07+Math.random()*0.24), a=0.4+Math.random()*0.45;
+    x.save(); x.translate(px,py); x.rotate(Math.random()*Math.PI); x.scale(1,0.3+Math.random()*0.5);
+    const g=x.createRadialGradient(0,0,0,0,0,rr);
+    g.addColorStop(0,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`); g.addColorStop(1,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+    x.fillStyle=g; x.beginPath(); x.arc(0,0,rr,0,7); x.fill(); x.restore(); }
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
+// 同系色の濃淡を作る（マットと遠目では同色、近くで混色＝ラメ）
+function shade(hex,f){ const h=hex.replace('#',''); const v=i=>Math.max(0,Math.min(255,Math.round(parseInt(h.slice(i,i+2),16)*f)));
+  return '#'+[v(0),v(2),v(4)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+function marbleOf(base){ return [base, shade(base,0.8), shade(base,1.12), shade(base,0.9)]; }
+
+// A) マット単色（反射ほぼ無し）
+function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:1.0,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.022,envMapIntensity:0.1}); }
+// B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
+function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.5,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.35,clearcoatRoughness:0.25,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.0}); }
+// C) 星専用：単色ラメ入り 超光沢
+function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.06,clearcoat:1.0,clearcoatRoughness:0.02,metalness:1.0,metalnessMap:sparkleTex,transmission:0.12,thickness:0.6,ior:1.47,iridescence:0.4,iridescenceIOR:1.3,bumpMap:microBump,bumpScale:0.004,envMapIntensity:2.0}); }
+
+// 同色で「仕上げ4種」を並べて比較（蝋らしさの検証）
+const group=new THREE.Group(); scene.add(group);
+
+// ===== 形・仕上げ レジストリ（形ごとに選べる仕上げを制限） =====
+const SHAPES={
+  octa:{geo:geoOcta,label:'八角',fin:['matte','marble']},
+  sunflower:{geo:geoFlower,label:'向日葵',fin:['matte','marble']},
+  blossom:{geo:geoBlossom,label:'花',fin:['matte','marble']},
+  star:{geo:geoStar,label:'星',fin:['gloss']},
+  fan:{geo:geoFan,label:'扇',fin:['matte']},
+  bee:{geo:geoBee,label:'蜂',fin:['matte']},
+  clover:{geo:geoClover,label:'四つ葉',fin:['matte']},
+};
+const FINISHES={
+  matte:{label:'マット単色',make:c=>finishMatte(c)},
+  marble:{label:'ラメ混色',make:c=>finishMarble(marbleOf(c))},
+  gloss:{label:'超光沢ラメ',make:c=>finishStarGloss(c)},
+};
+const matCache={};
+function getMat(fin,color){ const k=fin+'|'+color; if(!matCache[k]) matCache[k]=FINISHES[fin].make(color); return matCache[k]; }
+
+// ===== 配合データ =====
+let mix=[
+  {shape:'octa',   finish:'matte',  color:'#3C8C82', ratio:30},
+  {shape:'octa',   finish:'marble', color:'#3C8C82', ratio:25},
+  {shape:'blossom',finish:'matte',  color:'#C56B7A', ratio:25},
+  {shape:'star',   finish:'gloss',  color:'#1FA3AE', ratio:20},
+];
+let total=18, seed=12345;
+function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
+
+// ===== 配置を再構築（ルールベース） =====
+function rebuild(){
+  while(group.children.length) group.remove(group.children[0]);
+  const counts=computeCounts();
+  const beads=[]; mix.forEach((m,i)=>{ if(m.ratio>0){ for(let k=0;k<counts[i];k++) beads.push(m); } });
+  const r=mkRng(seed);
+  for(let i=beads.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [beads[i],beads[j]]=[beads[j],beads[i]]; }
+  const placed=[], Rdisc=3.0+beads.length*0.06, minD=1.5;
+  beads.forEach(m=>{
+    let x=0,z=0,ok=false,tr=0;
+    while(!ok && tr<240){ tr++; const ang=r()*Math.PI*2, rad=Math.sqrt(r())*Rdisc; x=Math.cos(ang)*rad; z=Math.sin(ang)*rad;
+      ok=!placed.some(p=>((p.x-x)**2+(p.z-z)**2)<minD*minD); }
+    placed.push({x,z});
+    const g=SHAPES[m.shape].geo, s=0.82+r()*0.14;
+    const me=new THREE.Mesh(g,getMat(m.finish,m.color)); me.scale.setScalar(s);
+    me.position.set(x,(g.userData.rest||0.3)*s,z); me.rotation.y=r()*Math.PI*2; me.castShadow=true; group.add(me);
+  });
+}
+
+// ===== 比率：合計100%を維持（按分式） =====
+function computeCounts(){
+  const sum=mix.reduce((a,m)=>a+Math.max(0,m.ratio),0)||1;
+  let c=mix.map(m=>Math.round(Math.max(0,m.ratio)/sum*total));
+  let diff=total-c.reduce((a,b)=>a+b,0), gi=0;
+  while(diff!==0 && mix.length){ const i=gi%mix.length; if(diff>0){c[i]++;diff--;} else if(c[i]>0){c[i]--;diff++;} gi++; if(gi>2000)break; }
+  return c;
+}
+function setRatio(i,v){
+  v=Math.max(0,Math.min(100,v));
+  const others=mix.map((_,idx)=>idx).filter(idx=>idx!==i);
+  const osum=others.reduce((a,idx)=>a+mix[idx].ratio,0), rem=100-v;
+  if(osum>1e-6) others.forEach(idx=>{ mix[idx].ratio=mix[idx].ratio/osum*rem; });
+  else if(others.length) others.forEach(idx=>{ mix[idx].ratio=rem/others.length; });
+  mix[i].ratio=v;
+}
+function normalize(){ const s=mix.reduce((a,m)=>a+Math.max(0,m.ratio),0)||1; mix.forEach(m=>m.ratio=Math.max(0,m.ratio)/s*100); }
+
+// ===== UIパネル構築 =====
+const panel=document.getElementById('mixList');
+let rowRefs=[];
+function updateValues(){
+  const counts=computeCounts();
+  rowRefs.forEach((r,i)=>{ r.rng.value=Math.round(mix[i].ratio); r.rv.textContent=Math.round(mix[i].ratio)+'%'; r.cnt.textContent=counts[i]+'粒'; });
+}
+function renderUI(){
+  panel.innerHTML=''; rowRefs=[];
+  mix.forEach((m,idx)=>{
+    const row=document.createElement('div'); row.className='mix-row';
+    const sSel=document.createElement('select');
+    Object.entries(SHAPES).forEach(([k,v])=>{ const o=document.createElement('option'); o.value=k; o.textContent=v.label; if(k===m.shape)o.selected=true; sSel.appendChild(o); });
+    sSel.onchange=()=>{ m.shape=sSel.value; if(!SHAPES[m.shape].fin.includes(m.finish)) m.finish=SHAPES[m.shape].fin[0]; renderUI(); rebuild(); };
+    const fSel=document.createElement('select');
+    SHAPES[m.shape].fin.forEach(fk=>{ const o=document.createElement('option'); o.value=fk; o.textContent=FINISHES[fk].label; if(fk===m.finish)o.selected=true; fSel.appendChild(o); });
+    fSel.disabled=SHAPES[m.shape].fin.length<2;
+    fSel.onchange=()=>{ m.finish=fSel.value; rebuild(); };
+    const col=document.createElement('input'); col.type='color'; col.value=m.color;
+    col.oninput=()=>{ m.color=col.value; rebuild(); };
+    const del=document.createElement('button'); del.className='del'; del.textContent='✕';
+    del.onclick=()=>{ if(mix.length<=1)return; mix.splice(idx,1); normalize(); renderUI(); rebuild(); };
+    const rng=document.createElement('input'); rng.type='range'; rng.min=0; rng.max=100; rng.value=Math.round(m.ratio);
+    const rv=document.createElement('span'); rv.className='rv';
+    const cnt=document.createElement('span'); cnt.className='cnt';
+    rng.oninput=()=>{ setRatio(idx,+rng.value); updateValues(); rebuild(); };
+    const top=document.createElement('div'); top.className='mr-top'; top.append(sSel,fSel,col,del);
+    const bot=document.createElement('div'); bot.className='mr-bot'; bot.append(rng,rv,cnt);
+    row.append(top,bot); panel.appendChild(row); rowRefs.push({rng,rv,cnt});
+  });
+  updateValues();
+}
+document.getElementById('addBtn').onclick=()=>{ const w=100/(mix.length+1); mix.forEach(m=>m.ratio*=(100-w)/100); mix.push({shape:'octa',finish:'matte',color:'#7E9C5B',ratio:w}); renderUI(); rebuild(); };
+document.getElementById('shuffleBtn').onclick=()=>{ seed=(seed*16807+1)&0x7fffffff; rebuild(); };
+const totalRange=document.getElementById('totalRange'), totalVal=document.getElementById('totalVal');
+totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); rebuild(); };
+document.getElementById('saveBtn').onclick=()=>{ renderer.render(scene,camera); const a=document.createElement('a'); a.download='wax-mix.png'; a.href=renderer.domElement.toDataURL('image/png'); a.click(); };
+renderUI(); rebuild();
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+function loop(){controls.update();renderer.render(scene,camera);requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>
