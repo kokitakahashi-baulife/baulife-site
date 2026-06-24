@@ -7,11 +7,27 @@
 <style>
   html,body{margin:0;height:100%;background:#f4f2ee;overflow:hidden;font-family:system-ui,sans-serif;}
   #c{display:block;width:100vw;height:100vh;}
-  #ui{position:fixed;left:300px;top:12px;background:rgba(255,255,255,.7);padding:8px 11px;border-radius:8px;font-size:12px;color:#333;line-height:1.5;}
-  #panel{position:fixed;left:0;top:0;width:280px;height:100vh;overflow-y:auto;background:rgba(255,255,255,.94);
-    box-shadow:2px 0 12px rgba(0,0,0,.08);padding:14px;box-sizing:border-box;font-size:13px;color:#2a2a2a;}
-  #panel h2{font-size:14px;margin:0 0 4px;color:#7a5c3a;}
-  #panel .sub{font-size:11px;color:#888;margin:0 0 12px;line-height:1.5;}
+  #tabs{position:fixed;left:0;top:0;width:100%;height:44px;display:flex;background:#fff;border-bottom:1px solid #eee;z-index:20;box-sizing:border-box;}
+  .tab{flex:0 0 auto;padding:0 22px;border:none;background:none;font-size:13px;cursor:pointer;color:#999;border-bottom:2px solid transparent;}
+  .tab.active{color:#7a5c3a;font-weight:bold;border-bottom-color:#7a5c3a;}
+  .sidebar{position:fixed;left:0;top:44px;width:300px;height:calc(100vh - 44px);overflow-y:auto;background:rgba(255,255,255,.95);
+    box-shadow:2px 0 12px rgba(0,0,0,.07);padding:14px;box-sizing:border-box;font-size:13px;color:#2a2a2a;display:flex;flex-direction:column;}
+  .page{position:fixed;inset:44px 0 0 0;overflow-y:auto;background:#faf9f6;padding:22px;box-sizing:border-box;z-index:10;}
+  .page h2,.sidebar h2{font-size:15px;margin:0 0 4px;color:#7a5c3a;}
+  .page{max-width:none;}
+  #regList{max-width:560px;}
+  .sub{font-size:11px;color:#888;margin:0 0 12px;line-height:1.6;}
+  .cardgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+  .pcard{border:1.5px solid #e7e2d8;border-radius:10px;padding:6px;cursor:pointer;background:#fff;text-align:center;transition:border-color .15s;}
+  .pcard:hover{border-color:#c9a87a;}
+  .pcard.sel{border-color:#7a5c3a;box-shadow:0 0 0 2px rgba(122,92,58,.15);}
+  .pthumb{width:100%;aspect-ratio:1/1;border-radius:7px;background:#f4f2ee;display:block;}
+  .pthumb.sm{width:48px;height:48px;aspect-ratio:auto;flex:0 0 auto;}
+  .pcname{font-size:11px;color:#444;margin-top:4px;line-height:1.3;}
+  .rprod{flex:1;font-size:12px;font-weight:bold;color:#3a3a3a;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .regcard{border:1px solid #e3ddd0;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;}
+  .comp{border-top:1px dashed #eee;padding-top:7px;margin-top:7px;}
+  .mini{flex:0 0 auto;padding:4px 10px;font-size:11px;margin-top:8px;}
   .mix-row{border:1px solid #e7e2d8;border-radius:8px;padding:8px;margin-bottom:8px;background:#fff;}
   .mr-top{display:flex;gap:5px;align-items:center;}
   .mr-top select{flex:1;font-size:12px;padding:3px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;min-width:0;}
@@ -27,34 +43,38 @@
   .pname{flex:1;font-size:12px;padding:3px 6px;border:1px solid #d8d2c6;border-radius:5px;min-width:0;}
   .ptag{font-size:10px;color:#7a5c3a;background:#f0ece3;border-radius:4px;padding:1px 6px;white-space:nowrap;}
   .mix-row .mr-top + .mr-top{margin-top:4px;}
-  .btnrow{display:flex;gap:6px;margin:6px 0;}
-  #panel button.act{flex:1;padding:7px;border:none;border-radius:7px;background:#7a5c3a;color:#fff;font-size:12px;cursor:pointer;}
-  #panel button.act.ghost{background:#ece7dd;color:#5a4a32;}
+  .btnrow{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;}
+  button.act{flex:1;padding:7px;border:none;border-radius:7px;background:#7a5c3a;color:#fff;font-size:12px;cursor:pointer;}
+  button.act.ghost{background:#ece7dd;color:#5a4a32;}
   .totalrow{display:flex;gap:8px;align-items:center;margin:10px 0 4px;font-size:12px;}
   .totalrow input{flex:1;}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="ui">混ぜた見た目を判断するツール（即時出力）／ ドラッグで視点回転・ホイールでズーム</div>
-<div id="panel">
-  <h2>WAX MIX シミュレーター</h2>
-  <p class="sub">仕入れ可能なワックスを「商品」として登録し、配合で選ぶと色・形・質感が自動反映されます。MIX商品は素材3つで1商品。</p>
-  <div class="seclabel">① 商品登録</div>
-  <div id="regList"></div>
-  <div class="btnrow">
-    <button class="act ghost" id="addSingle">＋単品</button>
-    <button class="act ghost" id="addMix">＋MIX</button>
-  </div>
-  <div class="seclabel">② 配合（合計100%）</div>
+<div id="tabs">
+  <button id="tabSim" class="tab active">調合シミュレーター</button>
+  <button id="tabReg" class="tab">商品登録</button>
+</div>
+
+<div id="simView" class="sidebar">
+  <p class="sub">商品カードを選んで調合 → お皿に流し出した見た目で確認。ドラッグで回転・ホイールでズーム。</p>
+  <div class="seclabel">商品（クリックで追加／解除）</div>
+  <div id="cardGrid" class="cardgrid"></div>
+  <div class="seclabel">配合（合計100%）</div>
   <div id="mixList"></div>
-  <div class="hint100">商品を選ぶだけ。MIX商品は最低3粒で表示されます。</div>
+  <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="40" value="20"><span id="totalVal">20</span></div>
   <div class="btnrow">
-    <button class="act ghost" id="addBtn">＋配合を追加</button>
     <button class="act ghost" id="shuffleBtn">再配置</button>
+    <button class="act" id="saveBtn">PNG保存</button>
   </div>
-  <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="36" value="18"><span id="totalVal">18</span></div>
-  <div class="btnrow"><button class="act" id="saveBtn">PNGで保存</button></div>
+</div>
+
+<div id="regView" class="page" style="display:none">
+  <h2>商品登録</h2>
+  <p class="sub">仕入れ可能なワックスを「商品」として登録します。色・形・素材を％配分で自由に作成（複数素材を入れればMIX）。登録はこのブラウザに保存されます。</p>
+  <div id="regList"></div>
+  <div class="btnrow"><button class="act" id="addProd">＋ 商品を追加</button></div>
 </div>
 <script type="importmap">
 {"imports":{
@@ -109,6 +129,16 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x666058,0.5));
 // ground (catch soft shadow only, keep bg color)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.16}));
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+// お皿（ワックスを流し出すシーン）
+const PLATE_R=4.4;
+const dishMat=new THREE.MeshPhysicalMaterial({color:'#f4f1ea',roughness:0.45,clearcoat:0.5,clearcoatRoughness:0.35,envMapIntensity:0.9});
+const plate=new THREE.Group();
+const dishBase=new THREE.Mesh(new THREE.CylinderGeometry(PLATE_R,PLATE_R*0.82,0.34,72), dishMat);
+dishBase.position.y=-0.17; dishBase.receiveShadow=true; plate.add(dishBase);
+const dishRim=new THREE.Mesh(new THREE.TorusGeometry(PLATE_R,0.17,18,72), dishMat);
+dishRim.rotation.x=Math.PI/2; dishRim.position.y=0.04; dishRim.receiveShadow=true; plate.add(dishRim);
+scene.add(plate);
 
 // ---- 形のジオメトリ（八角・星 共通の立体化）----
 function solidify(shape,H,BEV,dome,Rtop){
@@ -465,23 +495,27 @@ const matCache={};
 function getMat(fin,color){ const k=fin+'|'+color; if(!matCache[k]) matCache[k]=FINISHES[fin].make(color); return matCache[k]; }
 
 // ===== 配合データ =====
-// ===== 商品登録（仕入れ可能なワックス）。MIXは素材3つで1商品 =====
-let pidSeq=1;
-let products=[
-  {id:pidSeq++,name:'ティール（マット八角）',type:'single',shape:'octa',finish:'matte',color:'#3C8C82'},
-  {id:pidSeq++,name:'ローズ（マット花）',type:'single',shape:'blossom',finish:'matte',color:'#C56B7A'},
-  {id:pidSeq++,name:'ブルースター（超光沢）',type:'single',shape:'star',finish:'gloss',color:'#1FA3AE'},
-  {id:pidSeq++,name:'ミントMIX',type:'mix',comps:[
-    {shape:'octa',finish:'marble',color:'#3C8C82'},
-    {shape:'octa',finish:'matte',color:'#8FCFC4'},
-    {shape:'blossom',finish:'matte',color:'#EAE6D8'},
-  ]},
-  {id:pidSeq++,name:'イチョウ（マット）',type:'single',shape:'fan',finish:'matte',color:'#C98A3C'},
+// ===== 商品登録（商品＝素材の％配分リスト。複数素材＝MIX）。ブラウザ保存 =====
+const LSKEY='waxProductsV2';
+const defaultProducts=[
+  {id:1,name:'ティール',comps:[{shape:'octa',finish:'matte',color:'#3C8C82',ratio:100}]},
+  {id:2,name:'ローズ',comps:[{shape:'blossom',finish:'matte',color:'#C56B7A',ratio:100}]},
+  {id:3,name:'ブルースター',comps:[{shape:'star',finish:'gloss',color:'#1FA3AE',ratio:100}]},
+  {id:4,name:'ミントMIX',comps:[
+    {shape:'octa',finish:'marble',color:'#3C8C82',ratio:40},
+    {shape:'octa',finish:'matte',color:'#8FCFC4',ratio:35},
+    {shape:'blossom',finish:'matte',color:'#EAE6D8',ratio:25}]},
+  {id:5,name:'イチョウ',comps:[{shape:'fan',finish:'matte',color:'#C98A3C',ratio:100}]},
 ];
+let products;
+try{ products=JSON.parse(localStorage.getItem(LSKEY)); }catch(e){ products=null; }
+if(!products||!products.length) products=JSON.parse(JSON.stringify(defaultProducts));
+let pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
+function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){} }
 function productById(id){ return products.find(p=>p.id===id); }
-// 配合（出力）：登録商品を比率で選ぶ
-let recipe=[ {pid:1,ratio:30}, {pid:4,ratio:40}, {pid:5,ratio:30} ];
-let total=18, seed=12345;
+let recipe=[ {pid:1,ratio:30}, {pid:4,ratio:40}, {pid:5,ratio:30} ].filter(r=>productById(r.pid));
+if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
+let total=20, seed=12345;
 function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
 
 // ===== 配置を再構築（ルールベース） =====
@@ -497,14 +531,14 @@ function rebuild(){
   world.defaultContactMaterial.restitution=0.0;
   const floor=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
   floor.quaternion.setFromEuler(-Math.PI/2,0,0); world.addBody(floor);
-  const Rw=Math.max(2.4, Math.sqrt(beads.length)*0.78); // 円状の囲い＝中央に寄せて密な単層に
+  const Rw=Math.min(PLATE_R-0.55, Math.max(2.2, Math.sqrt(beads.length)*0.78)); // 皿の内側に収める囲い
   for(let i=0;i<10;i++){ const a=i/10*Math.PI*2;
     const w=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
     w.quaternion.setFromVectors(new CANNON.Vec3(0,0,1), new CANNON.Vec3(-Math.cos(a),0,-Math.sin(a)));
     w.position.set(Math.cos(a)*Rw,0,Math.sin(a)*Rw); world.addBody(w);
   }
   const bodies=[], meshes=[];
-  const Rspawn=Math.max(1.6, Math.sqrt(beads.length)*0.55); // 重なり気味に置いて衝突で押し合い密に
+  const Rspawn=Math.min(Rw-0.5, Math.max(1.4, Math.sqrt(beads.length)*0.55)); // 重なり気味に置いて衝突で密に
   beads.forEach((m)=>{
     const g=SHAPES[m.shape].geo, s=0.82+r()*0.14;
     const hx=g.userData.radius*s*0.92, hy=g.userData.halfH*s;
@@ -524,95 +558,167 @@ function rebuild(){
     meshes[i].quaternion.set(b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w); });
 }
 
-// ===== 比率：合計100%（按分）＆ 商品→粒の解決 =====
+// ===== 比率ユーティリティ（合計100%按分） =====
+function balance(arr,i,v,getR,setR){
+  v=Math.max(0,Math.min(100,v));
+  const others=arr.map((_,idx)=>idx).filter(idx=>idx!==i);
+  const osum=others.reduce((a,idx)=>a+getR(idx),0), rem=100-v;
+  if(osum>1e-6) others.forEach(idx=>setR(idx,getR(idx)/osum*rem));
+  else if(others.length) others.forEach(idx=>setR(idx,rem/others.length));
+  setR(i,v);
+}
+function setRatio(i,v){ balance(recipe,i,v,k=>recipe[k].ratio,(k,x)=>recipe[k].ratio=x); }
+function setCompRatio(p,i,v){ balance(p.comps,i,v,k=>p.comps[k].ratio,(k,x)=>p.comps[k].ratio=x); }
+function normalizeRecipe(){ const s=recipe.reduce((a,r)=>a+Math.max(0,r.ratio),0)||1; recipe.forEach(r=>r.ratio=Math.max(0,r.ratio)/s*100); }
+function normComps(p){ const s=p.comps.reduce((a,c)=>a+Math.max(0,c.ratio),0)||1; p.comps.forEach(c=>c.ratio=Math.max(0,c.ratio)/s*100); }
+
+// ===== 商品→粒の解決 =====
 function recipeCounts(){
   const valid=recipe.map((r,i)=>({r,i})).filter(o=>o.r.ratio>0 && productById(o.r.pid));
   const sum=valid.reduce((a,o)=>a+o.r.ratio,0)||1;
   const counts=recipe.map(()=>0);
   valid.forEach(o=>{ counts[o.i]=Math.max(0,Math.round(o.r.ratio/sum*total)); });
-  valid.forEach(o=>{ if(productById(o.r.pid).type==='mix' && counts[o.i]<3) counts[o.i]=3; }); // MIXは最低3粒
+  valid.forEach(o=>{ const p=productById(o.r.pid); if(p.comps.length>1 && counts[o.i]<p.comps.length) counts[o.i]=p.comps.length; });
   return counts;
+}
+function splitByComps(p,n){
+  const cs=p.comps, base=cs.length>1?1:0, sum=cs.reduce((a,c)=>a+Math.max(0,c.ratio),0)||1;
+  let arr=cs.map(c=>Math.max(base,Math.round(Math.max(0,c.ratio)/sum*n)));
+  let diff=n-arr.reduce((a,b)=>a+b,0), gi=0;
+  while(diff!==0 && cs.length){ const i=gi%cs.length; if(diff>0){arr[i]++;diff--;} else if(arr[i]>base){arr[i]--;diff++;} gi++; if(gi>3000)break; }
+  return arr;
 }
 function resolveBeads(){
   const counts=recipeCounts(), beads=[];
   recipe.forEach((r,i)=>{ const p=productById(r.pid); if(!p||counts[i]<=0)return;
-    if(p.type==='single'){ for(let k=0;k<counts[i];k++) beads.push(p); }
-    else { for(let k=0;k<counts[i];k++) beads.push(p.comps[k%p.comps.length]); }
+    const split=splitByComps(p,counts[i]);
+    p.comps.forEach((c,ci)=>{ for(let k=0;k<split[ci];k++) beads.push(c); });
   });
   return beads;
 }
-function setRatio(i,v){
-  v=Math.max(0,Math.min(100,v));
-  const others=recipe.map((_,idx)=>idx).filter(idx=>idx!==i);
-  const osum=others.reduce((a,idx)=>a+recipe[idx].ratio,0), rem=100-v;
-  if(osum>1e-6) others.forEach(idx=>recipe[idx].ratio=recipe[idx].ratio/osum*rem);
-  else if(others.length) others.forEach(idx=>recipe[idx].ratio=rem/others.length);
-  recipe[i].ratio=v;
-}
-function normalizeRecipe(){ const s=recipe.reduce((a,r)=>a+Math.max(0,r.ratio),0)||1; recipe.forEach(r=>r.ratio=Math.max(0,r.ratio)/s*100); }
 
 // ===== 共通セレクタ =====
 function shapeSel(val,onCh){ const s=document.createElement('select'); Object.entries(SHAPES).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v.label;if(k===val)o.selected=true;s.appendChild(o);}); s.onchange=()=>onCh(s.value); return s; }
 function finSel(shape,val,onCh){ const s=document.createElement('select'); SHAPES[shape].fin.forEach(fk=>{const o=document.createElement('option');o.value=fk;o.textContent=FINISHES[fk].label;if(fk===val)o.selected=true;s.appendChild(o);}); s.disabled=SHAPES[shape].fin.length<2; s.onchange=()=>onCh(s.value); return s; }
 function colInput(val,onCh){ const c=document.createElement('input'); c.type='color'; c.value=val; c.onchange=()=>onCh(c.value); return c; }
-function matLine(obj){ const line=document.createElement('div'); line.className='mr-top';
-  const ss=shapeSel(obj.shape, v=>{ obj.shape=v; if(!SHAPES[v].fin.includes(obj.finish)) obj.finish=SHAPES[v].fin[0]; renderAll(); rebuild(); });
-  const fs=finSel(obj.shape, obj.finish, v=>{ obj.finish=v; rebuild(); });
-  const cc=colInput(obj.color, v=>{ obj.color=v; rebuild(); });
-  line.append(ss,fs,cc); return line; }
 
-// ===== ① 商品登録 =====
-const regEl=document.getElementById('regList');
-function renderRegistry(){
-  regEl.innerHTML='';
+// ===== サムネイル（商品画像） =====
+const thumbR=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+thumbR.setSize(150,150); thumbR.setPixelRatio(2); thumbR.toneMapping=THREE.ACESFilmicToneMapping;
+const thumbScene=new THREE.Scene(); thumbScene.environment=scene.environment;
+const thumbCam=new THREE.PerspectiveCamera(40,1,0.1,100); thumbCam.position.set(0,5,4); thumbCam.lookAt(0,0.05,0);
+const tdl=new THREE.DirectionalLight(0xffffff,2.2); tdl.position.set(3,6,3); thumbScene.add(tdl); thumbScene.add(new THREE.HemisphereLight(0xffffff,0x665f55,0.5));
+const thumbGroup=new THREE.Group(); thumbScene.add(thumbGroup);
+const thumbCache={};
+function thumbSig(p){ return JSON.stringify(p.comps); }
+function makeThumb(p){
+  const sig=thumbSig(p); if(thumbCache[sig]) return thumbCache[sig];
+  while(thumbGroup.children.length) thumbGroup.remove(thumbGroup.children[0]);
+  const N=Math.min(9,Math.max(p.comps.length,6)), split=splitByComps(p,N), list=[];
+  p.comps.forEach((c,ci)=>{for(let k=0;k<split[ci];k++)list.push(c);});
+  const rr=mkRng(p.id*131+9);
+  list.forEach(c=>{ const g=SHAPES[c.shape].geo,s=0.8; const me=new THREE.Mesh(g,getMat(c.finish,c.color)); me.scale.setScalar(s);
+    const ang=rr()*Math.PI*2,rad=Math.sqrt(rr())*1.5; me.position.set(Math.cos(ang)*rad,g.userData.halfH*s,Math.sin(ang)*rad); me.rotation.y=rr()*Math.PI*2; thumbGroup.add(me); });
+  thumbR.render(thumbScene,thumbCam); const url=thumbR.domElement.toDataURL('image/png'); thumbCache[sig]=url; return url;
+}
+function invalidateThumb(p){ delete thumbCache[thumbSig(p)]; }
+
+// ===== タブ切替 =====
+const simView=document.getElementById('simView'), regView=document.getElementById('regView');
+function showTab(t){ const sim=t==='sim';
+  simView.style.display=sim?'flex':'none'; regView.style.display=sim?'none':'block';
+  document.getElementById('c').style.display=sim?'block':'none';
+  document.getElementById('tabSim').classList.toggle('active',sim);
+  document.getElementById('tabReg').classList.toggle('active',!sim);
+  if(sim){ renderCards(); renderRecipe(); rebuild(); } else { renderRegistry(); }
+}
+document.getElementById('tabSim').onclick=()=>showTab('sim');
+document.getElementById('tabReg').onclick=()=>showTab('reg');
+
+// ===== 調合：商品カード =====
+const cardGrid=document.getElementById('cardGrid');
+function renderCards(){
+  cardGrid.innerHTML='';
   products.forEach(p=>{
-    const card=document.createElement('div'); card.className='mix-row';
-    const head=document.createElement('div'); head.className='reg-head';
-    const nm=document.createElement('input'); nm.className='pname'; nm.value=p.name; nm.oninput=()=>{p.name=nm.value;}; nm.onchange=()=>renderRecipe();
-    const tag=document.createElement('span'); tag.className='ptag'; tag.textContent=p.type==='mix'?'MIX':'単品';
-    const del=document.createElement('button'); del.className='del'; del.textContent='✕';
-    del.onclick=()=>{ products=products.filter(x=>x!==p); recipe=recipe.filter(r=>r.pid!==p.id);
-      if(!recipe.length && products.length) recipe=[{pid:products[0].id,ratio:100}]; normalizeRecipe(); renderAll(); rebuild(); };
-    head.append(nm,tag,del); card.append(head);
-    if(p.type==='single') card.append(matLine(p));
-    else p.comps.forEach(c=>card.append(matLine(c)));
-    regEl.append(card);
+    const card=document.createElement('div'); card.className='pcard'+(recipe.find(r=>r.pid===p.id)?' sel':'');
+    const img=document.createElement('img'); img.className='pthumb'; img.src=makeThumb(p);
+    const nm=document.createElement('div'); nm.className='pcname'; nm.textContent=p.name;
+    card.append(img,nm);
+    card.onclick=()=>{ const ex=recipe.find(r=>r.pid===p.id);
+      if(ex){ if(recipe.length>1){ recipe=recipe.filter(r=>r!==ex); normalizeRecipe(); } }
+      else { const w=100/(recipe.length+1); recipe.forEach(r=>r.ratio*=(100-w)/100); recipe.push({pid:p.id,ratio:w}); }
+      renderCards(); renderRecipe(); rebuild(); };
+    cardGrid.append(card);
   });
 }
-document.getElementById('addSingle').onclick=()=>{ products.push({id:pidSeq++,name:'新規 単品',type:'single',shape:'octa',finish:'matte',color:'#3C8C82'}); renderAll(); };
-document.getElementById('addMix').onclick=()=>{ products.push({id:pidSeq++,name:'新規 MIX',type:'mix',comps:[{shape:'octa',finish:'marble',color:'#3C8C82'},{shape:'octa',finish:'matte',color:'#8FCFC4'},{shape:'blossom',finish:'matte',color:'#EAE6D8'}]}); renderAll(); };
 
-// ===== ② 配合 =====
+// ===== 調合：配合 =====
 const panel=document.getElementById('mixList');
 let rowRefs=[];
 function updateValues(){ const counts=recipeCounts(); rowRefs.forEach((ref,i)=>{ ref.rng.value=Math.round(recipe[i].ratio); ref.rv.textContent=Math.round(recipe[i].ratio)+'%'; ref.cnt.textContent=counts[i]+'粒'; }); }
 function renderRecipe(){
   panel.innerHTML=''; rowRefs=[];
-  recipe.forEach((r,idx)=>{
+  recipe.forEach((r,idx)=>{ const p=productById(r.pid); if(!p)return;
     const row=document.createElement('div'); row.className='mix-row';
-    const psel=document.createElement('select');
-    products.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.type==='mix'?' [MIX]':'');if(p.id===r.pid)o.selected=true;psel.appendChild(o);});
-    psel.onchange=()=>{ r.pid=+psel.value; updateValues(); rebuild(); };
+    const top=document.createElement('div'); top.className='mr-top';
+    const nm=document.createElement('span'); nm.className='rprod'; nm.textContent=p.name;
     const del=document.createElement('button'); del.className='del'; del.textContent='✕';
-    del.onclick=()=>{ if(recipe.length<=1)return; recipe.splice(idx,1); normalizeRecipe(); renderRecipe(); rebuild(); };
+    del.onclick=()=>{ if(recipe.length<=1)return; recipe.splice(idx,1); normalizeRecipe(); renderCards(); renderRecipe(); rebuild(); };
+    top.append(nm,del);
     const rng=document.createElement('input'); rng.type='range'; rng.min=0;rng.max=100;rng.value=Math.round(r.ratio);
     const rv=document.createElement('span'); rv.className='rv'; const cnt=document.createElement('span'); cnt.className='cnt';
     rng.oninput=()=>{ setRatio(idx,+rng.value); updateValues(); };
     rng.onchange=()=>{ setRatio(idx,+rng.value); updateValues(); rebuild(); };
-    const top=document.createElement('div'); top.className='mr-top'; top.append(psel,del);
     const bot=document.createElement('div'); bot.className='mr-bot'; bot.append(rng,rv,cnt);
     row.append(top,bot); panel.append(row); rowRefs.push({rng,rv,cnt});
   });
   updateValues();
 }
-function renderAll(){ renderRegistry(); renderRecipe(); }
-document.getElementById('addBtn').onclick=()=>{ if(!products.length)return; const w=100/(recipe.length+1); recipe.forEach(r=>r.ratio*=(100-w)/100); recipe.push({pid:products[0].id,ratio:w}); renderRecipe(); rebuild(); };
+
+// ===== 商品登録 =====
+const regEl=document.getElementById('regList');
+function compRow(p,c,ci){
+  const wrap=document.createElement('div'); wrap.className='comp';
+  const line=document.createElement('div'); line.className='mr-top';
+  const ss=shapeSel(c.shape,v=>{ c.shape=v; if(!SHAPES[v].fin.includes(c.finish))c.finish=SHAPES[v].fin[0]; invalidateThumb(p); renderRegistry(); saveProducts(); });
+  const fs=finSel(c.shape,c.finish,v=>{ c.finish=v; invalidateThumb(p); renderRegistry(); saveProducts(); });
+  const cc=colInput(c.color,v=>{ c.color=v; invalidateThumb(p); renderRegistry(); saveProducts(); });
+  const cdel=document.createElement('button'); cdel.className='del'; cdel.textContent='✕';
+  cdel.onclick=()=>{ if(p.comps.length<=1)return; p.comps.splice(ci,1); normComps(p); invalidateThumb(p); renderRegistry(); saveProducts(); };
+  line.append(ss,fs,cc,cdel);
+  const bot=document.createElement('div'); bot.className='mr-bot';
+  const rng=document.createElement('input'); rng.type='range'; rng.min=0;rng.max=100;rng.value=Math.round(c.ratio);
+  const rv=document.createElement('span'); rv.className='rv'; rv.textContent=Math.round(c.ratio)+'%';
+  rng.oninput=()=>{ setCompRatio(p,ci,+rng.value); [...wrap.parentNode.querySelectorAll('.comp')].forEach((el,k)=>{ const rr2=el.querySelector('input[type=range]'),sv=el.querySelector('.rv'); if(p.comps[k]){rr2.value=Math.round(p.comps[k].ratio);sv.textContent=Math.round(p.comps[k].ratio)+'%';} }); };
+  rng.onchange=()=>{ setCompRatio(p,ci,+rng.value); invalidateThumb(p); saveProducts(); renderRegistry(); };
+  bot.append(rng,rv);
+  wrap.append(line,bot); return wrap;
+}
+function renderRegistry(){
+  regEl.innerHTML='';
+  products.forEach(p=>{
+    const card=document.createElement('div'); card.className='regcard';
+    const head=document.createElement('div'); head.className='reg-head';
+    const img=document.createElement('img'); img.className='pthumb sm'; img.src=makeThumb(p);
+    const nm=document.createElement('input'); nm.className='pname'; nm.value=p.name; nm.oninput=()=>{p.name=nm.value;}; nm.onchange=()=>saveProducts();
+    const del=document.createElement('button'); del.className='del'; del.textContent='✕';
+    del.onclick=()=>{ products=products.filter(x=>x!==p); recipe=recipe.filter(r=>r.pid!==p.id); if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; normalizeRecipe(); saveProducts(); renderRegistry(); };
+    head.append(img,nm,del); card.append(head);
+    p.comps.forEach((c,ci)=>card.append(compRow(p,c,ci)));
+    const addc=document.createElement('button'); addc.className='act ghost mini'; addc.textContent='＋素材';
+    addc.onclick=()=>{ p.comps.push({shape:'octa',finish:'matte',color:'#8FCFC4',ratio:20}); normComps(p); invalidateThumb(p); renderRegistry(); saveProducts(); };
+    card.append(addc); regEl.append(card);
+  });
+}
+document.getElementById('addProd').onclick=()=>{ products.push({id:pidSeq++,name:'新規商品',comps:[{shape:'octa',finish:'matte',color:'#3C8C82',ratio:100}]}); saveProducts(); renderRegistry(); };
+
+// ===== ハンドラ =====
 document.getElementById('shuffleBtn').onclick=()=>{ seed=(seed*16807+1)&0x7fffffff; rebuild(); };
 const totalRange=document.getElementById('totalRange'), totalVal=document.getElementById('totalVal');
 totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); };
 totalRange.onchange=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); rebuild(); };
 document.getElementById('saveBtn').onclick=()=>{ renderer.render(scene,camera); const a=document.createElement('a'); a.download='wax-mix.png'; a.href=renderer.domElement.toDataURL('image/png'); a.click(); };
-renderAll(); rebuild();
+showTab('sim');
 
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
