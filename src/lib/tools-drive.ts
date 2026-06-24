@@ -82,6 +82,26 @@ export async function readProject(token: string, id: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`read ${res.status} ${await res.text()}`);
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const e: any = new Error("PARSE");
+    e.code = "PARSE";
+    throw e;
+  }
+}
+
+// 競合検知用：内容を取らずに更新時刻・更新者だけ取得
+export async function getMeta(token: string, id: string) {
+  const params = new URLSearchParams({
+    fields: "id,modifiedTime,lastModifyingUser/displayName",
+    supportsAllDrives: "true",
+  });
+  const res = await fetch(`${API}/files/${id}?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`meta ${res.status} ${await res.text()}`);
   return res.json();
 }
 

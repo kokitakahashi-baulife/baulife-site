@@ -1,18 +1,29 @@
 import { NextResponse } from "next/server";
-import { getAccessToken, readProject, saveProject } from "@/lib/tools-drive";
+import { getAccessToken, readProject, saveProject, getMeta } from "@/lib/tools-drive";
 
-// 1案件の読み込み
+// 1案件の読み込み（?meta=1 で更新時刻・更新者のみ取得＝競合検知用）
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = await getAccessToken();
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
+  const wantMeta = new URL(req.url).searchParams.get("meta");
   try {
+    if (wantMeta) {
+      const meta = await getMeta(token, id);
+      return NextResponse.json({ meta });
+    }
     const content = await readProject(token, id);
     return NextResponse.json({ content });
   } catch (e: any) {
+    if (e?.code === "PARSE") {
+      return NextResponse.json(
+        { error: "このファイルは企画書の形式ではないため開けません。", code: "PARSE" },
+        { status: 422 }
+      );
+    }
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 });
   }
 }
