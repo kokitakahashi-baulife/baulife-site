@@ -183,7 +183,7 @@ function defaultData(){
     blindPrice:"", completePrice:"", presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
     sales:{blind:true, complete:true, single:false, assort:false},
     schedule:SCHED.map(s=>({label:s.label, days:s.days})),
-    overall:{coreCharm:"",target:"",wow:"",theme:"",homuTie:"",hook:"",season:""},
+    overall:{concept:""},
     package:"", packageNote:"このメインビジュアルはポストカードに印刷され、さらにパッケージにも使用されます。（AI生成／任意でクリエイター自主制作可・納期2週間）",
     concepts:[blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept()],
     secret:blankConcept()
@@ -209,7 +209,7 @@ let conflictActive=false;    // 競合解決待ち
 let saveFailCount=0;         // 連続保存失敗回数（#5 案内のため）
 function setStatus(t){ const e=document.getElementById("saveStatus"); if(e) e.textContent=t; }
 function hhmm(d){ return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
-function metaOf(){ return { creator:(data.creator||""), theme:(data.overall&&data.overall.theme)||"" }; }
+function metaOf(){ return { creator:(data.creator||""), theme:((data.overall&&data.overall.concept)||"").replace(/\s+/g," ").trim().slice(0,40) }; }
 function fileBase(){ return ((data.creator&&data.creator.trim())||"無題")+"_企画書"; }
 
 /* 入力変更時に各所から呼ばれる → デバウンスして自動保存 */
@@ -546,14 +546,21 @@ function buildForm(){
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：全体コンセプト（コラボの土台）"));
-  fs.appendChild(el("div","hint","担当者とクリエイターが“同じ絵”を共有し、良いものづくり→消費者の喜びにつなげるための土台です。"));
-  fs.appendChild(field("① このクリエイター／IPの核の魅力（ファンが一番好きなところ）","coreCharm",data.overall,true,"例：独特の色使い・ゆるさ・物語性。これを薄めず活かすのが最重要。"));
-  fs.appendChild(field("② ファン（買う人）はどんな人？何を求めている？","target",data.overall,true,"例：20代女性・推し活・収集欲。どんな瞬間に欲しくなるか。"));
-  fs.appendChild(field("③ 手に取った人に届けたい体験・感情（WOW）","wow",data.overall,true,"例：開封のワクワク、飾る／使う／贈る、夢中になれる創作。"));
-  fs.appendChild(field("④ 全体を貫くテーマ・世界観（各ブラインドボックスをつなぐ軸）","theme",data.overall,true,"例：『夜の散歩』『四季の魔法』。1行で言える共通の物語。"));
-  fs.appendChild(field("⑤ HOMUらしさとの接続（封蝋・創作・想いを届ける）","homuTie",data.overall,true,"例：なぜ封蝋スタンプで成立するか。押す体験にどう繋がるか。"));
-  fs.appendChild(field("⑥ 記憶に残る・差別化のフック（一番の見せ場／SNSで語りたくなる点）","hook",data.overall,true,"例：他のグッズと違う、思わず話したくなる一点。"));
-  fs.appendChild(field("⑦ 季節・トレンドの要素（任意）","season",data.overall,true,"例：クリスマス、新生活。なければ空欄でOK。"));
+  const guide=el("div");
+  guide.style.cssText="background:#f3efe7;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.8;margin-bottom:8px;";
+  guide.innerHTML="このコラボの“軸”を、下の欄に自由に書いてください。次の点が入っていると良い企画書になります（埋まっているか自分でチェック）：<br>"
+    +"・<b>クリエイター／IPの核の魅力</b>（ファンが一番好きな所。これを薄めない）<br>"
+    +"・<b>ファン（買う人）</b>は誰で、何を求めているか<br>"
+    +"・手に取った人に届けたい<b>体験・感情（WOW）</b><br>"
+    +"・全体を貫く<b>テーマ・世界観</b>（各ブラインドボックスをつなぐ軸）<br>"
+    +"・<b>HOMUらしさ</b>との接続（封蝋・創作・想いを届ける）<br>"
+    +"・記憶に残る<b>差別化のフック</b>（任意：季節・トレンド）";
+  fs.appendChild(guide);
+  const conTa=el("textarea"); conTa.value=(data.overall.concept)||"";
+  conTa.placeholder="例）20代の文具好き・推し活層に『開封のワクワク』と『飾る喜び』を届けるコラボ。〇〇さんの柔らかな色使いと物語性を核に、『夜の散歩』という世界観で全体を統一。封蝋を押す所作が、その世界に没入する体験になる。SNSで“夜を集める”と語りたくなるのが狙い。";
+  conTa.style.minHeight="180px";
+  conTa.oninput=function(){ data.overall.concept=conTa.value; render(); autosave(); };
+  fs.appendChild(conTa);
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：本コラボのメインビジュアル"));
@@ -654,13 +661,7 @@ function renderPlan(){
     ${renderSalesDef()}
 
     <h3>2. 今回のコラボ全体コンセプト（土台）</h3>
-    <div class="qa"><div class="q">① クリエイター／IPの核の魅力（ファンが一番好きなところ）</div>${ans(data.overall.coreCharm)}</div>
-    <div class="qa"><div class="q">② ファン（買う人）はどんな人？何を求めている？</div>${ans(data.overall.target)}</div>
-    <div class="qa"><div class="q">③ 手に取った人に届けたい体験・感情（WOW）</div>${ans(data.overall.wow)}</div>
-    <div class="qa"><div class="q">④ 全体を貫くテーマ・世界観</div>${ans(data.overall.theme)}</div>
-    <div class="qa"><div class="q">⑤ HOMUらしさとの接続（封蝋・創作・想いを届ける）</div>${ans(data.overall.homuTie)}</div>
-    <div class="qa"><div class="q">⑥ 記憶に残る・差別化のフック</div>${ans(data.overall.hook)}</div>
-    <div class="qa"><div class="q">⑦ 季節・トレンドの要素（任意）</div>${ans(data.overall.season)}</div>
+    <div class="qa">${ans(data.overall.concept)}</div>
 
     <h3>3. 本コラボのメインビジュアル</h3>
     <p>このメインビジュアル画像が<b>ポストカードに印刷</b>され、さらに<b>パッケージにも使用</b>されます。</p>
