@@ -20,6 +20,13 @@ const tools: Tool[] = [
     href: "/tools/kikaku.html",
     tag: "HOMU",
   },
+  {
+    name: "WAX MIX シミュレーター",
+    description:
+      "ワックスの形・仕上げ・色・比率を指定して、混ぜた見た目を白床に即時3D出力。比率は合計100%で自動調整。PNG保存対応。",
+    href: "/tools/wax.html",
+    tag: "HOMU",
+  },
 ];
 
 export default function ToolsPortal() {
