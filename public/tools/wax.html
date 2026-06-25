@@ -63,6 +63,8 @@
   .hexin{width:78px;font-size:11px;padding:4px 6px;border:1px solid #d8d2c6;border-radius:5px;text-transform:uppercase;box-sizing:border-box;}
   .eyebtn{flex:0 0 auto;padding:3px 8px;border:1px solid #d8c9b6;border-radius:5px;background:#fff;cursor:pointer;font-size:13px;line-height:1;}
   .eyebtn:hover{background:#f4efe6;}
+  .autobtn{margin-left:6px;font-size:11px;padding:4px 10px;border:1px solid #d8c9b6;border-radius:6px;background:#fff;color:#7a5c3a;cursor:pointer;}
+  .autobtn:hover{background:#f4efe6;}
   .eyebtn.on{background:#7a5c3a;}
   .eyebtn.on svg{stroke:#fff;}
   .bigimg.picking{outline:3px solid #7a5c3a;outline-offset:-3px;cursor:crosshair;}
@@ -140,7 +142,7 @@
 <div id="regView" class="page" style="display:none">
   <h2>商品登録 <span class="selcnt"><span id="regCount"></span></span></h2>
   <p class="sub">色・形・素材を％配分で自由に作成（複数素材＝MIX）。登録はこのブラウザに保存されます。</p>
-  <div class="regbar"><input id="regSearch" class="regsearch" placeholder="商品名・SKUで検索…"><button class="act ghost" id="archiveToggle">🗑 アーカイブ</button><button class="act" id="addProd">＋ 商品を追加</button></div>
+  <div class="regbar"><input id="regSearch" class="regsearch" placeholder="商品名・SKUで検索…"><button class="act ghost" id="autoColor">🎨 実物から色を抽出</button><button class="act ghost" id="archiveToggle">🗑 アーカイブ</button><button class="act" id="addProd">＋ 商品を追加</button></div>
   <div id="regList"></div>
 </div>
 <script type="importmap">
@@ -1037,6 +1039,28 @@ function archiveProduct(p){
 }
 function restoreProduct(p){ p.archived=false; saveProducts(); renderRegistry(); }
 function purgeProduct(p){ products=products.filter(x=>x!==p); saveProducts(); renderRegistry(); }
+// ===== 実物画像から色を自動抽出（再現色に適用） =====
+function _rgb2hsv(r,g,b){ r/=255;g/=255;b/=255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0; if(d){ if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if(h<0)h+=360; } return [h, mx?d/mx:0, mx]; }
+function _hsv2hex(h,s,v){ const c=v*s, x=c*(1-Math.abs((h/60)%2-1)), m=v-c; let r,g,b;
+  if(h<60){r=c;g=x;b=0;}else if(h<120){r=x;g=c;b=0;}else if(h<180){r=0;g=c;b=x;}else if(h<240){r=0;g=x;b=c;}else if(h<300){r=x;g=0;b=c;}else{r=c;g=0;b=x;}
+  const t=u=>Math.max(0,Math.min(255,Math.round((u+m)*255))).toString(16).padStart(2,'0'); return '#'+t(r)+t(g)+t(b); }
+function _imgPixels(src){ return new Promise(res=>{ const im=new Image(); im.onload=()=>{ const mx=Math.max(im.width,im.height)||1, sc=Math.min(1,140/mx), w=Math.max(1,Math.round(im.width*sc)), h=Math.max(1,Math.round(im.height*sc)); const cv=document.createElement('canvas'); cv.width=w;cv.height=h; const cx=cv.getContext('2d'); cx.drawImage(im,0,0,w,h); res(cx.getImageData(0,0,w,h).data); }; im.onerror=()=>res(null); im.src=src; }); }
+function _beadPixels(data){ const px=[]; for(let i=0;i<data.length;i+=4){ const r=data[i],g=data[i+1],b=data[i+2],a=data[i+3]; if(a<200)continue; if(Math.min(r,g,b)>236)continue; /*白背景*/ if(r+g+b<70)continue; /*影*/ px.push([r,g,b]); } return px; }
+function _vivid(px){ const sc=px.map(p=>{ const v=_rgb2hsv(p[0],p[1],p[2]); return {p,s:v[1]*0.7+v[2]*0.3}; }); sc.sort((a,b)=>b.s-a.s); const top=sc.slice(0,Math.max(1,Math.floor(sc.length*0.45))); let r=0,g=0,b=0; top.forEach(o=>{r+=o.p[0];g+=o.p[1];b+=o.p[2];}); const n=top.length; const hsv=_rgb2hsv(r/n,g/n,b/n); return _hsv2hex(hsv[0], Math.min(1,hsv[1]*1.12), Math.min(1,hsv[2]*1.03)); }
+function _kmeans(px,k,iters){ if(px.length<=k) return px.map(c=>({c,n:1})); let C=[]; for(let i=0;i<k;i++)C.push(px[Math.floor(i*(px.length-1)/(k-1))].slice()); const lab=new Array(px.length).fill(0);
+  for(let it=0;it<iters;it++){ for(let i=0;i<px.length;i++){ let bd=1e9,bj=0; for(let j=0;j<k;j++){ const dx=px[i][0]-C[j][0],dy=px[i][1]-C[j][1],dz=px[i][2]-C[j][2],d=dx*dx+dy*dy+dz*dz; if(d<bd){bd=d;bj=j;} } lab[i]=bj; }
+    const s=Array.from({length:k},()=>[0,0,0,0]); for(let i=0;i<px.length;i++){ const j=lab[i]; s[j][0]+=px[i][0];s[j][1]+=px[i][1];s[j][2]+=px[i][2];s[j][3]++; } for(let j=0;j<k;j++) if(s[j][3])C[j]=[s[j][0]/s[j][3],s[j][1]/s[j][3],s[j][2]/s[j][3]]; }
+  const cnt=new Array(k).fill(0); lab.forEach(j=>cnt[j]++); return C.map((c,j)=>({c,n:cnt[j]})); }
+function _extract3(px){ const cl=_kmeans(px,6,9).filter(o=>o.n>px.length*0.02).sort((a,b)=>b.n-a.n); const pick=[];
+  for(const o of cl){ const [r,g,b]=o.c; if(pick.every(q=>Math.abs(q[0]-r)+Math.abs(q[1]-g)+Math.abs(q[2]-b)>55)) pick.push([r,g,b]); if(pick.length>=3)break; }
+  while(pick.length<3) pick.push(pick[pick.length-1]||[200,200,200]);
+  return pick.map(([r,g,b])=>{ const h=_rgb2hsv(r,g,b); return _hsv2hex(h[0], Math.min(1,h[1]*1.1), Math.min(1,h[2]*1.02)); }); }
+async function autoExtractColors(p){ if(!p.real) return false; const data=await _imgPixels(p.real); if(!data) return false; const px=_beadPixels(data); if(px.length<20) return false;
+  if(p.comps.length>=3){ const cols=_extract3(px); p.comps.forEach((c,i)=>c.color=cols[i%cols.length]); } else { const col=_vivid(px); p.comps.forEach(c=>c.color=col); }
+  invalidateThumb(p); return true; }
+async function autoExtractAll(){ const list=products.filter(p=>!p.archived && p.real); let done=0; const btn=document.getElementById('autoColor');
+  for(const p of list){ try{ await autoExtractColors(p); }catch(e){} done++; if(btn)btn.textContent='抽出中… '+done+'/'+list.length; }
+  saveProducts(); if(btn)btn.textContent='🎨 実物から色を抽出'; renderRegistry(); }
 // ===== スポイト（連続モード：実物画像をクリックで色取得、完了/Escまで継続） =====
 let _pickCleanup=null;
 function endPick(){ if(_pickCleanup){ _pickCleanup(); _pickCleanup=null; } }
@@ -1147,6 +1171,8 @@ function renderRegistry(){
         ey.onclick=()=>startPick(realImg, p.real, hex=>apply(hex,'ey'), ey);
         wrap.append(cc,hx,ey); cr.append(wrap);
       });
+      if(p.real){ const ae=document.createElement('button'); ae.type='button'; ae.className='autobtn'; ae.textContent='🎨 実物から自動抽出';
+        ae.onclick=async()=>{ ae.textContent='抽出中…'; await autoExtractColors(p); renderRegistry(); }; cr.append(ae); }
       card.append(cr);
       // 透け感（半透明）
       const trow=document.createElement('div'); trow.className='frow';
@@ -1167,6 +1193,7 @@ function renderRegistry(){
 }
 document.getElementById('addProd').onclick=()=>{ const s=document.getElementById('regSearch'); if(s)s.value=''; showArchive=false; const id=pidSeq++; products.unshift({id,type:'八角(マット)',name:'新規商品',sku:'',psku:'',comps:compsFor('八角(マット)',['#3C8C82'])}); newIds.add(id); editing.add(id); saveProducts(); renderRegistry(); regView.scrollTop=0; };
 document.getElementById('archiveToggle').onclick=()=>{ showArchive=!showArchive; const s=document.getElementById('regSearch'); if(s)s.value=''; renderRegistry(); regView.scrollTop=0; };
+document.getElementById('autoColor').onclick=()=>{ if(showArchive)return; if(confirm('表示中の全商品の色を、実物画像から自動抽出して上書きします。\n（個別に手動修正した色も上書きされます）\nよろしいですか？')) autoExtractAll(); };
 document.getElementById('cardSearch').oninput=()=>renderCards();
 document.getElementById('regSearch').oninput=()=>renderRegistry();
 
