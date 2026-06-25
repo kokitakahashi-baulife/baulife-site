@@ -476,6 +476,8 @@ function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THRE
 function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.5,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.35,clearcoatRoughness:0.25,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.0}); }
 // C) 星専用：単色ラメ入り 超光沢
 function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.06,clearcoat:1.0,clearcoatRoughness:0.02,metalness:1.0,metalnessMap:sparkleTex,transmission:0.12,thickness:0.6,ior:1.47,iridescence:0.4,iridescenceIOR:1.3,bumpMap:microBump,bumpScale:0.004,envMapIntensity:2.0}); }
+// ラメ単色：単色＋ラメ（混色なし）
+function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.55,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.015,clearcoat:0.35,clearcoatRoughness:0.2,envMapIntensity:1.0}); }
 
 // 同色で「仕上げ4種」を並べて比較（蝋らしさの検証）
 const group=new THREE.Group(); scene.add(group);
@@ -486,12 +488,13 @@ const SHAPES={
   sunflower:{geo:geoFlower,label:'向日葵',fin:['matte','marble']},
   blossom:{geo:geoBlossom,label:'花',fin:['matte','marble']},
   star:{geo:geoStar,label:'星',fin:['gloss']},
-  fan:{geo:geoFan,label:'イチョウ',fin:['matte']},
-  bee:{geo:geoBee,label:'蜂',fin:['matte']},
-  clover:{geo:geoClover,label:'四つ葉',fin:['matte']},
+  fan:{geo:geoFan,label:'イチョウ（絵柄入り）',fin:['glitterSolid']},
+  bee:{geo:geoBee,label:'蜂（絵柄入り）',fin:['matte']},
+  clover:{geo:geoClover,label:'クローバー（絵柄入り）',fin:['glitterSolid']},
 };
 const FINISHES={
   matte:{label:'マット単色',make:c=>finishMatte(c)},
+  glitterSolid:{label:'ラメ単色',make:c=>finishGlitterSolid(c)},
   marble:{label:'ラメ混色',make:c=>finishMarble(marbleOf(c))},
   gloss:{label:'超光沢ラメ',make:c=>finishStarGloss(c)},
 };
@@ -500,29 +503,29 @@ function getMat(fin,color){ const k=fin+'|'+color; if(!matCache[k]) matCache[k]=
 
 // ===== 配合データ =====
 // ===== 商品登録（商品＝素材の％配分リスト。複数素材＝MIX）。ブラウザ保存 =====
-const LSKEY='waxProductsV3';
+const LSKEY='waxProductsV4';
 // 絵柄入り（3色入り）= 3色を抽出し 蜂/クローバー/イチョウ に33.3%ずつ割当（色はPDF画像から読取り）
 const defaultProducts=[
   {id:1,name:'ピーチマンゴー（WS-WAX-0016）',comps:[
     {shape:'bee',finish:'matte',color:'#E6A95C',ratio:34},
-    {shape:'clover',finish:'matte',color:'#EAD06A',ratio:33},
-    {shape:'fan',finish:'matte',color:'#F0E6CE',ratio:33}]},
+    {shape:'clover',finish:'glitterSolid',color:'#EAD06A',ratio:33},
+    {shape:'fan',finish:'glitterSolid',color:'#F0E6CE',ratio:33}]},
   {id:2,name:'チェリー（WS-WAX-0017）',comps:[
     {shape:'bee',finish:'matte',color:'#CF4A3C',ratio:34},
-    {shape:'clover',finish:'matte',color:'#E0915C',ratio:33},
-    {shape:'fan',finish:'matte',color:'#E7B9A4',ratio:33}]},
+    {shape:'clover',finish:'glitterSolid',color:'#E0915C',ratio:33},
+    {shape:'fan',finish:'glitterSolid',color:'#E7B9A4',ratio:33}]},
   {id:3,name:'ユニコーン（WS-WAX-0018）',comps:[
     {shape:'bee',finish:'matte',color:'#B59FD4',ratio:34},
-    {shape:'clover',finish:'matte',color:'#CBBCE2',ratio:33},
-    {shape:'fan',finish:'matte',color:'#ECE3EC',ratio:33}]},
+    {shape:'clover',finish:'glitterSolid',color:'#CBBCE2',ratio:33},
+    {shape:'fan',finish:'glitterSolid',color:'#ECE3EC',ratio:33}]},
   {id:4,name:'ベリー（WS-WAX-0019）',comps:[
     {shape:'bee',finish:'matte',color:'#C04E64',ratio:34},
-    {shape:'clover',finish:'matte',color:'#9A3A48',ratio:33},
-    {shape:'fan',finish:'matte',color:'#E8C7BE',ratio:33}]},
+    {shape:'clover',finish:'glitterSolid',color:'#9A3A48',ratio:33},
+    {shape:'fan',finish:'glitterSolid',color:'#E8C7BE',ratio:33}]},
   {id:5,name:'サンドビーチ（WS-WAX-0020）',comps:[
     {shape:'bee',finish:'matte',color:'#D6BE9A',ratio:34},
-    {shape:'clover',finish:'matte',color:'#BFA47E',ratio:33},
-    {shape:'fan',finish:'matte',color:'#EFE6D2',ratio:33}]},
+    {shape:'clover',finish:'glitterSolid',color:'#BFA47E',ratio:33},
+    {shape:'fan',finish:'glitterSolid',color:'#EFE6D2',ratio:33}]},
 ];
 let products;
 try{ products=JSON.parse(localStorage.getItem(LSKEY)); }catch(e){ products=null; }
