@@ -65,10 +65,6 @@
   <div id="cardGrid" class="cardgrid"></div>
   <div class="seclabel">配合（合計100%）</div>
   <div id="mixList"></div>
-  <div class="totalrow"><span>表示</span>
-    <button id="modeFlat" class="seg active">並べる</button>
-    <button id="modeHeap" class="seg">山積み</button>
-  </div>
   <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="40" value="20"><span id="totalVal">20</span></div>
   <div class="btnrow">
     <button class="act ghost" id="shuffleBtn">再配置</button>
@@ -522,7 +518,7 @@ function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products
 function productById(id){ return products.find(p=>p.id===id); }
 let recipe=[ {pid:1,ratio:30}, {pid:4,ratio:40}, {pid:5,ratio:30} ].filter(r=>productById(r.pid));
 if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
-let total=20, seed=12345, layoutMode='flat';
+let total=20, seed=12345;
 function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
 function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)); return {x:q.x,y:q.y,z:q.z,w:q.w}; }
 
@@ -532,40 +528,36 @@ function rebuild(){
   const beads=resolveBeads();
   const r=mkRng(seed);
   for(let i=beads.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [beads[i],beads[j]]=[beads[j],beads[i]]; }
-  const heap = layoutMode==='heap';
-  // Rapier物理ワールド（円柱コライダー＝円盤状の粒が自然になじむ）
+  // Rapier物理（平らにロック＝重ねず、皿いっぱいに密に敷き詰める単層）
   const world=new RAPIER.World(new RAPIER.Vector3(0,-12,0));
   const gb=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0,-0.5,0));
-  world.createCollider(RAPIER.ColliderDesc.cuboid(20,0.5,20).setFriction(0.7), gb);
-  // 皿の内側にリング状の壁
-  const Rw = heap ? Math.min(PLATE_R-0.55, Math.max(2.8, Math.sqrt(beads.length)*0.88)) : PLATE_R-0.5;
-  const nW=20, seg=Math.PI*2*Rw/nW*0.62;
+  world.createCollider(RAPIER.ColliderDesc.cuboid(20,0.5,20).setFriction(0.4), gb);
+  // 皿の内側いっぱいに囲い
+  const Rw=PLATE_R-0.42;
+  const nW=26, seg=Math.PI*2*Rw/nW*0.62;
   for(let i=0;i<nW;i++){ const a=i/nW*Math.PI*2;
-    const wb=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(Math.cos(a)*Rw,1.6,Math.sin(a)*Rw).setRotation(quat(0,-a,0)));
-    world.createCollider(RAPIER.ColliderDesc.cuboid(0.12,1.6,seg).setFriction(0.35), wb);
+    const wb=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(Math.cos(a)*Rw,1.2,Math.sin(a)*Rw).setRotation(quat(0,-a,0)));
+    world.createCollider(RAPIER.ColliderDesc.cuboid(0.12,1.2,seg).setFriction(0.15), wb);
   }
-  // 粒の全体スケール
-  let gscale;
-  if(heap){ gscale=Math.min(1, Math.sqrt(18/Math.max(1,beads.length))); }
-  else { const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
-    const usable=Math.PI*Math.pow(PLATE_R-0.6,2)*0.62, unit=Math.PI*avgR*avgR;
-    gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length))); }
+  // 皿いっぱいに重ならず密に敷き詰まるサイズに自動調整（密充填）
+  const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
+  const usable=Math.PI*Math.pow(PLATE_R-0.45,2)*0.80, unit=Math.PI*avgR*avgR;
+  const gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length)));
   const bodies=[], meshes=[];
-  beads.forEach((m,idx)=>{
-    const g=SHAPES[m.shape].geo, s=gscale*(0.84+r()*0.12);
-    const rad=g.userData.radius*s*0.96, hh=g.userData.halfH*s;
-    let px,py,pz,q;
-    if(heap){ const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw*0.55); px=Math.cos(ang)*rr; pz=Math.sin(ang)*rr; py=hh+0.3+idx*0.3; q=quat((r()-0.5)*0.5, r()*Math.PI*2, (r()-0.5)*0.5); }
-    else { const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(PLATE_R-0.7); px=Math.cos(ang)*rr; pz=Math.sin(ang)*rr; py=hh+0.04; q=quat(0, r()*Math.PI*2, 0); }
-    let bd=RAPIER.RigidBodyDesc.dynamic().setTranslation(px,py,pz).setRotation(q)
-      .setLinearDamping(heap?0.05:0.4).setAngularDamping(heap?0.7:1.0);
-    if(!heap) bd=bd.lockRotations();
+  beads.forEach((m)=>{
+    const g=SHAPES[m.shape].geo, s=gscale*(0.94+r()*0.05);
+    const rad=g.userData.radius*s, hh=g.userData.halfH*s;     // 実寸コライダー＝重ならない
+    const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw-0.3);      // 皿の縁まで広げて配置
+    const bd=RAPIER.RigidBodyDesc.dynamic()
+      .setTranslation(Math.cos(ang)*rr, hh+0.03, Math.sin(ang)*rr)
+      .setRotation(quat(0, r()*Math.PI*2, 0))
+      .setLinearDamping(0.5).lockRotations();                  // 回転固定＝重ねず平ら
     const body=world.createRigidBody(bd);
-    world.createCollider(RAPIER.ColliderDesc.cylinder(hh,rad).setFriction(0.6).setRestitution(0.0), body);
+    world.createCollider(RAPIER.ColliderDesc.cylinder(hh,rad).setFriction(0.2).setRestitution(0.0), body); // 低摩擦＝滑って密に詰まる
     const me=new THREE.Mesh(g,getMat(m.finish,m.color)); me.scale.setScalar(s); me.castShadow=true;
     group.add(me); bodies.push(body); meshes.push(me);
   });
-  const steps = heap ? 260+beads.length*6 : 150;
+  const steps=240;
   for(let st=0;st<steps;st++) world.step();
   bodies.forEach((b,i)=>{ const t=b.translation(), qq=b.rotation();
     meshes[i].position.set(t.x,t.y,t.z); meshes[i].quaternion.set(qq.x,qq.y,qq.z,qq.w); });
@@ -727,10 +719,6 @@ function renderRegistry(){
 document.getElementById('addProd').onclick=()=>{ products.push({id:pidSeq++,name:'新規商品',comps:[{shape:'octa',finish:'matte',color:'#3C8C82',ratio:100}]}); saveProducts(); renderRegistry(); };
 
 // ===== ハンドラ =====
-function setCam(mode){ if(mode==='heap'){ camera.position.set(0,11,12); controls.target.set(0,0.4,0);} else { camera.position.set(0,14,8); controls.target.set(0,0,0);} controls.update(); }
-const modeFlat=document.getElementById('modeFlat'), modeHeap=document.getElementById('modeHeap');
-function setMode(mode){ layoutMode=mode; modeFlat.classList.toggle('active',mode==='flat'); modeHeap.classList.toggle('active',mode==='heap'); setCam(mode); rebuild(); }
-modeFlat.onclick=()=>setMode('flat'); modeHeap.onclick=()=>setMode('heap');
 document.getElementById('shuffleBtn').onclick=()=>{ seed=(seed*16807+1)&0x7fffffff; rebuild(); };
 const totalRange=document.getElementById('totalRange'), totalVal=document.getElementById('totalVal');
 totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); };
