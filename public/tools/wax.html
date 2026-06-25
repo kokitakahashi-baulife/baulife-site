@@ -57,6 +57,10 @@
   .fcell label{font-size:10px;color:#999;}
   .skuin{font-size:11px;padding:4px 6px;border:1px solid #d8d2c6;border-radius:5px;width:100%;box-sizing:border-box;}
   .frow input.skuin{flex:1;width:auto;}
+  .syncbadge{position:fixed;bottom:10px;left:10px;z-index:30;font-size:11px;padding:4px 11px;border-radius:14px;background:rgba(255,255,255,.93);border:1px solid #e3ddd0;color:#7a5c3a;box-shadow:0 1px 5px rgba(0,0,0,.1);pointer-events:none;}
+  .syncbadge.local{color:#b4502f;border-color:#e3b4ad;}
+  .syncbadge.saving,.syncbadge.loading{color:#999;}
+  .syncbadge:empty{display:none;}
   .editbtn{flex:0 0 auto;padding:5px 14px;border:none;border-radius:6px;background:#7a5c3a;color:#fff;font-size:11px;cursor:pointer;}
   .imgrow{display:flex;gap:10px;margin:8px 0 6px;}
   .imgfig{margin:0;flex:1;text-align:center;min-width:0;}
@@ -100,6 +104,7 @@
   <button id="tabSim" class="tab active">調合シミュレーター</button>
   <button id="tabReg" class="tab">商品登録</button>
 </div>
+<div id="syncStatus" class="syncbadge"></div>
 
 <div id="simView" class="sidebar">
   <p class="sub">左で商品を選ぶ → 右上で選択中を確認・解除 → 右下で比率を調整。</p>
@@ -692,13 +697,36 @@ try{ products=JSON.parse(localStorage.getItem(LSKEY)); }catch(e){ products=null;
 if(!products||!products.length) products=JSON.parse(JSON.stringify(defaultProducts));
 // 旧データの名称を移行（ラメ混色統一＋SKU名のままの商品名を正しい名前に）※手動修正は保持
 const NAMEFIX={'WS-WAX-0063':'フレッシュグリーン','WS-WAX-0064':'マンダリンオレンジ','WS-WAX-0065':'ロイヤルブルー','WS-WAX-0087':'パールグレー','WS-WAX-0088':'偏光パールゴールド','WS-WAX-0124':'フォレストグリーン','WS-WAX-0125':'ローズピンク','WS-WAX-0126':'ウォーターメロンピンク'};
-products.forEach(p=>{
+function migrate(arr){ (arr||[]).forEach(p=>{
   if(p.type==='八角(ラメ混色・白系)'||p.type==='八角(ラメ混色・黒系)') p.type='八角(ラメ混色)';
   if(p.comps) p.comps.forEach(c=>{ if(c.finish==='marbleW'||c.finish==='marbleB') c.finish='marble'; });
   if(NAMEFIX[p.sku] && (!p.name || p.name===p.sku || /^WS-WAX/.test(p.name))) p.name=NAMEFIX[p.sku];
-});
+}); return arr; }
+migrate(products);
 let pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
-function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){} }
+
+// ===== 共有保存（Google Drive／全員で同じデータ） =====
+let pushTimer=null, syncReady=false;
+function setSync(state,by){ const el=document.getElementById('syncStatus'); if(!el)return;
+  const m={loading:'☁ 共有データ取得中…',shared:'☁ 共有中'+(by?'（最終: '+by+'）':''),saving:'☁ 保存中…',saved:'☁ 共有に保存済み',local:'⚠ ローカルのみ（共有未接続）'};
+  el.textContent=m[state]||''; el.className='syncbadge '+state; }
+function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){} schedulePush(); }
+function schedulePush(){ if(!syncReady)return; clearTimeout(pushTimer); setSync('saving'); pushTimer=setTimeout(pushShared,1200); }
+async function pushShared(){ try{
+    const res=await fetch('/api/tools/wax',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({products})});
+    setSync(res.ok?'saved':'local'); }catch(e){ setSync('local'); } }
+function refreshView(){ recipe=recipe.filter(r=>productById(r.pid)); if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; if(recipe.length)normalizeRecipe();
+  if(regView.style.display!=='none') renderRegistry(); else { renderCards(); renderRecipe(); rebuild(); } }
+async function pullShared(){ setSync('loading'); try{
+    const res=await fetch('/api/tools/wax',{headers:{'Accept':'application/json'}});
+    if(!res.ok){ setSync('local'); return; }
+    const data=await res.json();
+    if(Array.isArray(data.products) && data.products.length){
+      products=migrate(data.products); pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
+      try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){}
+      syncReady=true; refreshView(); setSync('shared',data.by);
+    } else { syncReady=true; await pushShared(); setSync('shared'); } // 共有未作成なら現データで初期化
+  }catch(e){ setSync('local'); } }
 function productById(id){ return products.find(p=>p.id===id); }
 let recipe=[ {pid:1,ratio:40}, {pid:11,ratio:30}, {pid:12,ratio:30} ].filter(r=>productById(r.pid));
 if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
@@ -1022,6 +1050,7 @@ totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; up
 totalRange.onchange=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); rebuild(); };
 document.getElementById('saveBtn').onclick=()=>{ renderer.render(scene,camera); const a=document.createElement('a'); a.download='wax-mix.png'; a.href=renderer.domElement.toDataURL('image/png'); a.click(); };
 showTab(location.hash==='#products'?'reg':'sim');
+pullShared(); // 起動時に共有データを取得（あれば全員共通のデータで上書き）
 
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
