@@ -113,7 +113,7 @@
 <div id="mixDock">
   <div class="dockhead">配合（合計100%）</div>
   <div id="mixList"></div>
-  <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="40" value="20"><span id="totalVal">20</span></div>
+  <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="60" value="40"><span id="totalVal">40</span></div>
   <div class="btnrow">
     <button class="act ghost" id="shuffleBtn">再配置</button>
     <button class="act" id="saveBtn">PNG保存</button>
@@ -702,7 +702,7 @@ function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products
 function productById(id){ return products.find(p=>p.id===id); }
 let recipe=[ {pid:1,ratio:40}, {pid:11,ratio:30}, {pid:12,ratio:30} ].filter(r=>productById(r.pid));
 if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
-let total=20, seed=12345;
+let total=40, seed=12345;
 function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
 function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)); return {x:q.x,y:q.y,z:q.z,w:q.w}; }
 
@@ -733,9 +733,9 @@ function rebuild(){
     const rad=g.userData.radius*s*0.9, hh=g.userData.halfH*s;  // 当たり判定を見た目に近づけ、貫通せず当たって止まる
     const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw-0.1);      // 皿の縁まで広げて配置
     const bd=RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(Math.cos(ang)*rr, hh+0.03, Math.sin(ang)*rr)
+      .setTranslation(Math.cos(ang)*rr, hh, Math.sin(ang)*rr)
       .setRotation(quat(0, r()*Math.PI*2, 0))
-      .setLinearDamping(0.5).lockRotations();                  // 回転固定＝重ねず平ら
+      .setLinearDamping(0.5).lockRotations().enabledTranslations(true,false,true); // 回転固定＋Y移動禁止＝上下に乗らない単層
     const body=world.createRigidBody(bd);
     world.createCollider(RAPIER.ColliderDesc.cylinder(hh,rad).setFriction(0.2).setRestitution(0.0), body); // 低摩擦＝滑って密に詰まる
     const me=new THREE.Mesh(g,getMat(m.finish,m.color,m.trans)); me.scale.setScalar(s); me.castShadow=true;
