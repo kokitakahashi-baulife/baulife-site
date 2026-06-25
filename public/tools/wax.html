@@ -531,28 +531,32 @@ function rebuild(){
   world.defaultContactMaterial.restitution=0.0;
   const floor=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
   floor.quaternion.setFromEuler(-Math.PI/2,0,0); world.addBody(floor);
-  const Rw=Math.min(PLATE_R-0.55, Math.max(2.2, Math.sqrt(beads.length)*0.78)); // 皿の内側に収める囲い
-  for(let i=0;i<10;i++){ const a=i/10*Math.PI*2;
+  const Rw=PLATE_R-0.5; // 皿の内側で囲う
+  for(let i=0;i<12;i++){ const a=i/12*Math.PI*2;
     const w=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
     w.quaternion.setFromVectors(new CANNON.Vec3(0,0,1), new CANNON.Vec3(-Math.cos(a),0,-Math.sin(a)));
     w.position.set(Math.cos(a)*Rw,0,Math.sin(a)*Rw); world.addBody(w);
   }
+  // 皿に単層・非重複で収まるよう、粒の全体スケールを自動調整（数が増えるほど小さく）
+  const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length : 1;
+  const usable=Math.PI*Math.pow(PLATE_R-0.6,2)*0.62, unit=Math.PI*avgR*avgR;
+  const gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length)));
   const bodies=[], meshes=[];
-  const Rspawn=Math.min(Rw-0.5, Math.max(1.4, Math.sqrt(beads.length)*0.55)); // 重なり気味に置いて衝突で密に
+  const Rspawn=PLATE_R-0.7;
   beads.forEach((m)=>{
-    const g=SHAPES[m.shape].geo, s=0.82+r()*0.14;
-    const hx=g.userData.radius*s*0.92, hy=g.userData.halfH*s;
+    const g=SHAPES[m.shape].geo, s=gscale*(0.86+r()*0.12);
+    const hx=g.userData.radius*s, hy=g.userData.halfH*s;            // 実寸コライダー＝重ならない
     const body=new CANNON.Body({mass:1, shape:new CANNON.Box(new CANNON.Vec3(hx,hy,hx))});
     const ang=r()*Math.PI*2, rad=Math.sqrt(r())*Rspawn;
-    body.position.set(Math.cos(ang)*rad, hy+0.05, Math.sin(ang)*rad); // 平置き（床の高さに伏せる）
-    body.quaternion.setFromEuler(0, r()*Math.PI*2, 0);                 // 平らなまま向きだけランダム
-    body.fixedRotation=true; body.updateMassProperties();             // 傾かない＝めり込まず単層で押し合う
-    body.linearDamping=0.2;
+    body.position.set(Math.cos(ang)*rad, hy+0.04, Math.sin(ang)*rad);
+    body.quaternion.setFromEuler(0, r()*Math.PI*2, 0);             // 平らなまま向きだけランダム
+    body.fixedRotation=true; body.updateMassProperties();         // 傾かない＝単層
+    body.linearDamping=0.3;
     world.addBody(body);
     const me=new THREE.Mesh(g,getMat(m.finish,m.color)); me.scale.setScalar(s); me.castShadow=true;
     group.add(me); bodies.push(body); meshes.push(me);
   });
-  const steps=170;
+  const steps=150;
   for(let st=0; st<steps; st++) world.step(1/60);
   bodies.forEach((b,i)=>{ meshes[i].position.set(b.position.x,b.position.y,b.position.z);
     meshes[i].quaternion.set(b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w); });
