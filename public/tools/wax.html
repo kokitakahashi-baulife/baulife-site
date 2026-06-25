@@ -555,7 +555,14 @@ const FINISHES={
   gloss:{label:'超光沢ラメ',make:c=>finishStarGloss(c)},
 };
 const matCache={};
-function getMat(fin,color){ const k=fin+'|'+color; if(!matCache[k]) matCache[k]=FINISHES[fin].make(color); return matCache[k]; }
+function getMat(fin,color,trans){ trans=trans||0; const k=fin+'|'+color+'|'+trans;
+  if(!matCache[k]){ const m=FINISHES[fin].make(color);
+    if(trans>0){ m.transmission=Math.min(0.94,trans); m.thickness=0.9; m.ior=1.46;
+      m.attenuationColor=new THREE.Color(color); m.attenuationDistance=1.3;
+      m.roughness=Math.max(0.05,(m.roughness||0.5)*0.5); m.clearcoat=Math.max(m.clearcoat||0,0.4);
+      m.envMapIntensity=Math.max(m.envMapIntensity||1,1.3); }
+    matCache[k]=m; }
+  return matCache[k]; }
 
 // ===== 配合データ =====
 // ===== 商品登録（商品＝素材の％配分リスト。複数素材＝MIX）。ブラウザ保存 =====
@@ -695,7 +702,7 @@ function rebuild(){
   const gb=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0,-0.5,0));
   world.createCollider(RAPIER.ColliderDesc.cuboid(20,0.5,20).setFriction(0.4), gb);
   // 皿の内側いっぱいに囲い
-  const Rw=PLATE_R-0.42;
+  const Rw=PLATE_R-0.28;
   const nW=26, seg=Math.PI*2*Rw/nW*0.62;
   for(let i=0;i<nW;i++){ const a=i/nW*Math.PI*2;
     const wb=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(Math.cos(a)*Rw,1.2,Math.sin(a)*Rw).setRotation(quat(0,-a,0)));
@@ -703,32 +710,29 @@ function rebuild(){
   }
   // 皿いっぱいに重ならず密に敷き詰まるサイズに自動調整（密充填）
   const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
-  const usable=Math.PI*Math.pow(PLATE_R-0.45,2)*0.92, unit=Math.PI*avgR*avgR;
+  const usable=Math.PI*Math.pow(PLATE_R-0.30,2)*1.24, unit=Math.PI*avgR*avgR;
   const gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length)));
   const bodies=[], meshes=[];
   beads.forEach((m)=>{
     const g=SHAPES[m.shape].geo, s=gscale*(0.95+r()*0.04);
-    const rad=g.userData.radius*s*0.86, hh=g.userData.halfH*s;  // 接点を少し重ねて隙間（皿面）を埋める
-    const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw-0.3);      // 皿の縁まで広げて配置
+    const rad=g.userData.radius*s*0.76, hh=g.userData.halfH*s;  // 接点を重ねて隙間（皿面）を埋める＝高密度
+    const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw-0.1);      // 皿の縁まで広げて配置
     const bd=RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(Math.cos(ang)*rr, hh+0.03, Math.sin(ang)*rr)
       .setRotation(quat(0, r()*Math.PI*2, 0))
       .setLinearDamping(0.5).lockRotations();                  // 回転固定＝重ねず平ら
     const body=world.createRigidBody(bd);
     world.createCollider(RAPIER.ColliderDesc.cylinder(hh,rad).setFriction(0.2).setRestitution(0.0), body); // 低摩擦＝滑って密に詰まる
-    const me=new THREE.Mesh(g,getMat(m.finish,m.color)); me.scale.setScalar(s); me.castShadow=true;
+    const me=new THREE.Mesh(g,getMat(m.finish,m.color,m.trans)); me.scale.setScalar(s); me.castShadow=true;
     group.add(me); bodies.push(body); meshes.push(me);
   });
-  const steps=240;
+  const steps=320;
   for(let st=0;st<steps;st++) world.step();
   bodies.forEach((b,i)=>{ const t=b.translation(), qq=b.rotation();
     meshes[i].position.set(t.x,t.y,t.z); meshes[i].quaternion.set(qq.x,qq.y,qq.z,qq.w); });
   world.free();
-  // 皿を粒のかたまりにフィット（空いた縁を無くす＝皿面が見えない）
-  let clusterR=0;
-  meshes.forEach((me,i)=>{ const rad=SHAPES[beads[i].shape].geo.userData.radius*me.scale.x;
-    const d=Math.hypot(me.position.x,me.position.z)+rad; if(d>clusterR) clusterR=d; });
-  const pk=Math.max(0.45,(clusterR+0.35)/PLATE_R); plate.scale.set(pk,1,pk);
+  // 皿サイズは固定（再配置しても皿の大きさは変わらない）。粒は固定の囲い内に高密度で充填
+  plate.scale.set(1,1,1);
 }
 
 // ===== 比率ユーティリティ（合計100%按分） =====
@@ -765,7 +769,7 @@ function resolveBeads(){
   const counts=recipeCounts(), beads=[];
   recipe.forEach((r,i)=>{ const p=productById(r.pid); if(!p||counts[i]<=0)return;
     const split=splitByComps(p,counts[i]);
-    p.comps.forEach((c,ci)=>{ for(let k=0;k<split[ci];k++) beads.push(c); });
+    p.comps.forEach((c,ci)=>{ for(let k=0;k<split[ci];k++) beads.push({shape:c.shape,finish:c.finish,color:c.color,trans:p.trans||0}); });
   });
   return beads;
 }
@@ -792,7 +796,7 @@ const thumbGround=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.Shadow
 thumbGround.rotation.x=-Math.PI/2; thumbGround.receiveShadow=true; thumbScene.add(thumbGround);
 const thumbGroup=new THREE.Group(); thumbScene.add(thumbGroup);
 const thumbCache={};
-function thumbSig(p){ return JSON.stringify(p.comps); }
+function thumbSig(p){ return JSON.stringify([p.comps,p.trans||0]); }
 function makeThumb(p){
   const sig=thumbSig(p); if(thumbCache[sig]) return thumbCache[sig];
   while(thumbGroup.children.length) thumbGroup.remove(thumbGroup.children[0]);
@@ -806,7 +810,7 @@ function makeThumb(p){
     for(let a=0;a<48;a++){ const ang=rr()*Math.PI*2, rad=Math.sqrt(rr())*R; x=Math.cos(ang)*rad; z=Math.sin(ang)*rad;
       if(placed.every(q=>(q[0]-x)*(q[0]-x)+(q[1]-z)*(q[1]-z) >= mind*mind)){ ok=true; break; } }
     if(!ok) return; placed.push([x,z]);
-    const g=SHAPES[c.shape].geo; const me=new THREE.Mesh(g,getMat(c.finish,c.color)); me.scale.setScalar(s);
+    const g=SHAPES[c.shape].geo; const me=new THREE.Mesh(g,getMat(c.finish,c.color,p.trans)); me.scale.setScalar(s);
     me.position.set(x, g.userData.halfH*s, z); me.rotation.y=rr()*Math.PI*2; me.castShadow=true; me.receiveShadow=true; thumbGroup.add(me);
   });
   thumbR.render(thumbScene,thumbCam); const url=thumbR.domElement.toDataURL('image/png'); thumbCache[sig]=url; return url;
@@ -961,6 +965,7 @@ function renderRegistry(){
       const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色'; cr.append(cl);
       p.comps.forEach(c=>{ const sw=document.createElement('span'); sw.className='vsw'; sw.style.background=c.color; cr.append(sw); });
       card.append(cr);
+      if(p.trans>0) field('透け感', vval(Math.round(p.trans*100)+'%'));
     }else{
       // 編集モード
       const txt=(key,ph,after)=>{ const inp=document.createElement('input'); inp.className='skuin'; inp.placeholder=ph; inp.value=p[key]||''; inp.oninput=()=>{p[key]=inp.value; if(after)after(inp.value);}; return inp; };
@@ -975,6 +980,14 @@ function renderRegistry(){
       const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色'; cr.append(cl);
       p.comps.forEach(c=>{ const cc=colInput(c.color,v=>{ c.color=v; invalidateThumb(p); renderRegistry(); }); cr.append(cc); });
       card.append(cr);
+      // 透け感（半透明）
+      const trow=document.createElement('div'); trow.className='frow';
+      const tll=document.createElement('label'); tll.textContent='透け感';
+      const trng=document.createElement('input'); trng.type='range'; trng.min=0; trng.max=100; trng.value=Math.round((p.trans||0)*100); trng.style.flex='1';
+      const tvv=document.createElement('span'); tvv.className='vval'; tvv.style.flex='0 0 auto'; tvv.textContent=trng.value+'%';
+      trng.oninput=()=>{ tvv.textContent=trng.value+'%'; };
+      trng.onchange=()=>{ p.trans=(+trng.value)/100; invalidateThumb(p); renderRegistry(); };
+      trow.append(tll,trng,tvv); card.append(trow);
       const bar=document.createElement('div'); bar.className='savebar';
       const sv=document.createElement('button'); sv.className='save'; sv.textContent='保存'; sv.onclick=()=>saveEdit(p);
       const ca=document.createElement('button'); ca.className='cancel'; ca.textContent='キャンセル'; ca.onclick=()=>cancelEdit(p);
