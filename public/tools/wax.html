@@ -341,8 +341,8 @@ function octaGeoWithRing(){
   const g=solidify(octaShape(0.80), 0.54, 0.085, 0.035, 0.6);
   g.computeBoundingBox(); const topY=g.boundingBox.max.y;
   // 天面の凸リング（実物の⭕️）
-  const ring=new THREE.TorusGeometry(0.46, 0.072, 14, 60);
-  ring.rotateX(Math.PI/2); ring.translate(0, topY-0.045, 0);
+  const ring=new THREE.TorusGeometry(0.60, 0.072, 14, 64);
+  ring.rotateX(Math.PI/2); ring.translate(0, topY-0.04, 0);
   const ringN=ring.toNonIndexed(); ringN.deleteAttribute('uv');
   const gN=g.index? g.toNonIndexed():g; gN.deleteAttribute('uv');
   const m=mergeGeometries([gN,ringN],false); m.computeVertexNormals(); m.userData=g.userData; return m;
