@@ -337,7 +337,17 @@ function blossomGeo(opts){
   return g;
 }
 
-const geoOcta=solidify(octaShape(0.78), 0.52, 0.2, 0.12, 0.58);
+function octaGeoWithRing(){
+  const g=solidify(octaShape(0.78), 0.52, 0.2, 0.12, 0.58);
+  g.computeBoundingBox(); const topY=g.boundingBox.max.y;
+  // 天面の凸リング（実物の⭕️）
+  const ring=new THREE.TorusGeometry(0.46, 0.072, 14, 60);
+  ring.rotateX(Math.PI/2); ring.translate(0, topY-0.045, 0);
+  const ringN=ring.toNonIndexed(); ringN.deleteAttribute('uv');
+  const gN=g.index? g.toNonIndexed():g; gN.deleteAttribute('uv');
+  const m=mergeGeometries([gN,ringN],false); m.computeVertexNormals(); m.userData=g.userData; return m;
+}
+const geoOcta=octaGeoWithRing();
 const geoStar=puffGeo(roundedStarShape(1.5,0.9,5,0.22).getPoints(180), 0.62, 0.5, 20, 160);
 const geoFlower=sunflowerGeo();
 const geoBlossom=blossomGeo();
