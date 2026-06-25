@@ -106,10 +106,10 @@ const pmrem=new THREE.PMREMGenerator(renderer);
 scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
 
 const camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,0.1,100);
-camera.position.set(0,11,12);
+camera.position.set(0,14,8);
 
 const controls=new OrbitControls(camera,canvas);
-controls.target.set(0,0.3,0);
+controls.target.set(0,0,0);
 controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
@@ -531,28 +531,32 @@ function rebuild(){
   world.defaultContactMaterial.restitution=0.0;
   const floor=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
   floor.quaternion.setFromEuler(-Math.PI/2,0,0); world.addBody(floor);
-  // 山にまとめる囲い（皿の内側。低く広い山＝安息角になる広さ）
-  const Rw=Math.min(PLATE_R-0.55, Math.max(2.8, Math.sqrt(beads.length)*0.88));
-  for(let i=0;i<14;i++){ const a=i/14*Math.PI*2;
+  const Rw=PLATE_R-0.5; // 皿の内側で囲う
+  for(let i=0;i<12;i++){ const a=i/12*Math.PI*2;
     const w=new CANNON.Body({mass:0,shape:new CANNON.Plane()});
     w.quaternion.setFromVectors(new CANNON.Vec3(0,0,1), new CANNON.Vec3(-Math.cos(a),0,-Math.sin(a)));
     w.position.set(Math.cos(a)*Rw,0,Math.sin(a)*Rw); world.addBody(w);
   }
-  const gscale=Math.min(1, Math.sqrt(18/Math.max(1,beads.length))); // 多いほど少し小さく（皿に収める）
+  // 皿に単層・非重複で収まるよう、粒の全体スケールを自動調整
+  const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length : 1;
+  const usable=Math.PI*Math.pow(PLATE_R-0.6,2)*0.62, unit=Math.PI*avgR*avgR;
+  const gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length)));
   const bodies=[], meshes=[];
-  beads.forEach((m,idx)=>{
-    const g=SHAPES[m.shape].geo, s=gscale*(0.82+r()*0.12);
-    const hx=g.userData.radius*s, hy=g.userData.halfH*s;
+  const Rspawn=PLATE_R-0.7;
+  beads.forEach((m)=>{
+    const g=SHAPES[m.shape].geo, s=gscale*(0.86+r()*0.12);
+    const hx=g.userData.radius*s, hy=g.userData.halfH*s;            // 実寸コライダー＝重ならない
     const body=new CANNON.Body({mass:1, shape:new CANNON.Box(new CANNON.Vec3(hx,hy,hx))});
-    const ang=r()*Math.PI*2, rad=Math.sqrt(r())*(Rw*0.55);
-    body.position.set(Math.cos(ang)*rad, hy+0.3+idx*0.3, Math.sin(ang)*rad);       // 中央寄りに低く流し落とす
-    body.quaternion.setFromEuler((r()-0.5)*0.5, r()*Math.PI*2, (r()-0.5)*0.5);     // ほぼ平ら＋わずかな傾き
-    body.angularDamping=0.6; body.linearDamping=0.04;                             // 回転は自由＝隙間になじむ
+    const ang=r()*Math.PI*2, rad=Math.sqrt(r())*Rspawn;
+    body.position.set(Math.cos(ang)*rad, hy+0.04, Math.sin(ang)*rad);
+    body.quaternion.setFromEuler(0, r()*Math.PI*2, 0);             // 平らなまま向きだけランダム
+    body.fixedRotation=true; body.updateMassProperties();         // 傾かない＝単層
+    body.linearDamping=0.3;
     world.addBody(body);
     const me=new THREE.Mesh(g,getMat(m.finish,m.color)); me.scale.setScalar(s); me.castShadow=true;
     group.add(me); bodies.push(body); meshes.push(me);
   });
-  const steps=260+beads.length*6;
+  const steps=150;
   for(let st=0; st<steps; st++) world.step(1/60);
   bodies.forEach((b,i)=>{ meshes[i].position.set(b.position.x,b.position.y,b.position.z);
     meshes[i].quaternion.set(b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w); });
