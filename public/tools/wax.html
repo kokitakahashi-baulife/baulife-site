@@ -818,13 +818,15 @@ function rebuild(){
   }
   // 皿いっぱいに重ならず密に敷き詰まるサイズに自動調整（密充填）
   const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
+  const REF=40; // この粒数でお皿が程よく埋まる。粒サイズはこの基準で固定（粒数では変えない）
   const usable=Math.PI*Math.pow(PLATE_R-0.30,2)*0.72, unit=Math.PI*avgR*avgR;
-  const gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length)));
+  const gscale=Math.min(1, Math.sqrt((usable/unit)/REF)); // 固定サイズ（beads.lengthに依存しない）
+  const spawnR=Math.min(Rw-0.1, (Rw-0.1)*Math.sqrt(Math.max(1,beads.length)/REF)); // 粒数に応じて占有面積が変化
   const bodies=[], meshes=[];
   beads.forEach((m)=>{
     const g=SHAPES[m.shape].geo, s=gscale*(0.95+r()*0.04);
     const rad=g.userData.radius*s*0.9, hh=g.userData.halfH*s;  // 当たり判定を見た目に近づけ、貫通せず当たって止まる
-    const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw-0.1);      // 皿の縁まで広げて配置
+    const ang=r()*Math.PI*2, rr=Math.sqrt(r())*spawnR;       // 粒数に応じた範囲に配置（中央寄り→広がる）
     const bd=RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(Math.cos(ang)*rr, hh, Math.sin(ang)*rr)
       .setRotation(quat(0, r()*Math.PI*2, 0))
