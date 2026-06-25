@@ -183,7 +183,7 @@ controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
 // lights
-const key=new THREE.DirectionalLight(0xffffff,0.78);
+const key=new THREE.DirectionalLight(0xffffff,1.05);
 key.position.set(6,10,5);
 key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);
@@ -195,8 +195,8 @@ scene.add(key);
 const fill=new THREE.DirectionalLight(0xffffff,0.04); fill.position.set(-6,4,-3); scene.add(fill);
 // リムライト（粒の輪郭・白×白の分離を出す）
 const rim=new THREE.DirectionalLight(0xffffff,0.06); rim.position.set(-4,6,-7); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.44));
-scene.add(new THREE.AmbientLight(0xffffff,2.0));
+scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.32));
+scene.add(new THREE.AmbientLight(0xffffff,1.18));
 
 // ground (catch soft shadow only, keep bg color)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.3}));
@@ -894,12 +894,12 @@ thumbR.shadowMap.enabled=true; thumbR.shadowMap.type=THREE.PCFSoftShadowMap;
 const thumbScene=new THREE.Scene(); thumbScene.environment=scene.environment;
 thumbScene.background=new THREE.Color('#ffffff');
 const thumbCam=new THREE.PerspectiveCamera(40,1,0.1,100); thumbCam.position.set(0,4.5,3.5); thumbCam.lookAt(0,0.05,0);
-const tdl=new THREE.DirectionalLight(0xffffff,0.78); tdl.position.set(3.5,7,3); tdl.castShadow=true;
+const tdl=new THREE.DirectionalLight(0xffffff,1.05); tdl.position.set(3.5,7,3); tdl.castShadow=true;
 tdl.shadow.mapSize.set(1024,1024); tdl.shadow.camera.near=1; tdl.shadow.camera.far=24;
 tdl.shadow.camera.left=-3; tdl.shadow.camera.right=3; tdl.shadow.camera.top=3; tdl.shadow.camera.bottom=-3;
 tdl.shadow.bias=-0.0004; tdl.shadow.radius=2.2; thumbScene.add(tdl);
-thumbScene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.44));
-thumbScene.add(new THREE.AmbientLight(0xffffff,2.0));
+thumbScene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.32));
+thumbScene.add(new THREE.AmbientLight(0xffffff,1.18));
 const thumbGround=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.ShadowMaterial({opacity:0.26}));
 thumbGround.rotation.x=-Math.PI/2; thumbGround.receiveShadow=true; thumbScene.add(thumbGround);
 const thumbGroup=new THREE.Group(); thumbScene.add(thumbGroup);
