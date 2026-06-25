@@ -98,7 +98,7 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuf
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.0;
+renderer.toneMappingExposure=1.1;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 
@@ -127,7 +127,8 @@ key.shadow.bias=-0.0003;
 key.shadow.radius=7;
 scene.add(key);
 const fill=new THREE.DirectionalLight(0xffffff,0.6); fill.position.set(-6,4,-3); scene.add(fill);
-scene.add(new THREE.HemisphereLight(0xffffff,0x666058,0.5));
+scene.add(new THREE.HemisphereLight(0xffffff,0x9a948c,0.95));
+scene.add(new THREE.AmbientLight(0xffffff,0.25));
 
 // ground (catch soft shadow only, keep bg color)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.16}));
@@ -470,7 +471,7 @@ function shade(hex,f){ const h=hex.replace('#',''); const v=i=>Math.max(0,Math.m
 function marbleOf(base){ return [base, shade(base,0.8), shade(base,1.12), shade(base,0.9)]; }
 
 // A) マット単色（反射ほぼ無し）
-function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:1.0,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.022,envMapIntensity:0.1}); }
+function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.9,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.018,envMapIntensity:0.7}); }
 // B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
 function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.5,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.35,clearcoatRoughness:0.25,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.0}); }
 // C) 星専用：単色ラメ入り 超光沢
@@ -631,7 +632,7 @@ const thumbR=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingB
 thumbR.setSize(150,150); thumbR.setPixelRatio(2); thumbR.toneMapping=THREE.ACESFilmicToneMapping;
 const thumbScene=new THREE.Scene(); thumbScene.environment=scene.environment;
 const thumbCam=new THREE.PerspectiveCamera(40,1,0.1,100); thumbCam.position.set(0,5,4); thumbCam.lookAt(0,0.05,0);
-const tdl=new THREE.DirectionalLight(0xffffff,2.2); tdl.position.set(3,6,3); thumbScene.add(tdl); thumbScene.add(new THREE.HemisphereLight(0xffffff,0x665f55,0.5));
+const tdl=new THREE.DirectionalLight(0xffffff,2.2); tdl.position.set(3,6,3); thumbScene.add(tdl); thumbScene.add(new THREE.HemisphereLight(0xffffff,0x9a948c,0.95)); thumbScene.add(new THREE.AmbientLight(0xffffff,0.25));
 const thumbGroup=new THREE.Group(); thumbScene.add(thumbGroup);
 const thumbCache={};
 function thumbSig(p){ return JSON.stringify(p.comps); }
