@@ -30,6 +30,15 @@
   .mini{flex:0 0 auto;padding:4px 10px;font-size:11px;margin-top:8px;}
   .seg{flex:1;padding:6px;border:1px solid #d8d2c6;background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#777;}
   .seg.active{background:#7a5c3a;color:#fff;border-color:#7a5c3a;}
+  .pcard{position:relative;}
+  .pcard.disabled{opacity:0.35;pointer-events:none;}
+  .cardx{position:absolute;top:3px;right:3px;width:20px;height:20px;border:none;border-radius:50%;background:#7a5c3a;color:#fff;font-size:11px;line-height:20px;text-align:center;cursor:pointer;padding:0;}
+  .selbadge{position:absolute;top:3px;left:3px;background:#7a5c3a;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;}
+  .selcnt{font-weight:normal;font-size:11px;color:#999;margin-left:6px;}
+  .regsearch{flex:1;padding:7px 9px;border:1px solid #d8d2c6;border-radius:7px;font-size:13px;box-sizing:border-box;}
+  #cardSearch{width:100%;margin-bottom:6px;}
+  .regbar{display:flex;gap:8px;margin-bottom:12px;max-width:560px;}
+  .regbar .act{flex:0 0 auto;}
   .mix-row{border:1px solid #e7e2d8;border-radius:8px;padding:8px;margin-bottom:8px;background:#fff;}
   .mr-top{display:flex;gap:5px;align-items:center;}
   .mr-top select{flex:1;font-size:12px;padding:3px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;min-width:0;}
@@ -61,7 +70,8 @@
 
 <div id="simView" class="sidebar">
   <p class="sub">商品カードを選んで調合 → お皿に流し出した見た目で確認。ドラッグで回転・ホイールでズーム。</p>
-  <div class="seclabel">商品（クリックで追加／解除）</div>
+  <div class="seclabel">商品（クリックで選択／解除）<span class="selcnt">選択 <span id="selCount">0</span>/6種</span></div>
+  <input id="cardSearch" class="regsearch" placeholder="商品名で検索…">
   <div id="cardGrid" class="cardgrid"></div>
   <div class="seclabel">配合（合計100%）</div>
   <div id="mixList"></div>
@@ -73,10 +83,10 @@
 </div>
 
 <div id="regView" class="page" style="display:none">
-  <h2>商品登録</h2>
-  <p class="sub">仕入れ可能なワックスを「商品」として登録します。色・形・素材を％配分で自由に作成（複数素材を入れればMIX）。登録はこのブラウザに保存されます。</p>
+  <h2>商品登録 <span class="selcnt"><span id="regCount"></span></span></h2>
+  <p class="sub">色・形・素材を％配分で自由に作成（複数素材＝MIX）。登録はこのブラウザに保存されます。</p>
+  <div class="regbar"><input id="regSearch" class="regsearch" placeholder="商品名・SKUで検索…"><button class="act" id="addProd">＋ 商品を追加</button></div>
   <div id="regList"></div>
-  <div class="btnrow"><button class="act" id="addProd">＋ 商品を追加</button></div>
 </div>
 <script type="importmap">
 {"imports":{
@@ -622,7 +632,7 @@ if(!products||!products.length) products=JSON.parse(JSON.stringify(defaultProduc
 let pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
 function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){} }
 function productById(id){ return products.find(p=>p.id===id); }
-let recipe=[ {pid:1,ratio:40}, {pid:2,ratio:30}, {pid:5,ratio:30} ].filter(r=>productById(r.pid));
+let recipe=[ {pid:1,ratio:40}, {pid:11,ratio:30}, {pid:12,ratio:30} ].filter(r=>productById(r.pid));
 if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
 let total=20, seed=12345;
 function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
@@ -754,17 +764,34 @@ document.getElementById('tabReg').onclick=()=>showTab('reg');
 
 // ===== 調合：商品カード =====
 const cardGrid=document.getElementById('cardGrid');
+const MAXCOMP=6;
+function usedComps(){ return recipe.reduce((a,r)=>{const p=productById(r.pid);return a+(p?p.comps.length:0);},0); }
+function removeFromRecipe(pid){ recipe=recipe.filter(r=>r.pid!==pid); if(recipe.length)normalizeRecipe(); renderCards(); renderRecipe(); rebuild(); }
 function renderCards(){
   cardGrid.innerHTML='';
-  products.forEach(p=>{
-    const card=document.createElement('div'); card.className='pcard'+(recipe.find(r=>r.pid===p.id)?' sel':'');
+  const used=usedComps();
+  const sc=document.getElementById('selCount'); if(sc) sc.textContent=used;
+  const q=(document.getElementById('cardSearch')?.value||'').trim().toLowerCase();
+  const list=q? products.filter(p=>p.name.toLowerCase().includes(q) || recipe.find(r=>r.pid===p.id)) : products;
+  list.forEach(p=>{
+    const isSel=!!recipe.find(r=>r.pid===p.id);
+    const exceed=!isSel && (used+p.comps.length>MAXCOMP);
+    const card=document.createElement('div'); card.className='pcard'+(isSel?' sel':'')+(exceed?' disabled':'');
     const img=document.createElement('img'); img.className='pthumb'; img.src=makeThumb(p);
     const nm=document.createElement('div'); nm.className='pcname'; nm.textContent=p.name;
     card.append(img,nm);
-    card.onclick=()=>{ const ex=recipe.find(r=>r.pid===p.id);
-      if(ex){ if(recipe.length>1){ recipe=recipe.filter(r=>r!==ex); normalizeRecipe(); } }
-      else { const w=100/(recipe.length+1); recipe.forEach(r=>r.ratio*=(100-w)/100); recipe.push({pid:p.id,ratio:w}); }
-      renderCards(); renderRecipe(); rebuild(); };
+    if(isSel){
+      const x=document.createElement('button'); x.className='cardx'; x.textContent='✕';
+      x.onclick=(e)=>{ e.stopPropagation(); removeFromRecipe(p.id); };
+      const bdg=document.createElement('div'); bdg.className='selbadge'; bdg.textContent='✓選択中';
+      card.append(x,bdg);
+    }
+    card.onclick=()=>{
+      if(isSel){ removeFromRecipe(p.id); return; }
+      if(used+p.comps.length>MAXCOMP) return;            // 最大6種（絵柄入りは3種）
+      const w=100/(recipe.length+1); recipe.forEach(r=>r.ratio*=(100-w)/100); recipe.push({pid:p.id,ratio:w});
+      renderCards(); renderRecipe(); rebuild();
+    };
     cardGrid.append(card);
   });
 }
@@ -780,7 +807,7 @@ function renderRecipe(){
     const top=document.createElement('div'); top.className='mr-top';
     const nm=document.createElement('span'); nm.className='rprod'; nm.textContent=p.name;
     const del=document.createElement('button'); del.className='del'; del.textContent='✕';
-    del.onclick=()=>{ if(recipe.length<=1)return; recipe.splice(idx,1); normalizeRecipe(); renderCards(); renderRecipe(); rebuild(); };
+    del.onclick=()=>{ recipe.splice(idx,1); if(recipe.length)normalizeRecipe(); renderCards(); renderRecipe(); rebuild(); };
     top.append(nm,del);
     const rng=document.createElement('input'); rng.type='range'; rng.min=0;rng.max=100;rng.value=Math.round(r.ratio);
     const rv=document.createElement('span'); rv.className='rv'; const cnt=document.createElement('span'); cnt.className='cnt';
@@ -813,7 +840,10 @@ function compRow(p,c,ci){
 }
 function renderRegistry(){
   regEl.innerHTML='';
-  products.forEach(p=>{
+  const q=(document.getElementById('regSearch')?.value||'').trim().toLowerCase();
+  const list=q? products.filter(p=>p.name.toLowerCase().includes(q)) : products;
+  const cnt=document.getElementById('regCount'); if(cnt) cnt.textContent=list.length+'/'+products.length;
+  list.forEach(p=>{
     const card=document.createElement('div'); card.className='regcard';
     const head=document.createElement('div'); head.className='reg-head';
     const img=document.createElement('img'); img.className='pthumb sm'; img.src=makeThumb(p);
@@ -828,6 +858,8 @@ function renderRegistry(){
   });
 }
 document.getElementById('addProd').onclick=()=>{ products.push({id:pidSeq++,name:'新規商品',comps:[{shape:'octa',finish:'matte',color:'#3C8C82',ratio:100}]}); saveProducts(); renderRegistry(); };
+document.getElementById('cardSearch').oninput=()=>renderCards();
+document.getElementById('regSearch').oninput=()=>renderRegistry();
 
 // ===== ハンドラ =====
 document.getElementById('shuffleBtn').onclick=()=>{ seed=(seed*16807+1)&0x7fffffff; rebuild(); };
