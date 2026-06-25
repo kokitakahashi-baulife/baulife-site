@@ -45,6 +45,14 @@
   #selBar .selitem .x{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border:none;border-radius:50%;background:#7a5c3a;color:#fff;font-size:10px;line-height:18px;text-align:center;cursor:pointer;padding:0;}
   #mixDock{position:fixed;bottom:14px;right:14px;width:290px;max-height:64vh;overflow-y:auto;background:rgba(255,255,255,.96);border:1px solid #eee;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.13);padding:12px;z-index:9;box-sizing:border-box;}
   #mixDock .dockhead{font-size:12px;font-weight:bold;color:#7a5c3a;margin-bottom:8px;}
+  .frow{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;}
+  .frow>label{font-size:11px;color:#888;width:60px;flex:0 0 auto;}
+  .frow select{flex:1;font-size:12px;padding:4px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;}
+  .frow input[type=color]{width:34px;height:27px;padding:0;border:1px solid #d8d2c6;border-radius:5px;background:#fff;}
+  .frow2{display:flex;gap:8px;margin-top:7px;}
+  .fcell{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .fcell label{font-size:10px;color:#999;}
+  .skuin{font-size:11px;padding:4px 6px;border:1px solid #d8d2c6;border-radius:5px;width:100%;box-sizing:border-box;}
   .mix-row{border:1px solid #e7e2d8;border-radius:8px;padding:8px;margin-bottom:8px;background:#fff;}
   .mr-top{display:flex;gap:5px;align-items:center;}
   .mr-top select{flex:1;font-size:12px;padding:3px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;min-width:0;}
@@ -524,118 +532,118 @@ function getMat(fin,color){ const k=fin+'|'+color; if(!matCache[k]) matCache[k]=
 
 // ===== 配合データ =====
 // ===== 商品登録（商品＝素材の％配分リスト。複数素材＝MIX）。ブラウザ保存 =====
-const LSKEY='waxProductsV5';
+const LSKEY='waxProductsV6';
 // 絵柄入り（3色入り）= 3色を抽出し 蜂/クローバー/イチョウ に33.3%ずつ割当（色はPDF画像から読取り）
 const defaultProducts=[
-{id:1,name:'ピーチマンゴー（WS-WAX-0016）',comps:[{shape:'bee',finish:'matte',color:'#E0A632',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#CA7919',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#EEC262',ratio:33}]},
-{id:2,name:'チェリー（WS-WAX-0017）',comps:[{shape:'bee',finish:'matte',color:'#D5A19D',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#E3BFC4',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#F6F4EF',ratio:33}]},
-{id:3,name:'ユニコーン（WS-WAX-0018）',comps:[{shape:'bee',finish:'matte',color:'#F1E4C8',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#917FBA',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#DDBC7D',ratio:33}]},
-{id:4,name:'ベリー（WS-WAX-0019）',comps:[{shape:'bee',finish:'matte',color:'#D5B5AE',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#EDEAE7',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#C79188',ratio:33}]},
-{id:5,name:'サンドビーチ（WS-WAX-0020）',comps:[{shape:'bee',finish:'matte',color:'#A2C1E7',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#F0DEB9',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#6693C2',ratio:33}]},
-{id:6,name:'ライムミント（WS-WAX-0021）',comps:[{shape:'bee',finish:'matte',color:'#CCD3B3',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#BDC486',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#A0A763',ratio:33}]},
-{id:7,name:'ビター（WS-WAX-0022）',comps:[{shape:'bee',finish:'matte',color:'#DBAE8C',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#F3D8BA',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#865132',ratio:33}]},
-{id:8,name:'ペールブルー（WS-WAX-0023）',comps:[{shape:'bee',finish:'matte',color:'#EDF1D7',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#CDD0DF',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#BABAA4',ratio:33}]},
-{id:9,name:'ソーダ（WS-WAX-0024）',comps:[{shape:'bee',finish:'matte',color:'#CDE3EA',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#A6C4CB',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#8AACB5',ratio:33}]},
-{id:10,name:'フレッシュオレンジ（WS-WAX-0025）',comps:[{shape:'bee',finish:'matte',color:'#FCF6CC',ratio:34},{shape:'clover',finish:'glitterSolid',color:'#EBC374',ratio:33},{shape:'fan',finish:'glitterSolid',color:'#D9AA4C',ratio:33}]},
-{id:11,name:'スノーホワイト（WS-WAX-0046）',comps:[{shape:'octa',finish:'matte',color:'#DBD4D6',ratio:100}]},
-{id:12,name:'ライトピンク（WS-WAX-0047）',comps:[{shape:'octa',finish:'matte',color:'#EBBBCD',ratio:100}]},
-{id:13,name:'クリアスカイ（WS-WAX-0048）',comps:[{shape:'octa',finish:'matte',color:'#3269B2',ratio:100}]},
-{id:14,name:'ベイビーブルー（WS-WAX-0049）',comps:[{shape:'octa',finish:'matte',color:'#5FA3EC',ratio:100}]},
-{id:15,name:'ペールレモン（WS-WAX-0050）',comps:[{shape:'octa',finish:'matte',color:'#E9BF61',ratio:100}]},
-{id:16,name:'フレッシュミント（WS-WAX-0051）',comps:[{shape:'octa',finish:'matte',color:'#8AC2C0',ratio:100}]},
-{id:17,name:'ソフトラベンダー（WS-WAX-0052）',comps:[{shape:'octa',finish:'matte',color:'#B1A0C7',ratio:100}]},
-{id:18,name:'スプリンググリーン（WS-WAX-0053）',comps:[{shape:'octa',finish:'matte',color:'#95D58F',ratio:100}]},
-{id:19,name:'イエロー（WS-WAX-0054）',comps:[{shape:'octa',finish:'matte',color:'#F1AC00',ratio:100}]},
-{id:20,name:'アッシュグレー（WS-WAX-0055）',comps:[{shape:'octa',finish:'matte',color:'#BDB9BF',ratio:100}]},
-{id:21,name:'トゥルーブルー（WS-WAX-0056）',comps:[{shape:'octa',finish:'matte',color:'#1B4AB6',ratio:100}]},
-{id:22,name:'ディープブルー（WS-WAX-0057）',comps:[{shape:'octa',finish:'matte',color:'#242F91',ratio:100}]},
-{id:23,name:'モスグリーン（WS-WAX-0058）',comps:[{shape:'octa',finish:'matte',color:'#094258',ratio:100}]},
-{id:24,name:'クラシックレッド（WS-WAX-0059）',comps:[{shape:'octa',finish:'matte',color:'#930A0C',ratio:100}]},
-{id:25,name:'コーラルヴェール（WS-WAX-0060）',comps:[{shape:'octa',finish:'matte',color:'#DC7465',ratio:100}]},
-{id:26,name:'ホットピンク（WS-WAX-0061）',comps:[{shape:'octa',finish:'matte',color:'#FA2471',ratio:100}]},
-{id:27,name:'ココアブラウン（WS-WAX-0062）',comps:[{shape:'octa',finish:'matte',color:'#685357',ratio:100}]},
-{id:28,name:'WS-WAX-0063（WS-WAX-0063）',comps:[{shape:'octa',finish:'matte',color:'#00A769',ratio:100}]},
-{id:29,name:'WS-WAX-0064（WS-WAX-0064）',comps:[{shape:'octa',finish:'matte',color:'#C63100',ratio:100}]},
-{id:30,name:'WS-WAX-0065（WS-WAX-0065）',comps:[{shape:'octa',finish:'matte',color:'#29438B',ratio:100}]},
-{id:31,name:'スカイブルー（WS-WAX-0066）',comps:[{shape:'octa',finish:'matte',color:'#356DAC',ratio:100}]},
-{id:32,name:'ライトブルー（WS-WAX-0067）',comps:[{shape:'octa',finish:'matte',color:'#32A0E0',ratio:100}]},
-{id:33,name:'アクアマリン（WS-WAX-0068）',comps:[{shape:'octa',finish:'matte',color:'#0C567B',ratio:100}]},
-{id:34,name:'ナイルブルー（WS-WAX-0069）',comps:[{shape:'octa',finish:'matte',color:'#407384',ratio:100}]},
-{id:35,name:'オリーブ（WS-WAX-0070）',comps:[{shape:'octa',finish:'matte',color:'#415A71',ratio:100}]},
-{id:36,name:'エメラルドグリーン（WS-WAX-0071）',comps:[{shape:'octa',finish:'matte',color:'#008B86',ratio:100}]},
-{id:37,name:'グリーン（WS-WAX-0072）',comps:[{shape:'octa',finish:'matte',color:'#349231',ratio:100}]},
-{id:38,name:'リーフグリーン（WS-WAX-0073）',comps:[{shape:'octa',finish:'matte',color:'#787D1D',ratio:100}]},
-{id:39,name:'カーキ（WS-WAX-0074）',comps:[{shape:'octa',finish:'matte',color:'#968150',ratio:100}]},
-{id:40,name:'ブラウン（WS-WAX-0075）',comps:[{shape:'octa',finish:'matte',color:'#AB7C5F',ratio:100}]},
-{id:41,name:'キャラメル（WS-WAX-0076）',comps:[{shape:'octa',finish:'matte',color:'#C9802C',ratio:100}]},
-{id:42,name:'アメジスト（WS-WAX-0077）',comps:[{shape:'octa',finish:'matte',color:'#9D6991',ratio:100}]},
-{id:43,name:'ピュアパープル（WS-WAX-0078）',comps:[{shape:'octa',finish:'matte',color:'#6F57AE',ratio:100}]},
-{id:44,name:'ワインレッド（WS-WAX-0079）',comps:[{shape:'octa',finish:'matte',color:'#722C4C',ratio:100}]},
-{id:45,name:'テラコッタ（WS-WAX-0080）',comps:[{shape:'octa',finish:'matte',color:'#A24634',ratio:100}]},
-{id:46,name:'ボルドー（WS-WAX-0081）',comps:[{shape:'octa',finish:'matte',color:'#8E3940',ratio:100}]},
-{id:47,name:'ローズピンク（WS-WAX-0082）',comps:[{shape:'octa',finish:'matte',color:'#B93D69',ratio:100}]},
-{id:48,name:'ルージュ（WS-WAX-0083）',comps:[{shape:'octa',finish:'matte',color:'#C8382F',ratio:100}]},
-{id:49,name:'サーモンピンク（WS-WAX-0084）',comps:[{shape:'octa',finish:'matte',color:'#C2644E',ratio:100}]},
-{id:50,name:'シェルグレー（WS-WAX-0085）',comps:[{shape:'octa',finish:'matte',color:'#B0A59E',ratio:100}]},
-{id:51,name:'シルバー（WS-WAX-0086）',comps:[{shape:'octa',finish:'matte',color:'#D8D7DF',ratio:100}]},
-{id:52,name:'WS-WAX-0087（WS-WAX-0087）',comps:[{shape:'octa',finish:'marble',color:'#C5B5B9',ratio:100}]},
-{id:53,name:'WS-WAX-0088（WS-WAX-0088）',comps:[{shape:'octa',finish:'marble',color:'#CDC5A2',ratio:100}]},
-{id:54,name:'ロイヤルブルー（WS-WAX-0097）',comps:[{shape:'star',finish:'gloss',color:'#1A2B82',ratio:100}]},
-{id:55,name:'ネイビーブルー（WS-WAX-0098）',comps:[{shape:'star',finish:'gloss',color:'#163D67',ratio:100}]},
-{id:56,name:'アイスパープル（WS-WAX-0099）',comps:[{shape:'star',finish:'gloss',color:'#58559C',ratio:100}]},
-{id:57,name:'セルリアンブルー（WS-WAX-0100）',comps:[{shape:'star',finish:'gloss',color:'#1D5FA5',ratio:100}]},
-{id:58,name:'スカイブルー（WS-WAX-0101）',comps:[{shape:'star',finish:'gloss',color:'#7DBBD2',ratio:100}]},
-{id:59,name:'アクアブルー（WS-WAX-0102）',comps:[{shape:'star',finish:'gloss',color:'#458C94',ratio:100}]},
-{id:60,name:'ダスティブルースモーキーラベンダー（WS-WAX-0103）',comps:[{shape:'star',finish:'gloss',color:'#618CBB',ratio:100}]},
-{id:61,name:'スモーキーラベンダー（WS-WAX-0104）',comps:[{shape:'star',finish:'gloss',color:'#8C9ABE',ratio:100}]},
-{id:62,name:'アイスブルー（WS-WAX-0105）',comps:[{shape:'star',finish:'gloss',color:'#8EBEC8',ratio:100}]},
-{id:63,name:'ライラック（WS-WAX-0106）',comps:[{shape:'star',finish:'gloss',color:'#B1ABC1',ratio:100}]},
-{id:64,name:'ジェイドグリーン（WS-WAX-0107）',comps:[{shape:'star',finish:'gloss',color:'#9BC4AC',ratio:100}]},
-{id:65,name:'タロパープル（WS-WAX-0108）',comps:[{shape:'star',finish:'gloss',color:'#B7A5BA',ratio:100}]},
-{id:66,name:'パールピンク（WS-WAX-0109）',comps:[{shape:'star',finish:'gloss',color:'#E57D89',ratio:100}]},
-{id:67,name:'コーラルローズ（WS-WAX-0110）',comps:[{shape:'star',finish:'gloss',color:'#964946',ratio:100}]},
-{id:68,name:'アプリコットベージュ（WS-WAX-0111）',comps:[{shape:'star',finish:'gloss',color:'#BD6E59',ratio:100}]},
-{id:69,name:'ローズゴールドアンティークブロンズ（WS-WAX-0112）',comps:[{shape:'star',finish:'gloss',color:'#AB6E71',ratio:100}]},
-{id:70,name:'アンティークブロンズ（WS-WAX-0113）',comps:[{shape:'star',finish:'gloss',color:'#644A25',ratio:100}]},
-{id:71,name:'オリーブゴールド（WS-WAX-0114）',comps:[{shape:'star',finish:'gloss',color:'#5C5D2A',ratio:100}]},
-{id:72,name:'バブルガムピンク（WS-WAX-0115）',comps:[{shape:'star',finish:'gloss',color:'#DD7CA6',ratio:100}]},
-{id:73,name:'ワインレッド（WS-WAX-0116）',comps:[{shape:'star',finish:'gloss',color:'#863234',ratio:100}]},
-{id:74,name:'ブリックレッド（WS-WAX-0117）',comps:[{shape:'star',finish:'gloss',color:'#670D08',ratio:100}]},
-{id:75,name:'レッド（WS-WAX-0118）',comps:[{shape:'star',finish:'gloss',color:'#700300',ratio:100}]},
-{id:76,name:'プラムパープル（WS-WAX-0119）',comps:[{shape:'star',finish:'gloss',color:'#4A1029',ratio:100}]},
-{id:77,name:'コーヒーブラウン（WS-WAX-0120）',comps:[{shape:'star',finish:'gloss',color:'#6E4F3F',ratio:100}]},
-{id:78,name:'クレイグレー（WS-WAX-0121）',comps:[{shape:'star',finish:'gloss',color:'#77858D',ratio:100}]},
-{id:79,name:'ミントグリーン（WS-WAX-0122）',comps:[{shape:'star',finish:'gloss',color:'#578862',ratio:100}]},
-{id:80,name:'ティールグリーン（WS-WAX-0123）',comps:[{shape:'star',finish:'gloss',color:'#114747',ratio:100}]},
-{id:81,name:'WS-WAX-0124（WS-WAX-0124）',comps:[{shape:'octa',finish:'matte',color:'#003C37',ratio:100}]},
-{id:82,name:'WS-WAX-0125（WS-WAX-0125）',comps:[{shape:'octa',finish:'matte',color:'#8D1F50',ratio:100}]},
-{id:83,name:'WS-WAX-0126（WS-WAX-0126）',comps:[{shape:'octa',finish:'matte',color:'#C12E47',ratio:100}]},
-{id:84,name:'ウィステリア（WS-WAX-0127）',comps:[{shape:'star',finish:'gloss',color:'#7878A4',ratio:100}]},
-{id:85,name:'ロイヤルパープル（WS-WAX-0128）',comps:[{shape:'star',finish:'gloss',color:'#2F0C5D',ratio:100}]},
-{id:86,name:'ミッドナイトブルー（WS-WAX-0129）',comps:[{shape:'star',finish:'gloss',color:'#0F0D40',ratio:100}]},
-{id:87,name:'サクラピンク（WS-WAX-0130）',comps:[{shape:'star',finish:'gloss',color:'#E7A9B7',ratio:100}]},
-{id:88,name:'ブラッシュピンク（WS-WAX-0131）',comps:[{shape:'star',finish:'gloss',color:'#CD8E93',ratio:100}]},
-{id:89,name:'クリームホワイト（WS-WAX-0132）',comps:[{shape:'star',finish:'gloss',color:'#DFC7AB',ratio:100}]},
-{id:90,name:'クラシックゴールド（WS-WAX-0133）',comps:[{shape:'star',finish:'gloss',color:'#8D560C',ratio:100}]},
-{id:91,name:'パールイエロー（WS-WAX-0134）',comps:[{shape:'star',finish:'gloss',color:'#CDA83C',ratio:100}]},
-{id:92,name:'バーガンディ（WS-WAX-0135）',comps:[{shape:'star',finish:'gloss',color:'#3E130E',ratio:100}]},
-{id:93,name:'シルバー（WS-WAX-0136）',comps:[{shape:'star',finish:'gloss',color:'#A7AFAB',ratio:100}]},
-{id:94,name:'パールホワイト（WS-WAX-0137）',comps:[{shape:'star',finish:'gloss',color:'#DBD7D4',ratio:100}]},
-{id:95,name:'イリディセントゴールド（WS-WAX-0138）',comps:[{shape:'star',finish:'gloss',color:'#D3C493',ratio:100}]},
-{id:96,name:'アイボリーパールイリディセントライラック（WS-WAX-0139）',comps:[{shape:'star',finish:'gloss',color:'#DEC68A',ratio:100}]},
-{id:97,name:'イリディセントライラック（WS-WAX-0140）',comps:[{shape:'star',finish:'gloss',color:'#B4B0DC',ratio:100}]},
-{id:98,name:'ウィローグリーン（WS-WAX-0152）',comps:[{shape:'star',finish:'gloss',color:'#AEB150',ratio:100}]},
-{id:99,name:'フレッシュオレンジ（WS-WAX-0153）',comps:[{shape:'star',finish:'gloss',color:'#C85712',ratio:100}]},
-{id:100,name:'ブライトイエロー（WS-WAX-0154）',comps:[{shape:'star',finish:'gloss',color:'#CA9B00',ratio:100}]},
-{id:101,name:'エメラルドグリーン（WS-WAX-0155）',comps:[{shape:'star',finish:'gloss',color:'#96AF42',ratio:100}]},
-{id:102,name:'トランスルーセントホワイト（WS-WAX-0156）',comps:[{shape:'star',finish:'gloss',color:'#D1D0C3',ratio:100}]},
-{id:103,name:'ピュアゴールド（WS-WAX-0157）',comps:[{shape:'star',finish:'gloss',color:'#BB8D41',ratio:100}]},
-{id:104,name:'シャンパンゴールド（WS-WAX-0158）',comps:[{shape:'star',finish:'gloss',color:'#AF9EA3',ratio:100}]},
-{id:105,name:'ディープティール（WS-WAX-0159）',comps:[{shape:'star',finish:'gloss',color:'#009386',ratio:100}]},
-{id:106,name:'ジェリーイエロー（WS-WAX-0160）',comps:[{shape:'star',finish:'gloss',color:'#E2CF6F',ratio:100}]},
-{id:107,name:'ライトオレンジ（WS-WAX-0161）',comps:[{shape:'star',finish:'gloss',color:'#CC9A64',ratio:100}]},
-{id:108,name:'ジェリーピンク（WS-WAX-0162）',comps:[{shape:'star',finish:'gloss',color:'#E5ADB9',ratio:100}]},
-{id:109,name:'ティーグリーン（WS-WAX-0163）',comps:[{shape:'star',finish:'gloss',color:'#617725',ratio:100}]}
+{id:1,type:'絵柄入り',name:'ピーチマンゴー',sku:'WS-WAX-0016',psku:'PW-WG23722-10',comps:[{shape:'bee',finish:'matte',color:'#E0A632',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#CA7919',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#EEC262',ratio:33}]},
+{id:2,type:'絵柄入り',name:'チェリー',sku:'WS-WAX-0017',psku:'PW-WG23722-09',comps:[{shape:'bee',finish:'matte',color:'#D5A19D',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#E3BFC4',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#F6F4EF',ratio:33}]},
+{id:3,type:'絵柄入り',name:'ユニコーン',sku:'WS-WAX-0018',psku:'PW-WG23722-08',comps:[{shape:'bee',finish:'matte',color:'#F1E4C8',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#917FBA',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#DDBC7D',ratio:33}]},
+{id:4,type:'絵柄入り',name:'ベリー',sku:'WS-WAX-0019',psku:'PW-WG23722-07',comps:[{shape:'bee',finish:'matte',color:'#D5B5AE',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#EDEAE7',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#C79188',ratio:33}]},
+{id:5,type:'絵柄入り',name:'サンドビーチ',sku:'WS-WAX-0020',psku:'PW-WG23722-06',comps:[{shape:'bee',finish:'matte',color:'#A2C1E7',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#F0DEB9',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#6693C2',ratio:33}]},
+{id:6,type:'絵柄入り',name:'ライムミント',sku:'WS-WAX-0021',psku:'PW-WG23722-05',comps:[{shape:'bee',finish:'matte',color:'#CCD3B3',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#BDC486',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#A0A763',ratio:33}]},
+{id:7,type:'絵柄入り',name:'ビター',sku:'WS-WAX-0022',psku:'PW-WG23722-04',comps:[{shape:'bee',finish:'matte',color:'#DBAE8C',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#F3D8BA',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#865132',ratio:33}]},
+{id:8,type:'絵柄入り',name:'ペールブルー',sku:'WS-WAX-0023',psku:'PW-WG23722-03',comps:[{shape:'bee',finish:'matte',color:'#EDF1D7',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#CDD0DF',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#BABAA4',ratio:33}]},
+{id:9,type:'絵柄入り',name:'ソーダ',sku:'WS-WAX-0024',psku:'PW-WG23722-01',comps:[{shape:'bee',finish:'matte',color:'#CDE3EA',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#A6C4CB',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#8AACB5',ratio:33}]},
+{id:10,type:'絵柄入り',name:'フレッシュオレンジ',sku:'WS-WAX-0025',psku:'PW-WG23722-02',comps:[{shape:'bee',finish:'matte',color:'#FCF6CC',ratio:34},{shape:'fan',finish:'glitterSolid',color:'#EBC374',ratio:33},{shape:'blossom',finish:'glitterSolid',color:'#D9AA4C',ratio:33}]},
+{id:11,type:'八角(マット)',name:'スノーホワイト',sku:'WS-WAX-0046',psku:'DIY-E033-A13',comps:[{shape:'octa',finish:'matte',color:'#DBD4D6',ratio:100}]},
+{id:12,type:'八角(マット)',name:'ライトピンク',sku:'WS-WAX-0047',psku:'DIY-B003-19',comps:[{shape:'octa',finish:'matte',color:'#EBBBCD',ratio:100}]},
+{id:13,type:'八角(マット)',name:'クリアスカイ',sku:'WS-WAX-0048',psku:'DIY-L041-A02',comps:[{shape:'octa',finish:'matte',color:'#3269B2',ratio:100}]},
+{id:14,type:'八角(マット)',name:'ベイビーブルー',sku:'WS-WAX-0049',psku:'DIY-E033-A52',comps:[{shape:'octa',finish:'matte',color:'#5FA3EC',ratio:100}]},
+{id:15,type:'八角(マット)',name:'ペールレモン',sku:'WS-WAX-0050',psku:'DIY-B003-13',comps:[{shape:'octa',finish:'matte',color:'#E9BF61',ratio:100}]},
+{id:16,type:'八角(マット)',name:'フレッシュミント',sku:'WS-WAX-0051',psku:'DIY-B003-25',comps:[{shape:'octa',finish:'matte',color:'#8AC2C0',ratio:100}]},
+{id:17,type:'八角(マット)',name:'ソフトラベンダー',sku:'WS-WAX-0052',psku:'DIY-B003-14',comps:[{shape:'octa',finish:'matte',color:'#B1A0C7',ratio:100}]},
+{id:18,type:'八角(マット)',name:'スプリンググリーン',sku:'WS-WAX-0053',psku:'DIY-L041-A01',comps:[{shape:'octa',finish:'matte',color:'#95D58F',ratio:100}]},
+{id:19,type:'八角(マット)',name:'イエロー',sku:'WS-WAX-0054',psku:'DIY-E033-A28',comps:[{shape:'octa',finish:'matte',color:'#F1AC00',ratio:100}]},
+{id:20,type:'八角(マット)',name:'アッシュグレー',sku:'WS-WAX-0055',psku:'DIY-B003-05',comps:[{shape:'octa',finish:'matte',color:'#BDB9BF',ratio:100}]},
+{id:21,type:'八角(マット)',name:'トゥルーブルー',sku:'WS-WAX-0056',psku:'DIY-E033-A05',comps:[{shape:'octa',finish:'matte',color:'#1B4AB6',ratio:100}]},
+{id:22,type:'八角(マット)',name:'ディープブルー',sku:'WS-WAX-0057',psku:'DIY-B003-15',comps:[{shape:'octa',finish:'matte',color:'#242F91',ratio:100}]},
+{id:23,type:'八角(マット)',name:'モスグリーン',sku:'WS-WAX-0058',psku:'DIY-B003-21',comps:[{shape:'octa',finish:'matte',color:'#094258',ratio:100}]},
+{id:24,type:'八角(マット)',name:'クラシックレッド',sku:'WS-WAX-0059',psku:'DIY-E033-A18',comps:[{shape:'octa',finish:'matte',color:'#930A0C',ratio:100}]},
+{id:25,type:'八角(マット)',name:'コーラルヴェール',sku:'WS-WAX-0060',psku:'DIY-B003-22',comps:[{shape:'octa',finish:'matte',color:'#DC7465',ratio:100}]},
+{id:26,type:'八角(マット)',name:'ホットピンク',sku:'WS-WAX-0061',psku:'DIY-E033-A14',comps:[{shape:'octa',finish:'matte',color:'#FA2471',ratio:100}]},
+{id:27,type:'八角(マット)',name:'ココアブラウン',sku:'WS-WAX-0062',psku:'DIY-E033-A22',comps:[{shape:'octa',finish:'matte',color:'#685357',ratio:100}]},
+{id:28,type:'八角(マット)',name:'WS-WAX-0063',sku:'WS-WAX-0063',psku:'DIY-B003-11',comps:[{shape:'octa',finish:'matte',color:'#00A769',ratio:100}]},
+{id:29,type:'八角(マット)',name:'WS-WAX-0064',sku:'WS-WAX-0064',psku:'DIY-B003-18',comps:[{shape:'octa',finish:'matte',color:'#C63100',ratio:100}]},
+{id:30,type:'八角(マット)',name:'WS-WAX-0065',sku:'WS-WAX-0065',psku:'DIY-L041-A09',comps:[{shape:'octa',finish:'matte',color:'#29438B',ratio:100}]},
+{id:31,type:'八角(マット)',name:'スカイブルー',sku:'WS-WAX-0066',psku:'DIY-E033-A06',comps:[{shape:'octa',finish:'matte',color:'#356DAC',ratio:100}]},
+{id:32,type:'八角(マット)',name:'ライトブルー',sku:'WS-WAX-0067',psku:'DIY-B003-17',comps:[{shape:'octa',finish:'matte',color:'#32A0E0',ratio:100}]},
+{id:33,type:'八角(マット)',name:'アクアマリン',sku:'WS-WAX-0068',psku:'DIY-B003-20',comps:[{shape:'octa',finish:'matte',color:'#0C567B',ratio:100}]},
+{id:34,type:'八角(マット)',name:'ナイルブルー',sku:'WS-WAX-0069',psku:'DIY-L041-A08',comps:[{shape:'octa',finish:'matte',color:'#407384',ratio:100}]},
+{id:35,type:'八角(マット)',name:'オリーブ',sku:'WS-WAX-0070',psku:'DIY-B003-08',comps:[{shape:'octa',finish:'matte',color:'#415A71',ratio:100}]},
+{id:36,type:'八角(マット)',name:'エメラルドグリーン',sku:'WS-WAX-0071',psku:'DIY-WH0153-07',comps:[{shape:'octa',finish:'matte',color:'#008B86',ratio:100}]},
+{id:37,type:'八角(マット)',name:'グリーン',sku:'WS-WAX-0072',psku:'DIY-L041-A04',comps:[{shape:'octa',finish:'matte',color:'#349231',ratio:100}]},
+{id:38,type:'八角(マット)',name:'リーフグリーン',sku:'WS-WAX-0073',psku:'DIY-L041-A10',comps:[{shape:'octa',finish:'matte',color:'#787D1D',ratio:100}]},
+{id:39,type:'八角(マット)',name:'カーキ',sku:'WS-WAX-0074',psku:'DIY-E033-A10',comps:[{shape:'octa',finish:'matte',color:'#968150',ratio:100}]},
+{id:40,type:'八角(マット)',name:'ブラウン',sku:'WS-WAX-0075',psku:'DIY-E033-A09',comps:[{shape:'octa',finish:'matte',color:'#AB7C5F',ratio:100}]},
+{id:41,type:'八角(マット)',name:'キャラメル',sku:'WS-WAX-0076',psku:'DIY-E033-A01',comps:[{shape:'octa',finish:'matte',color:'#C9802C',ratio:100}]},
+{id:42,type:'八角(マット)',name:'アメジスト',sku:'WS-WAX-0077',psku:'DIY-E033-A39',comps:[{shape:'octa',finish:'matte',color:'#9D6991',ratio:100}]},
+{id:43,type:'八角(マット)',name:'ピュアパープル',sku:'WS-WAX-0078',psku:'DIY-E033-A32',comps:[{shape:'octa',finish:'matte',color:'#6F57AE',ratio:100}]},
+{id:44,type:'八角(マット)',name:'ワインレッド',sku:'WS-WAX-0079',psku:'DIY-B003-06',comps:[{shape:'octa',finish:'matte',color:'#722C4C',ratio:100}]},
+{id:45,type:'八角(マット)',name:'テラコッタ',sku:'WS-WAX-0080',psku:'DIY-E033-A11',comps:[{shape:'octa',finish:'matte',color:'#A24634',ratio:100}]},
+{id:46,type:'八角(マット)',name:'ボルドー',sku:'WS-WAX-0081',psku:'DIY-E033-A30',comps:[{shape:'octa',finish:'matte',color:'#8E3940',ratio:100}]},
+{id:47,type:'八角(マット)',name:'ローズピンク',sku:'WS-WAX-0082',psku:'DIY-E033-A37',comps:[{shape:'octa',finish:'matte',color:'#B93D69',ratio:100}]},
+{id:48,type:'八角(マット)',name:'ルージュ',sku:'WS-WAX-0083',psku:'DIY-E033-A20',comps:[{shape:'octa',finish:'matte',color:'#C8382F',ratio:100}]},
+{id:49,type:'八角(マット)',name:'サーモンピンク',sku:'WS-WAX-0084',psku:'DIY-L041-A07',comps:[{shape:'octa',finish:'matte',color:'#C2644E',ratio:100}]},
+{id:50,type:'八角(マット)',name:'シェルグレー',sku:'WS-WAX-0085',psku:'DIY-L041-A05',comps:[{shape:'octa',finish:'matte',color:'#B0A59E',ratio:100}]},
+{id:51,type:'八角(マット)',name:'シルバー',sku:'WS-WAX-0086',psku:'DIY-E033-A08',comps:[{shape:'octa',finish:'matte',color:'#D8D7DF',ratio:100}]},
+{id:52,type:'八角(ラメ混色)',name:'WS-WAX-0087',sku:'WS-WAX-0087',psku:'DIY-L041-A06',comps:[{shape:'octa',finish:'marble',color:'#C5B5B9',ratio:100}]},
+{id:53,type:'八角(ラメ混色)',name:'WS-WAX-0088',sku:'WS-WAX-0088',psku:'DIY-E033-A46',comps:[{shape:'octa',finish:'marble',color:'#CDC5A2',ratio:100}]},
+{id:54,type:'星',name:'ロイヤルブルー',sku:'WS-WAX-0097',psku:'亮蓝',comps:[{shape:'star',finish:'gloss',color:'#1A2B82',ratio:100}]},
+{id:55,type:'星',name:'ネイビーブルー',sku:'WS-WAX-0098',psku:'海蓝',comps:[{shape:'star',finish:'gloss',color:'#163D67',ratio:100}]},
+{id:56,type:'星',name:'アイスパープル',sku:'WS-WAX-0099',psku:'冰紫',comps:[{shape:'star',finish:'gloss',color:'#58559C',ratio:100}]},
+{id:57,type:'星',name:'セルリアンブルー',sku:'WS-WAX-0100',psku:'天蓝',comps:[{shape:'star',finish:'gloss',color:'#1D5FA5',ratio:100}]},
+{id:58,type:'星',name:'スカイブルー',sku:'WS-WAX-0101',psku:'浅蓝',comps:[{shape:'star',finish:'gloss',color:'#7DBBD2',ratio:100}]},
+{id:59,type:'星',name:'アクアブルー',sku:'WS-WAX-0102',psku:'水蓝',comps:[{shape:'star',finish:'gloss',color:'#458C94',ratio:100}]},
+{id:60,type:'星',name:'ダスティブルースモーキーラベンダー',sku:'WS-WAX-0103',psku:'雾霾蓝',comps:[{shape:'star',finish:'gloss',color:'#618CBB',ratio:100}]},
+{id:61,type:'星',name:'スモーキーラベンダー',sku:'WS-WAX-0104',psku:'烟紫',comps:[{shape:'star',finish:'gloss',color:'#8C9ABE',ratio:100}]},
+{id:62,type:'星',name:'アイスブルー',sku:'WS-WAX-0105',psku:'雪蓝',comps:[{shape:'star',finish:'gloss',color:'#8EBEC8',ratio:100}]},
+{id:63,type:'星',name:'ライラック',sku:'WS-WAX-0106',psku:'浅紫',comps:[{shape:'star',finish:'gloss',color:'#B1ABC1',ratio:100}]},
+{id:64,type:'星',name:'ジェイドグリーン',sku:'WS-WAX-0107',psku:'玉石',comps:[{shape:'star',finish:'gloss',color:'#9BC4AC',ratio:100}]},
+{id:65,type:'星',name:'タロパープル',sku:'WS-WAX-0108',psku:'芋紫',comps:[{shape:'star',finish:'gloss',color:'#B7A5BA',ratio:100}]},
+{id:66,type:'星',name:'パールピンク',sku:'WS-WAX-0109',psku:'珠光粉',comps:[{shape:'star',finish:'gloss',color:'#E57D89',ratio:100}]},
+{id:67,type:'星',name:'コーラルローズ',sku:'WS-WAX-0110',psku:'橙红',comps:[{shape:'star',finish:'gloss',color:'#964946',ratio:100}]},
+{id:68,type:'星',name:'アプリコットベージュ',sku:'WS-WAX-0111',psku:'杏肤',comps:[{shape:'star',finish:'gloss',color:'#BD6E59',ratio:100}]},
+{id:69,type:'星',name:'ローズゴールドアンティークブロンズ',sku:'WS-WAX-0112',psku:'玫瑰金',comps:[{shape:'star',finish:'gloss',color:'#AB6E71',ratio:100}]},
+{id:70,type:'星',name:'アンティークブロンズ',sku:'WS-WAX-0113',psku:'古铜金',comps:[{shape:'star',finish:'gloss',color:'#644A25',ratio:100}]},
+{id:71,type:'星',name:'オリーブゴールド',sku:'WS-WAX-0114',psku:'青金',comps:[{shape:'star',finish:'gloss',color:'#5C5D2A',ratio:100}]},
+{id:72,type:'星',name:'バブルガムピンク',sku:'WS-WAX-0115',psku:'粉红',comps:[{shape:'star',finish:'gloss',color:'#DD7CA6',ratio:100}]},
+{id:73,type:'星',name:'ワインレッド',sku:'WS-WAX-0116',psku:'枣红',comps:[{shape:'star',finish:'gloss',color:'#863234',ratio:100}]},
+{id:74,type:'星',name:'ブリックレッド',sku:'WS-WAX-0117',psku:'炽红',comps:[{shape:'star',finish:'gloss',color:'#670D08',ratio:100}]},
+{id:75,type:'星',name:'レッド',sku:'WS-WAX-0118',psku:'中国红',comps:[{shape:'star',finish:'gloss',color:'#700300',ratio:100}]},
+{id:76,type:'星',name:'プラムパープル',sku:'WS-WAX-0119',psku:'紫红',comps:[{shape:'star',finish:'gloss',color:'#4A1029',ratio:100}]},
+{id:77,type:'星',name:'コーヒーブラウン',sku:'WS-WAX-0120',psku:'棕咖',comps:[{shape:'star',finish:'gloss',color:'#6E4F3F',ratio:100}]},
+{id:78,type:'星',name:'クレイグレー',sku:'WS-WAX-0121',psku:'泥灰',comps:[{shape:'star',finish:'gloss',color:'#77858D',ratio:100}]},
+{id:79,type:'星',name:'ミントグリーン',sku:'WS-WAX-0122',psku:'嫩绿',comps:[{shape:'star',finish:'gloss',color:'#578862',ratio:100}]},
+{id:80,type:'星',name:'ティールグリーン',sku:'WS-WAX-0123',psku:'鸭绿',comps:[{shape:'star',finish:'gloss',color:'#114747',ratio:100}]},
+{id:81,type:'八角(マット)',name:'WS-WAX-0124',sku:'WS-WAX-0124',psku:'墨绿',comps:[{shape:'octa',finish:'matte',color:'#003C37',ratio:100}]},
+{id:82,type:'八角(マット)',name:'WS-WAX-0125',sku:'WS-WAX-0125',psku:'玫粉',comps:[{shape:'octa',finish:'matte',color:'#8D1F50',ratio:100}]},
+{id:83,type:'八角(マット)',name:'WS-WAX-0126',sku:'WS-WAX-0126',psku:'西瓜红',comps:[{shape:'octa',finish:'matte',color:'#C12E47',ratio:100}]},
+{id:84,type:'星',name:'ウィステリア',sku:'WS-WAX-0127',psku:'紫藤',comps:[{shape:'star',finish:'gloss',color:'#7878A4',ratio:100}]},
+{id:85,type:'星',name:'ロイヤルパープル',sku:'WS-WAX-0128',psku:'紫色',comps:[{shape:'star',finish:'gloss',color:'#2F0C5D',ratio:100}]},
+{id:86,type:'星',name:'ミッドナイトブルー',sku:'WS-WAX-0129',psku:'星空蓝',comps:[{shape:'star',finish:'gloss',color:'#0F0D40',ratio:100}]},
+{id:87,type:'星',name:'サクラピンク',sku:'WS-WAX-0130',psku:'樱花粉',comps:[{shape:'star',finish:'gloss',color:'#E7A9B7',ratio:100}]},
+{id:88,type:'星',name:'ブラッシュピンク',sku:'WS-WAX-0131',psku:'烟粉',comps:[{shape:'star',finish:'gloss',color:'#CD8E93',ratio:100}]},
+{id:89,type:'星',name:'クリームホワイト',sku:'WS-WAX-0132',psku:'奶白',comps:[{shape:'star',finish:'gloss',color:'#DFC7AB',ratio:100}]},
+{id:90,type:'星',name:'クラシックゴールド',sku:'WS-WAX-0133',psku:'金色',comps:[{shape:'star',finish:'gloss',color:'#8D560C',ratio:100}]},
+{id:91,type:'星',name:'パールイエロー',sku:'WS-WAX-0134',psku:'珍珠黄',comps:[{shape:'star',finish:'gloss',color:'#CDA83C',ratio:100}]},
+{id:92,type:'星',name:'バーガンディ',sku:'WS-WAX-0135',psku:'深红',comps:[{shape:'star',finish:'gloss',color:'#3E130E',ratio:100}]},
+{id:93,type:'星',name:'シルバー',sku:'WS-WAX-0136',psku:'银色',comps:[{shape:'star',finish:'gloss',color:'#A7AFAB',ratio:100}]},
+{id:94,type:'星',name:'パールホワイト',sku:'WS-WAX-0137',psku:'珠光白',comps:[{shape:'star',finish:'gloss',color:'#DBD7D4',ratio:100}]},
+{id:95,type:'星',name:'イリディセントゴールド',sku:'WS-WAX-0138',psku:'幻彩金',comps:[{shape:'star',finish:'gloss',color:'#D3C493',ratio:100}]},
+{id:96,type:'星',name:'アイボリーパールイリディセントライラック',sku:'WS-WAX-0139',psku:'珍珠米',comps:[{shape:'star',finish:'gloss',color:'#DEC68A',ratio:100}]},
+{id:97,type:'星',name:'イリディセントライラック',sku:'WS-WAX-0140',psku:'幻彩紫',comps:[{shape:'star',finish:'gloss',color:'#B4B0DC',ratio:100}]},
+{id:98,type:'星',name:'ウィローグリーン',sku:'WS-WAX-0152',psku:'柳芽',comps:[{shape:'star',finish:'gloss',color:'#AEB150',ratio:100}]},
+{id:99,type:'星',name:'フレッシュオレンジ',sku:'WS-WAX-0153',psku:'鲜橙',comps:[{shape:'star',finish:'gloss',color:'#C85712',ratio:100}]},
+{id:100,type:'星',name:'ブライトイエロー',sku:'WS-WAX-0154',psku:'明黄',comps:[{shape:'star',finish:'gloss',color:'#CA9B00',ratio:100}]},
+{id:101,type:'星',name:'エメラルドグリーン',sku:'WS-WAX-0155',psku:'翠绿',comps:[{shape:'star',finish:'gloss',color:'#96AF42',ratio:100}]},
+{id:102,type:'星',name:'トランスルーセントホワイト',sku:'WS-WAX-0156',psku:'半透明',comps:[{shape:'star',finish:'gloss',color:'#D1D0C3',ratio:100}]},
+{id:103,type:'星',name:'ピュアゴールド',sku:'WS-WAX-0157',psku:'纯金',comps:[{shape:'star',finish:'gloss',color:'#BB8D41',ratio:100}]},
+{id:104,type:'星',name:'シャンパンゴールド',sku:'WS-WAX-0158',psku:'香槟金',comps:[{shape:'star',finish:'gloss',color:'#AF9EA3',ratio:100}]},
+{id:105,type:'星',name:'ディープティール',sku:'WS-WAX-0159',psku:'绿沉',comps:[{shape:'star',finish:'gloss',color:'#009386',ratio:100}]},
+{id:106,type:'星',name:'ジェリーイエロー',sku:'WS-WAX-0160',psku:'果冻黄',comps:[{shape:'star',finish:'gloss',color:'#E2CF6F',ratio:100}]},
+{id:107,type:'星',name:'ライトオレンジ',sku:'WS-WAX-0161',psku:'槟橙',comps:[{shape:'star',finish:'gloss',color:'#CC9A64',ratio:100}]},
+{id:108,type:'星',name:'ジェリーピンク',sku:'WS-WAX-0162',psku:'果冻粉',comps:[{shape:'star',finish:'gloss',color:'#E5ADB9',ratio:100}]},
+{id:109,type:'星',name:'ティーグリーン',sku:'WS-WAX-0163',psku:'',comps:[{shape:'star',finish:'gloss',color:'#617725',ratio:100}]}
 ];
 let products;
 try{ products=JSON.parse(localStorage.getItem(LSKEY)); }catch(e){ products=null; }
@@ -844,43 +852,51 @@ function renderSelBar(){
 
 // ===== 商品登録 =====
 const regEl=document.getElementById('regList');
-function compRow(p,c,ci){
-  const wrap=document.createElement('div'); wrap.className='comp';
-  const line=document.createElement('div'); line.className='mr-top';
-  const ss=shapeSel(c.shape,v=>{ c.shape=v; if(!SHAPES[v].fin.includes(c.finish))c.finish=SHAPES[v].fin[0]; invalidateThumb(p); renderRegistry(); saveProducts(); });
-  const fs=finSel(c.shape,c.finish,v=>{ c.finish=v; invalidateThumb(p); renderRegistry(); saveProducts(); });
-  const cc=colInput(c.color,v=>{ c.color=v; invalidateThumb(p); renderRegistry(); saveProducts(); });
-  const cdel=document.createElement('button'); cdel.className='del'; cdel.textContent='✕';
-  cdel.onclick=()=>{ if(p.comps.length<=1)return; p.comps.splice(ci,1); normComps(p); invalidateThumb(p); renderRegistry(); saveProducts(); };
-  line.append(ss,fs,cc,cdel);
-  const bot=document.createElement('div'); bot.className='mr-bot';
-  const rng=document.createElement('input'); rng.type='range'; rng.min=0;rng.max=100;rng.value=Math.round(c.ratio);
-  const rv=document.createElement('span'); rv.className='rv'; rv.textContent=Math.round(c.ratio)+'%';
-  rng.oninput=()=>{ setCompRatio(p,ci,+rng.value); [...wrap.parentNode.querySelectorAll('.comp')].forEach((el,k)=>{ const rr2=el.querySelector('input[type=range]'),sv=el.querySelector('.rv'); if(p.comps[k]){rr2.value=Math.round(p.comps[k].ratio);sv.textContent=Math.round(p.comps[k].ratio)+'%';} }); };
-  rng.onchange=()=>{ setCompRatio(p,ci,+rng.value); invalidateThumb(p); saveProducts(); renderRegistry(); };
-  bot.append(rng,rv);
-  wrap.append(line,bot); return wrap;
+// 型・種類 → 構成（形・素材）の自動マップ
+const TYPES={
+  '絵柄入り':[{shape:'bee',finish:'matte'},{shape:'fan',finish:'glitterSolid'},{shape:'blossom',finish:'glitterSolid'}],
+  '八角(マット)':[{shape:'octa',finish:'matte'}],
+  '八角(ラメ混色)':[{shape:'octa',finish:'marble'}],
+  '星':[{shape:'star',finish:'gloss'}],
+};
+function compsFor(type,colors){
+  const base=TYPES[type]||TYPES['八角(マット)']; const rs=base.length===3?[34,33,33]:[100];
+  return base.map((b,i)=>({shape:b.shape,finish:b.finish,color:(colors&&colors[i])||'#CCCCCC',ratio:rs[i]}));
 }
 function renderRegistry(){
   regEl.innerHTML='';
   const q=(document.getElementById('regSearch')?.value||'').trim().toLowerCase();
-  const list=q? products.filter(p=>p.name.toLowerCase().includes(q)) : products;
+  const list=q? products.filter(p=>((p.name||'')+(p.sku||'')+(p.psku||'')).toLowerCase().includes(q)) : products;
   const cnt=document.getElementById('regCount'); if(cnt) cnt.textContent=list.length+'/'+products.length;
   list.forEach(p=>{
+    if(!p.type) p.type='八角(マット)';
     const card=document.createElement('div'); card.className='regcard';
     const head=document.createElement('div'); head.className='reg-head';
     const img=document.createElement('img'); img.className='pthumb sm'; img.src=makeThumb(p);
-    const nm=document.createElement('input'); nm.className='pname'; nm.value=p.name; nm.oninput=()=>{p.name=nm.value;}; nm.onchange=()=>saveProducts();
+    const nm=document.createElement('input'); nm.className='pname'; nm.placeholder='商品名'; nm.value=p.name||''; nm.oninput=()=>{p.name=nm.value;}; nm.onchange=()=>saveProducts();
     const del=document.createElement('button'); del.className='del'; del.textContent='✕';
     del.onclick=()=>{ products=products.filter(x=>x!==p); recipe=recipe.filter(r=>r.pid!==p.id); if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; normalizeRecipe(); saveProducts(); renderRegistry(); };
     head.append(img,nm,del); card.append(head);
-    p.comps.forEach((c,ci)=>card.append(compRow(p,c,ci)));
-    const addc=document.createElement('button'); addc.className='act ghost mini'; addc.textContent='＋素材';
-    addc.onclick=()=>{ p.comps.push({shape:'octa',finish:'matte',color:'#8FCFC4',ratio:20}); normComps(p); invalidateThumb(p); renderRegistry(); saveProducts(); };
-    card.append(addc); regEl.append(card);
+    // 型・種類（構成は自動）
+    const tr=document.createElement('div'); tr.className='frow';
+    const tl=document.createElement('label'); tl.textContent='型・種類';
+    const tsel=document.createElement('select');
+    Object.keys(TYPES).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;if(k===p.type)o.selected=true;tsel.appendChild(o);});
+    tsel.onchange=()=>{ p.type=tsel.value; p.comps=compsFor(p.type,p.comps.map(c=>c.color)); invalidateThumb(p); saveProducts(); renderRegistry(); };
+    tr.append(tl,tsel); card.append(tr);
+    // SKU 2種
+    const sr=document.createElement('div'); sr.className='frow2';
+    const mk=(lab,key,ph)=>{ const w=document.createElement('div'); w.className='fcell'; const l=document.createElement('label'); l.textContent=lab; const inp=document.createElement('input'); inp.className='skuin'; inp.placeholder=ph; inp.value=p[key]||''; inp.oninput=()=>{p[key]=inp.value;}; inp.onchange=()=>saveProducts(); w.append(l,inp); return w; };
+    sr.append(mk('自社SKU','sku','WS-WAX-…'), mk('仕入SKU','psku','PW-… / DIY-…')); card.append(sr);
+    // 色（型に応じて本数自動）
+    const cr=document.createElement('div'); cr.className='frow';
+    const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色';
+    cr.append(cl);
+    p.comps.forEach(c=>{ const cc=colInput(c.color,v=>{ c.color=v; invalidateThumb(p); saveProducts(); renderRegistry(); }); cr.append(cc); });
+    card.append(cr); regEl.append(card);
   });
 }
-document.getElementById('addProd').onclick=()=>{ products.push({id:pidSeq++,name:'新規商品',comps:[{shape:'octa',finish:'matte',color:'#3C8C82',ratio:100}]}); saveProducts(); renderRegistry(); };
+document.getElementById('addProd').onclick=()=>{ products.push({id:pidSeq++,type:'八角(マット)',name:'新規商品',sku:'',psku:'',comps:compsFor('八角(マット)',['#3C8C82'])}); saveProducts(); renderRegistry(); };
 document.getElementById('cardSearch').oninput=()=>renderCards();
 document.getElementById('regSearch').oninput=()=>renderRegistry();
 
