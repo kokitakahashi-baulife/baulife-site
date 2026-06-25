@@ -175,10 +175,10 @@ const pmrem=new THREE.PMREMGenerator(renderer);
 scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
 
 const camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,0.1,100);
-camera.position.set(-1.6,14,8);
+camera.position.set(0,16.5,9.8);
 
 const controls=new OrbitControls(camera,canvas);
-controls.target.set(-1.6,0,0);
+controls.target.set(0,0,0);
 controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
