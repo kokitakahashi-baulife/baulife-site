@@ -154,7 +154,7 @@ const canvas=document.getElementById('c');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMapping=THREE.NoToneMapping;
 renderer.toneMappingExposure=0.9;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -175,7 +175,7 @@ controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
 // lights
-const key=new THREE.DirectionalLight(0xfff6ec,2.55);
+const key=new THREE.DirectionalLight(0xffffff,0.46);
 key.position.set(6,10,5);
 key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);
@@ -184,11 +184,11 @@ key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;k
 key.shadow.bias=-0.0003;
 key.shadow.radius=3.5;
 scene.add(key);
-const fill=new THREE.DirectionalLight(0xffffff,0.45); fill.position.set(-6,4,-3); scene.add(fill);
+const fill=new THREE.DirectionalLight(0xffffff,0.07); fill.position.set(-6,4,-3); scene.add(fill);
 // リムライト（粒の輪郭・白×白の分離を出す）
-const rim=new THREE.DirectionalLight(0xffffff,1.2); rim.position.set(-4,6,-7); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0xffffff,0x9a948c,0.46));
-scene.add(new THREE.AmbientLight(0xffffff,0.1));
+const rim=new THREE.DirectionalLight(0xffffff,0.15); rim.position.set(-4,6,-7); scene.add(rim);
+scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.44));
+scene.add(new THREE.AmbientLight(0xffffff,2.0));
 
 // ground (catch soft shadow only, keep bg color)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.3}));
@@ -581,7 +581,7 @@ function lighten(hex,dL){ const h=hex.replace('#','');
 function marbleOf(base){ return [base, base, lighten(base,0.13), lighten(base,0.27)]; }
 
 // A) マット単色（反射ほぼ無し）
-function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.92,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.022,envMapIntensity:0.45}); }
+function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.95,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.012,envMapIntensity:0.08}); }
 // B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
 function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.48,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.55,clearcoatRoughness:0.22,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.15}); }
 // C) 星専用：単色ラメ入り 超光沢
@@ -872,17 +872,17 @@ function colInput(val,onCh){ const c=document.createElement('input'); c.type='co
 
 // ===== サムネイル（商品画像） =====
 const thumbR=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
-thumbR.setSize(150,150); thumbR.setPixelRatio(2); thumbR.toneMapping=THREE.ACESFilmicToneMapping;
+thumbR.setSize(150,150); thumbR.setPixelRatio(2); thumbR.toneMapping=THREE.NoToneMapping;
 thumbR.shadowMap.enabled=true; thumbR.shadowMap.type=THREE.PCFSoftShadowMap;
 const thumbScene=new THREE.Scene(); thumbScene.environment=scene.environment;
 thumbScene.background=new THREE.Color('#ffffff');
 const thumbCam=new THREE.PerspectiveCamera(40,1,0.1,100); thumbCam.position.set(0,4.5,3.5); thumbCam.lookAt(0,0.05,0);
-const tdl=new THREE.DirectionalLight(0xffffff,2.6); tdl.position.set(3.5,7,3); tdl.castShadow=true;
+const tdl=new THREE.DirectionalLight(0xffffff,0.78); tdl.position.set(3.5,7,3); tdl.castShadow=true;
 tdl.shadow.mapSize.set(1024,1024); tdl.shadow.camera.near=1; tdl.shadow.camera.far=24;
 tdl.shadow.camera.left=-3; tdl.shadow.camera.right=3; tdl.shadow.camera.top=3; tdl.shadow.camera.bottom=-3;
 tdl.shadow.bias=-0.0004; tdl.shadow.radius=2.2; thumbScene.add(tdl);
-thumbScene.add(new THREE.HemisphereLight(0xffffff,0xb9b3a8,0.55));
-thumbScene.add(new THREE.AmbientLight(0xffffff,0.12));
+thumbScene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.44));
+thumbScene.add(new THREE.AmbientLight(0xffffff,2.0));
 const thumbGround=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.ShadowMaterial({opacity:0.26}));
 thumbGround.rotation.x=-Math.PI/2; thumbGround.receiveShadow=true; thumbScene.add(thumbGround);
 const thumbGroup=new THREE.Group(); thumbScene.add(thumbGroup);
@@ -1075,7 +1075,7 @@ function renderRegistry(){
         const wrap=document.createElement('div'); wrap.className='colcell';
         const cc=document.createElement('input'); cc.type='color'; cc.value=c.color;
         const hx=document.createElement('input'); hx.className='hexin'; hx.value=c.color; hx.maxLength=7; hx.spellcheck=false; hx.placeholder='#RRGGBB';
-        const ey=document.createElement('button'); ey.type='button'; ey.className='eyebtn'; ey.textContent='🔍'; ey.title='実物から色を取る（スポイト）';
+        const ey=document.createElement('button'); ey.type='button'; ey.className='eyebtn'; ey.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7a5c3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.12 2.12 0 1 1 3 3L18 9l.4.4a2.12 2.12 0 1 1-3 3l-3.8-3.8a2.12 2.12 0 1 1 3-3l.4.4Z"/></svg>'; ey.title='実物から色を取る（スポイト）';
         const apply=(hex,from)=>{ if(!/^#?[0-9a-fA-F]{6}$/.test(hex.trim()))return; hex=hex.trim(); if(hex[0]!=='#')hex='#'+hex; c.color=hex; if(from!=='cc')cc.value=hex; if(from!=='hx')hx.value=hex; invalidateThumb(p); if(simImg)simImg.src=makeThumb(p); };
         cc.oninput=()=>apply(cc.value,'cc');   // ドラッグ中も即時プレビュー
         hx.oninput=()=>apply(hx.value,'hx');
