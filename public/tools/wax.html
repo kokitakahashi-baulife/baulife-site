@@ -499,16 +499,29 @@ function getMat(fin,color){ const k=fin+'|'+color; if(!matCache[k]) matCache[k]=
 
 // ===== 配合データ =====
 // ===== 商品登録（商品＝素材の％配分リスト。複数素材＝MIX）。ブラウザ保存 =====
-const LSKEY='waxProductsV2';
+const LSKEY='waxProductsV3';
+// 絵柄入り（3色入り）= 3色を抽出し 蜂/クローバー/イチョウ に33.3%ずつ割当（色はPDF画像から読取り）
 const defaultProducts=[
-  {id:1,name:'ティール',comps:[{shape:'octa',finish:'matte',color:'#3C8C82',ratio:100}]},
-  {id:2,name:'ローズ',comps:[{shape:'blossom',finish:'matte',color:'#C56B7A',ratio:100}]},
-  {id:3,name:'ブルースター',comps:[{shape:'star',finish:'gloss',color:'#1FA3AE',ratio:100}]},
-  {id:4,name:'ミントMIX',comps:[
-    {shape:'octa',finish:'marble',color:'#3C8C82',ratio:40},
-    {shape:'octa',finish:'matte',color:'#8FCFC4',ratio:35},
-    {shape:'blossom',finish:'matte',color:'#EAE6D8',ratio:25}]},
-  {id:5,name:'イチョウ',comps:[{shape:'fan',finish:'matte',color:'#C98A3C',ratio:100}]},
+  {id:1,name:'ピーチマンゴー（WS-WAX-0016）',comps:[
+    {shape:'bee',finish:'matte',color:'#E6A95C',ratio:34},
+    {shape:'clover',finish:'matte',color:'#EAD06A',ratio:33},
+    {shape:'fan',finish:'matte',color:'#F0E6CE',ratio:33}]},
+  {id:2,name:'チェリー（WS-WAX-0017）',comps:[
+    {shape:'bee',finish:'matte',color:'#CF4A3C',ratio:34},
+    {shape:'clover',finish:'matte',color:'#E0915C',ratio:33},
+    {shape:'fan',finish:'matte',color:'#E7B9A4',ratio:33}]},
+  {id:3,name:'ユニコーン（WS-WAX-0018）',comps:[
+    {shape:'bee',finish:'matte',color:'#B59FD4',ratio:34},
+    {shape:'clover',finish:'matte',color:'#CBBCE2',ratio:33},
+    {shape:'fan',finish:'matte',color:'#ECE3EC',ratio:33}]},
+  {id:4,name:'ベリー（WS-WAX-0019）',comps:[
+    {shape:'bee',finish:'matte',color:'#C04E64',ratio:34},
+    {shape:'clover',finish:'matte',color:'#9A3A48',ratio:33},
+    {shape:'fan',finish:'matte',color:'#E8C7BE',ratio:33}]},
+  {id:5,name:'サンドビーチ（WS-WAX-0020）',comps:[
+    {shape:'bee',finish:'matte',color:'#D6BE9A',ratio:34},
+    {shape:'clover',finish:'matte',color:'#BFA47E',ratio:33},
+    {shape:'fan',finish:'matte',color:'#EFE6D2',ratio:33}]},
 ];
 let products;
 try{ products=JSON.parse(localStorage.getItem(LSKEY)); }catch(e){ products=null; }
@@ -516,7 +529,7 @@ if(!products||!products.length) products=JSON.parse(JSON.stringify(defaultProduc
 let pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
 function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){} }
 function productById(id){ return products.find(p=>p.id===id); }
-let recipe=[ {pid:1,ratio:30}, {pid:4,ratio:40}, {pid:5,ratio:30} ].filter(r=>productById(r.pid));
+let recipe=[ {pid:1,ratio:40}, {pid:2,ratio:30}, {pid:5,ratio:30} ].filter(r=>productById(r.pid));
 if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
 let total=20, seed=12345;
 function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
