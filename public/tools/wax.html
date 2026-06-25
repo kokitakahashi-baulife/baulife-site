@@ -535,14 +535,16 @@ function makeMarble(cols,size){ size=size||512; const c=document.createElement('
 function shade(hex,f){ const h=hex.replace('#',''); const v=i=>Math.max(0,Math.min(255,Math.round(parseInt(h.slice(i,i+2),16)*f)));
   return '#'+[v(0),v(2),v(4)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
 // ベース色の濃淡中心の同系マーブル（白の要素は控えめ＝実物に近い）
-function marbleOf(base){ return [base, shade(base,0.76), shade(base,1.2), base, shade(base,1.34)]; }
+function marbleOf(base){ return [base, base, shade(base,1.22), shade(base,1.5), '#f4efe8']; }
 
 // A) マット単色（反射ほぼ無し）
 function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.92,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.022,envMapIntensity:0.45}); }
 // B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
-function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.5,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.35,clearcoatRoughness:0.25,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.0}); }
+function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.48,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.55,clearcoatRoughness:0.22,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.15}); }
 // C) 星専用：単色ラメ入り 超光沢
 function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.06,clearcoat:1.0,clearcoatRoughness:0.02,metalness:1.0,metalnessMap:sparkleTex,transmission:0.12,thickness:0.6,ior:1.47,iridescence:0.4,iridescenceIOR:1.3,bumpMap:microBump,bumpScale:0.004,envMapIntensity:2.0}); }
+// 超光沢（ラメなし）：きらめき粒子なしの滑らかな艶
+function finishStarGlossPlain(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.05,clearcoat:1.0,clearcoatRoughness:0.03,metalness:0.0,bumpMap:microBump,bumpScale:0.003,envMapIntensity:1.5}); }
 // ラメ単色：単色＋ラメ（混色なし）
 function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.55,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.015,clearcoat:0.35,clearcoatRoughness:0.2,envMapIntensity:1.0}); }
 
@@ -553,7 +555,7 @@ const group=new THREE.Group(); scene.add(group);
 const SHAPES={
   octa:{geo:geoOcta,label:'八角',fin:['matte','marble']},
   sunflower:{geo:geoFlower,label:'向日葵',fin:['matte','marble']},
-  blossom:{geo:geoBlossom,label:'花',fin:['matte','marble']},
+  blossom:{geo:geoBlossom,label:'アジサイ',fin:['matte','marble']},
   star:{geo:geoStar,label:'星',fin:['gloss']},
   fan:{geo:geoFan,label:'イチョウ（絵柄入り）',fin:['glitterSolid']},
   bee:{geo:geoBee,label:'蜂（絵柄入り）',fin:['matte']},
@@ -566,6 +568,7 @@ const FINISHES={
   marbleW:{label:'ラメ混色',make:c=>finishMarble(marbleOf(c))},
   marbleB:{label:'ラメ混色',make:c=>finishMarble(marbleOf(c))},
   gloss:{label:'超光沢ラメ',make:c=>finishStarGloss(c)},
+  glossPlain:{label:'超光沢（ラメなし）',make:c=>finishStarGlossPlain(c)},
 };
 const matCache={};
 function getMat(fin,color,trans){ trans=trans||0; const k=fin+'|'+color+'|'+trans;
@@ -699,6 +702,7 @@ if(!products||!products.length) products=JSON.parse(JSON.stringify(defaultProduc
 const NAMEFIX={'WS-WAX-0063':'フレッシュグリーン','WS-WAX-0064':'マンダリンオレンジ','WS-WAX-0065':'ロイヤルブルー','WS-WAX-0087':'パールグレー','WS-WAX-0088':'偏光パールゴールド','WS-WAX-0124':'フォレストグリーン','WS-WAX-0125':'ローズピンク','WS-WAX-0126':'ウォーターメロンピンク'};
 function migrate(arr){ (arr||[]).forEach(p=>{
   if(p.type==='八角(ラメ混色・白系)'||p.type==='八角(ラメ混色・黒系)') p.type='八角(ラメ混色)';
+  if(p.type==='星') p.type='星(ラメ)';
   if(p.comps) p.comps.forEach(c=>{ if(c.finish==='marbleW'||c.finish==='marbleB') c.finish='marble'; });
   if(NAMEFIX[p.sku] && (!p.name || p.name===p.sku || /^WS-WAX/.test(p.name))) p.name=NAMEFIX[p.sku];
 }); return arr; }
@@ -950,7 +954,9 @@ const TYPES={
   '絵柄入り':[{shape:'bee',finish:'matte'},{shape:'fan',finish:'glitterSolid'},{shape:'blossom',finish:'glitterSolid'}],
   '八角(マット)':[{shape:'octa',finish:'matte'}],
   '八角(ラメ混色)':[{shape:'octa',finish:'marble'}],
-  '星':[{shape:'star',finish:'gloss'}],
+  '星(ラメ)':[{shape:'star',finish:'gloss'}],
+  '星(ラメなし)':[{shape:'star',finish:'glossPlain'}],
+  'アジサイ':[{shape:'blossom',finish:'matte'}],
 };
 function compsFor(type,colors){
   const base=TYPES[type]||TYPES['八角(マット)']; const rs=base.length===3?[34,33,33]:[100];
