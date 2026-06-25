@@ -725,12 +725,12 @@ function rebuild(){
   }
   // 皿いっぱいに重ならず密に敷き詰まるサイズに自動調整（密充填）
   const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
-  const usable=Math.PI*Math.pow(PLATE_R-0.30,2)*1.24, unit=Math.PI*avgR*avgR;
+  const usable=Math.PI*Math.pow(PLATE_R-0.30,2)*1.02, unit=Math.PI*avgR*avgR;
   const gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length)));
   const bodies=[], meshes=[];
   beads.forEach((m)=>{
     const g=SHAPES[m.shape].geo, s=gscale*(0.95+r()*0.04);
-    const rad=g.userData.radius*s*0.76, hh=g.userData.halfH*s;  // 接点を重ねて隙間（皿面）を埋める＝高密度
+    const rad=g.userData.radius*s*0.9, hh=g.userData.halfH*s;  // 当たり判定を見た目に近づけ、貫通せず当たって止まる
     const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw-0.1);      // 皿の縁まで広げて配置
     const bd=RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(Math.cos(ang)*rr, hh+0.03, Math.sin(ang)*rr)
