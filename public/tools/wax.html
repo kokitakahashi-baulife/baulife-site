@@ -541,12 +541,12 @@ function rebuild(){
   }
   // 皿いっぱいに重ならず密に敷き詰まるサイズに自動調整（密充填）
   const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
-  const usable=Math.PI*Math.pow(PLATE_R-0.45,2)*0.80, unit=Math.PI*avgR*avgR;
+  const usable=Math.PI*Math.pow(PLATE_R-0.45,2)*0.92, unit=Math.PI*avgR*avgR;
   const gscale=Math.min(1, Math.sqrt((usable/unit)/Math.max(1,beads.length)));
   const bodies=[], meshes=[];
   beads.forEach((m)=>{
-    const g=SHAPES[m.shape].geo, s=gscale*(0.94+r()*0.05);
-    const rad=g.userData.radius*s, hh=g.userData.halfH*s;     // 実寸コライダー＝重ならない
+    const g=SHAPES[m.shape].geo, s=gscale*(0.95+r()*0.04);
+    const rad=g.userData.radius*s*0.86, hh=g.userData.halfH*s;  // 接点を少し重ねて隙間（皿面）を埋める
     const ang=r()*Math.PI*2, rr=Math.sqrt(r())*(Rw-0.3);      // 皿の縁まで広げて配置
     const bd=RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(Math.cos(ang)*rr, hh+0.03, Math.sin(ang)*rr)
@@ -562,6 +562,11 @@ function rebuild(){
   bodies.forEach((b,i)=>{ const t=b.translation(), qq=b.rotation();
     meshes[i].position.set(t.x,t.y,t.z); meshes[i].quaternion.set(qq.x,qq.y,qq.z,qq.w); });
   world.free();
+  // 皿を粒のかたまりにフィット（空いた縁を無くす＝皿面が見えない）
+  let clusterR=0;
+  meshes.forEach((me,i)=>{ const rad=SHAPES[beads[i].shape].geo.userData.radius*me.scale.x;
+    const d=Math.hypot(me.position.x,me.position.z)+rad; if(d>clusterR) clusterR=d; });
+  const pk=Math.max(0.45,(clusterR+0.35)/PLATE_R); plate.scale.set(pk,1,pk);
 }
 
 // ===== 比率ユーティリティ（合計100%按分） =====
