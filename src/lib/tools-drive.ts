@@ -144,3 +144,87 @@ export async function saveProject(
   if (!res.ok) throw new Error(`save ${res.status} ${await res.text()}`);
   return res.json();
 }
+
+// ===== WAX MIX シミュレーター：共有商品データ（単一ファイル） =====
+const WAX_FOLDER_NAME = "WAXシミュレーター";
+const WAX_FILE_NAME = "wax-products.json";
+
+async function findFolder(token: string, name: string, parent: string) {
+  const params = new URLSearchParams({
+    q: `'${parent}' in parents and name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: "files(id,name)",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    corpora: "drive",
+    driveId: DRIVE_ID,
+  });
+  const res = await fetch(`${API}/files?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`folder list ${res.status} ${await res.text()}`);
+  return (await res.json()).files?.[0] ?? null;
+}
+
+async function getWaxFolder(token: string): Promise<string> {
+  const f = await findFolder(token, WAX_FOLDER_NAME, FOLDER);
+  if (f) return f.id;
+  const res = await fetch(`${API}/files?supportsAllDrives=true&fields=id`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name: WAX_FOLDER_NAME, parents: [FOLDER], mimeType: "application/vnd.google-apps.folder" }),
+  });
+  if (!res.ok) throw new Error(`folder create ${res.status} ${await res.text()}`);
+  return (await res.json()).id;
+}
+
+async function findWaxFile(token: string, folderId: string) {
+  const params = new URLSearchParams({
+    q: `'${folderId}' in parents and name='${WAX_FILE_NAME}' and trashed=false`,
+    fields: "files(id,name,modifiedTime,lastModifyingUser/displayName)",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    corpora: "drive",
+    driveId: DRIVE_ID,
+  });
+  const res = await fetch(`${API}/files?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`wax list ${res.status} ${await res.text()}`);
+  return (await res.json()).files?.[0] ?? null;
+}
+
+export async function loadWax(token: string) {
+  const folderId = await getWaxFolder(token);
+  const f = await findWaxFile(token, folderId);
+  if (!f) return { products: null as unknown[] | null, modifiedTime: null, by: null };
+  const content: any = await readProject(token, f.id);
+  return {
+    products: content?.products ?? null,
+    modifiedTime: f.modifiedTime ?? null,
+    by: f.lastModifyingUser?.displayName ?? null,
+  };
+}
+
+export async function saveWax(token: string, products: unknown[]) {
+  const folderId = await getWaxFolder(token);
+  const f = await findWaxFile(token, folderId);
+  const content = { products, savedAt: new Date().toISOString() };
+  if (f) {
+    const res = await fetch(
+      `${UPLOAD}/files/${f.id}?uploadType=multipart&supportsAllDrives=true&fields=id,modifiedTime,lastModifyingUser/displayName`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${BOUNDARY}` },
+        body: multipartBody({ name: WAX_FILE_NAME }, content),
+      }
+    );
+    if (!res.ok) throw new Error(`wax save ${res.status} ${await res.text()}`);
+    return res.json();
+  }
+  const res = await fetch(
+    `${UPLOAD}/files?uploadType=multipart&supportsAllDrives=true&fields=id,modifiedTime,lastModifyingUser/displayName`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${BOUNDARY}` },
+      body: multipartBody({ name: WAX_FILE_NAME, parents: [folderId], mimeType: "application/json" }, content),
+    }
+  );
+  if (!res.ok) throw new Error(`wax create ${res.status} ${await res.text()}`);
+  return res.json();
+}
