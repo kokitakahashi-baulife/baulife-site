@@ -127,45 +127,51 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuf
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.1;
+renderer.toneMappingExposure=1.05;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color('#f6f6f6');
+// 背景：スタジオ風グラデ（純白を避け、白い粒が浮くように）
+const bgCv=document.createElement('canvas'); bgCv.width=bgCv.height=512;
+const bgx=bgCv.getContext('2d'); const bgg=bgx.createRadialGradient(256,210,70,256,300,380);
+bgg.addColorStop(0,'#ece8e0'); bgg.addColorStop(1,'#b9b5ac'); bgx.fillStyle=bgg; bgx.fillRect(0,0,512,512);
+scene.background=new THREE.CanvasTexture(bgCv);
 
 const pmrem=new THREE.PMREMGenerator(renderer);
 scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
 
 const camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,0.1,100);
-camera.position.set(0,14,8);
+camera.position.set(-1.6,14,8);
 
 const controls=new OrbitControls(camera,canvas);
-controls.target.set(0,0,0);
+controls.target.set(-1.6,0,0);
 controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
 // lights
-const key=new THREE.DirectionalLight(0xffffff,2.4);
-key.position.set(5,9,4);
+const key=new THREE.DirectionalLight(0xfff6ec,3.1);
+key.position.set(6,10,5);
 key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);
 key.shadow.camera.near=1;key.shadow.camera.far=40;
 key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;
 key.shadow.bias=-0.0003;
-key.shadow.radius=7;
+key.shadow.radius=3.5;
 scene.add(key);
-const fill=new THREE.DirectionalLight(0xffffff,0.6); fill.position.set(-6,4,-3); scene.add(fill);
-scene.add(new THREE.HemisphereLight(0xffffff,0x9a948c,0.95));
-scene.add(new THREE.AmbientLight(0xffffff,0.25));
+const fill=new THREE.DirectionalLight(0xffffff,0.45); fill.position.set(-6,4,-3); scene.add(fill);
+// リムライト（粒の輪郭・白×白の分離を出す）
+const rim=new THREE.DirectionalLight(0xffffff,1.8); rim.position.set(-4,6,-7); scene.add(rim);
+scene.add(new THREE.HemisphereLight(0xffffff,0x9a948c,0.62));
+scene.add(new THREE.AmbientLight(0xffffff,0.16));
 
 // ground (catch soft shadow only, keep bg color)
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.16}));
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.3}));
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 
 // お皿（ワックスを流し出すシーン）
 const PLATE_R=4.4;
-const dishMat=new THREE.MeshPhysicalMaterial({color:'#f4f1ea',roughness:0.45,clearcoat:0.5,clearcoatRoughness:0.35,envMapIntensity:0.9});
+const dishMat=new THREE.MeshPhysicalMaterial({color:'#e3ddd0',roughness:0.5,clearcoat:0.4,clearcoatRoughness:0.4,envMapIntensity:0.7});
 const plate=new THREE.Group();
 const dishBase=new THREE.Mesh(new THREE.CylinderGeometry(PLATE_R,PLATE_R*0.82,0.34,72), dishMat);
 dishBase.position.y=-0.17; dishBase.receiveShadow=true; plate.add(dishBase);
@@ -500,7 +506,7 @@ function shade(hex,f){ const h=hex.replace('#',''); const v=i=>Math.max(0,Math.m
 function marbleOf(base){ return [base, shade(base,0.8), shade(base,1.12), shade(base,0.9)]; }
 
 // A) マット単色（反射ほぼ無し）
-function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.9,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.018,envMapIntensity:0.7}); }
+function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.92,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.022,envMapIntensity:0.45}); }
 // B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
 function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.5,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.35,clearcoatRoughness:0.25,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.0}); }
 // C) 星専用：単色ラメ入り 超光沢
