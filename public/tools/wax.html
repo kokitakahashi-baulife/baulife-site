@@ -57,6 +57,15 @@
   .fcell label{font-size:10px;color:#999;}
   .skuin{font-size:11px;padding:4px 6px;border:1px solid #d8d2c6;border-radius:5px;width:100%;box-sizing:border-box;}
   .frow input.skuin{flex:1;width:auto;}
+  .editbtn{flex:0 0 auto;padding:5px 14px;border:none;border-radius:6px;background:#7a5c3a;color:#fff;font-size:11px;cursor:pointer;}
+  .vval{font-size:12px;color:#333;flex:1;min-width:0;word-break:break-all;}
+  .vsw{width:26px;height:20px;border-radius:4px;border:1px solid #d8d2c6;display:inline-block;}
+  .regcard.editing{border-color:#7a5c3a;box-shadow:0 0 0 2px rgba(122,92,58,.13);}
+  .savebar{display:flex;gap:6px;margin-top:10px;}
+  .savebar button{padding:7px;border:none;border-radius:7px;font-size:12px;cursor:pointer;}
+  .savebar .save{flex:1;background:#7a5c3a;color:#fff;}
+  .savebar .cancel{flex:1;background:#ece7dd;color:#5a4a32;}
+  .savebar .danger{flex:0 0 auto;padding:7px 12px;background:#fff;color:#c0392b;border:1px solid #e3b4ad;}
   .mix-row{border:1px solid #e7e2d8;border-radius:8px;padding:8px;margin-bottom:8px;background:#fff;}
   .mr-top{display:flex;gap:5px;align-items:center;}
   .mr-top select{flex:1;font-size:12px;padding:3px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;min-width:0;}
@@ -873,6 +882,20 @@ function compsFor(type,colors){
   const base=TYPES[type]||TYPES['八角(マット)']; const rs=base.length===3?[34,33,33]:[100];
   return base.map((b,i)=>({shape:b.shape,finish:b.finish,color:(colors&&colors[i])||'#CCCCCC',ratio:rs[i]}));
 }
+const editing=new Set(), snap={}, newIds=new Set();
+function pclone(o){ return JSON.parse(JSON.stringify(o)); }
+function startEdit(p){ editing.add(p.id); snap[p.id]=pclone(p); renderRegistry(); }
+function saveEdit(p){ editing.delete(p.id); delete snap[p.id]; newIds.delete(p.id); invalidateThumb(p); saveProducts(); renderRegistry(); }
+function cancelEdit(p){
+  if(newIds.has(p.id)){ products=products.filter(x=>x!==p); newIds.delete(p.id); saveProducts(); }
+  else if(snap[p.id]){ Object.assign(p, pclone(snap[p.id])); }
+  editing.delete(p.id); delete snap[p.id]; invalidateThumb(p); renderRegistry();
+}
+function deleteProduct(p){
+  products=products.filter(x=>x!==p); recipe=recipe.filter(r=>r.pid!==p.id);
+  if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; normalizeRecipe();
+  editing.delete(p.id); delete snap[p.id]; newIds.delete(p.id); saveProducts(); renderRegistry();
+}
 function renderRegistry(){
   regEl.innerHTML='';
   const q=(document.getElementById('regSearch')?.value||'').trim().toLowerCase();
@@ -880,33 +903,49 @@ function renderRegistry(){
   const cnt=document.getElementById('regCount'); if(cnt) cnt.textContent=list.length+'/'+products.length;
   list.forEach(p=>{
     if(!p.type) p.type='八角(マット)';
-    const card=document.createElement('div'); card.className='regcard';
+    const ed=editing.has(p.id);
+    const card=document.createElement('div'); card.className='regcard'+(ed?' editing':'');
     const head=document.createElement('div'); head.className='reg-head';
     const img=document.createElement('img'); img.className='pthumb sm'; img.src=makeThumb(p);
     const ttl=document.createElement('div'); ttl.className='regttl'; ttl.textContent=p.name||'(無名)';
-    const del=document.createElement('button'); del.className='del'; del.textContent='✕';
-    del.onclick=()=>{ products=products.filter(x=>x!==p); recipe=recipe.filter(r=>r.pid!==p.id); if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; normalizeRecipe(); saveProducts(); renderRegistry(); };
-    head.append(img,ttl,del); card.append(head);
-    // 各項目を別入力
+    head.append(img,ttl);
+    if(!ed){ const eb=document.createElement('button'); eb.className='editbtn'; eb.textContent='編集'; eb.onclick=()=>startEdit(p); head.append(eb); }
+    card.append(head);
     const field=(lab,el)=>{ const r=document.createElement('div'); r.className='frow'; const l=document.createElement('label'); l.textContent=lab; r.append(l,el); card.append(r); };
-    const txt=(key,ph,after)=>{ const inp=document.createElement('input'); inp.className='skuin'; inp.placeholder=ph; inp.value=p[key]||''; inp.oninput=()=>{p[key]=inp.value; if(after)after(inp.value);}; inp.onchange=()=>saveProducts(); return inp; };
-    field('商品名', txt('name','商品名',v=>{ttl.textContent=v||'(無名)';}));
-    // 型・種類（構成は自動）
-    const tsel=document.createElement('select');
-    Object.keys(TYPES).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;if(k===p.type)o.selected=true;tsel.appendChild(o);});
-    tsel.onchange=()=>{ p.type=tsel.value; p.comps=compsFor(p.type,p.comps.map(c=>c.color)); invalidateThumb(p); saveProducts(); renderRegistry(); };
-    field('型・種類', tsel);
-    field('自社SKU', txt('sku','WS-WAX-…'));
-    field('仕入れコード', txt('psku','PW-… / DIY-…'));
-    // 色（型に応じて本数自動）
-    const cr=document.createElement('div'); cr.className='frow';
-    const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色';
-    cr.append(cl);
-    p.comps.forEach(c=>{ const cc=colInput(c.color,v=>{ c.color=v; invalidateThumb(p); saveProducts(); renderRegistry(); }); cr.append(cc); });
-    card.append(cr); regEl.append(card);
+    if(!ed){
+      // 閲覧モード（読み取り専用）
+      const vval=t=>{ const s=document.createElement('span'); s.className='vval'; s.textContent=t||'—'; return s; };
+      field('型・種類', vval(p.type));
+      field('自社SKU', vval(p.sku));
+      field('仕入れコード', vval(p.psku));
+      const cr=document.createElement('div'); cr.className='frow';
+      const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色'; cr.append(cl);
+      p.comps.forEach(c=>{ const sw=document.createElement('span'); sw.className='vsw'; sw.style.background=c.color; cr.append(sw); });
+      card.append(cr);
+    }else{
+      // 編集モード
+      const txt=(key,ph,after)=>{ const inp=document.createElement('input'); inp.className='skuin'; inp.placeholder=ph; inp.value=p[key]||''; inp.oninput=()=>{p[key]=inp.value; if(after)after(inp.value);}; return inp; };
+      field('商品名', txt('name','商品名',v=>{ttl.textContent=v||'(無名)';}));
+      const tsel=document.createElement('select');
+      Object.keys(TYPES).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;if(k===p.type)o.selected=true;tsel.appendChild(o);});
+      tsel.onchange=()=>{ p.type=tsel.value; p.comps=compsFor(p.type,p.comps.map(c=>c.color)); invalidateThumb(p); renderRegistry(); };
+      field('型・種類', tsel);
+      field('自社SKU', txt('sku','WS-WAX-…'));
+      field('仕入れコード', txt('psku','PW-… / DIY-…'));
+      const cr=document.createElement('div'); cr.className='frow';
+      const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色'; cr.append(cl);
+      p.comps.forEach(c=>{ const cc=colInput(c.color,v=>{ c.color=v; invalidateThumb(p); renderRegistry(); }); cr.append(cc); });
+      card.append(cr);
+      const bar=document.createElement('div'); bar.className='savebar';
+      const sv=document.createElement('button'); sv.className='save'; sv.textContent='保存'; sv.onclick=()=>saveEdit(p);
+      const ca=document.createElement('button'); ca.className='cancel'; ca.textContent='キャンセル'; ca.onclick=()=>cancelEdit(p);
+      const dl=document.createElement('button'); dl.className='danger'; dl.textContent='削除'; dl.onclick=()=>{ if(confirm('「'+(p.name||'')+'」を削除しますか？'))deleteProduct(p); };
+      bar.append(sv,ca,dl); card.append(bar);
+    }
+    regEl.append(card);
   });
 }
-document.getElementById('addProd').onclick=()=>{ const s=document.getElementById('regSearch'); if(s)s.value=''; products.unshift({id:pidSeq++,type:'八角(マット)',name:'新規商品',sku:'',psku:'',comps:compsFor('八角(マット)',['#3C8C82'])}); saveProducts(); renderRegistry(); regView.scrollTop=0; };
+document.getElementById('addProd').onclick=()=>{ const s=document.getElementById('regSearch'); if(s)s.value=''; const id=pidSeq++; products.unshift({id,type:'八角(マット)',name:'新規商品',sku:'',psku:'',comps:compsFor('八角(マット)',['#3C8C82'])}); newIds.add(id); editing.add(id); saveProducts(); renderRegistry(); regView.scrollTop=0; };
 document.getElementById('cardSearch').oninput=()=>renderCards();
 document.getElementById('regSearch').oninput=()=>renderRegistry();
 
