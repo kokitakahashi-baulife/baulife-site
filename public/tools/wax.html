@@ -1050,11 +1050,14 @@ function _vivid(px){ const sc=px.map(p=>{ const v=_rgb2hsv(p[0],p[1],p[2]); retu
 function _kmeans(px,k,iters){ if(px.length<=k) return px.map(c=>({c,n:1})); let C=[]; for(let i=0;i<k;i++)C.push(px[Math.floor(i*(px.length-1)/(k-1))].slice()); const lab=new Array(px.length).fill(0);
   for(let it=0;it<iters;it++){ for(let i=0;i<px.length;i++){ let bd=1e9,bj=0; for(let j=0;j<k;j++){ const dx=px[i][0]-C[j][0],dy=px[i][1]-C[j][1],dz=px[i][2]-C[j][2],d=dx*dx+dy*dy+dz*dz; if(d<bd){bd=d;bj=j;} } lab[i]=bj; }
     const s=Array.from({length:k},()=>[0,0,0,0]); for(let i=0;i<px.length;i++){ const j=lab[i]; s[j][0]+=px[i][0];s[j][1]+=px[i][1];s[j][2]+=px[i][2];s[j][3]++; } for(let j=0;j<k;j++) if(s[j][3])C[j]=[s[j][0]/s[j][3],s[j][1]/s[j][3],s[j][2]/s[j][3]]; }
-  const cnt=new Array(k).fill(0); lab.forEach(j=>cnt[j]++); return C.map((c,j)=>({c,n:cnt[j]})); }
-function _extract3(px){ const cl=_kmeans(px,6,9).filter(o=>o.n>px.length*0.02).sort((a,b)=>b.n-a.n); const pick=[];
-  for(const o of cl){ const [r,g,b]=o.c; if(pick.every(q=>Math.abs(q[0]-r)+Math.abs(q[1]-g)+Math.abs(q[2]-b)>55)) pick.push([r,g,b]); if(pick.length>=3)break; }
-  while(pick.length<3) pick.push(pick[pick.length-1]||[200,200,200]);
-  return pick.map(([r,g,b])=>{ const h=_rgb2hsv(r,g,b); return _hsv2hex(h[0], Math.min(1,h[1]*1.1), Math.min(1,h[2]*1.02)); }); }
+  const cnt=new Array(k).fill(0); lab.forEach(j=>cnt[j]++); return {C,lab,cnt}; }
+function _extract3(px){ const km=_kmeans(px,6,9);
+  const groups=Array.from({length:km.C.length},()=>[]); km.lab.forEach((j,i)=>groups[j].push(px[i]));
+  const order=km.C.map((c,j)=>({c,n:km.cnt[j],j})).filter(o=>o.n>px.length*0.02).sort((a,b)=>b.n-a.n);
+  const pick=[], picC=[];
+  for(const o of order){ const [r,g,b]=o.c; if(picC.every(q=>Math.abs(q[0]-r)+Math.abs(q[1]-g)+Math.abs(q[2]-b)>50)){ pick.push(_vivid(groups[o.j])); picC.push(o.c); } if(pick.length>=3)break; }
+  while(pick.length<3) pick.push(pick[pick.length-1]||'#cccccc');
+  return pick; }
 async function autoExtractColors(p){ if(!p.real) return false; const data=await _imgPixels(p.real); if(!data) return false; const px=_beadPixels(data); if(px.length<20) return false;
   if(p.comps.length>=3){ const cols=_extract3(px); p.comps.forEach((c,i)=>c.color=cols[i%cols.length]); } else { const col=_vivid(px); p.comps.forEach(c=>c.color=col); }
   invalidateThumb(p); return true; }
