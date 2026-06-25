@@ -25,7 +25,10 @@
   .pthumb.sm{width:48px;height:48px;aspect-ratio:auto;flex:0 0 auto;}
   .pcname{font-size:11px;color:#444;margin-top:4px;line-height:1.3;}
   .rprod{flex:1;font-size:12px;font-weight:bold;color:#3a3a3a;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .regcard{border:1px solid #e3ddd0;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;}
+  .regcard{border:1px solid #e3ddd0;border-radius:10px;padding:10px;background:#fff;}
+  #regList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:940px;align-items:start;}
+  @media(max-width:780px){#regList{grid-template-columns:1fr;}}
+  .regttl{flex:1;font-size:12px;font-weight:700;color:#444;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .comp{border-top:1px dashed #eee;padding-top:7px;margin-top:7px;}
   .mini{flex:0 0 auto;padding:4px 10px;font-size:11px;margin-top:8px;}
   .seg{flex:1;padding:6px;border:1px solid #d8d2c6;background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#777;}
@@ -37,7 +40,7 @@
   .selcnt{font-weight:normal;font-size:11px;color:#999;margin-left:6px;}
   .regsearch{flex:1;padding:7px 9px;border:1px solid #d8d2c6;border-radius:7px;font-size:13px;box-sizing:border-box;}
   #cardSearch{width:100%;margin-bottom:6px;}
-  .regbar{display:flex;gap:8px;margin-bottom:12px;max-width:560px;}
+  .regbar{display:flex;gap:8px;margin-bottom:12px;max-width:940px;}
   .regbar .act{flex:0 0 auto;}
   #selBar{position:fixed;top:54px;left:316px;right:14px;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;z-index:8;pointer-events:none;}
   #selBar .selitem{pointer-events:auto;position:relative;width:52px;background:rgba(255,255,255,.93);border:1px solid #e3ddd0;border-radius:9px;padding:3px;box-shadow:0 1px 5px rgba(0,0,0,.1);}
@@ -46,13 +49,14 @@
   #mixDock{position:fixed;bottom:14px;right:14px;width:290px;max-height:64vh;overflow-y:auto;background:rgba(255,255,255,.96);border:1px solid #eee;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.13);padding:12px;z-index:9;box-sizing:border-box;}
   #mixDock .dockhead{font-size:12px;font-weight:bold;color:#7a5c3a;margin-bottom:8px;}
   .frow{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;}
-  .frow>label{font-size:11px;color:#888;width:60px;flex:0 0 auto;}
+  .frow>label{font-size:11px;color:#888;width:76px;flex:0 0 auto;white-space:nowrap;}
   .frow select{flex:1;font-size:12px;padding:4px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;}
   .frow input[type=color]{width:34px;height:27px;padding:0;border:1px solid #d8d2c6;border-radius:5px;background:#fff;}
   .frow2{display:flex;gap:8px;margin-top:7px;}
   .fcell{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
   .fcell label{font-size:10px;color:#999;}
   .skuin{font-size:11px;padding:4px 6px;border:1px solid #d8d2c6;border-radius:5px;width:100%;box-sizing:border-box;}
+  .frow input.skuin{flex:1;width:auto;}
   .mix-row{border:1px solid #e7e2d8;border-radius:8px;padding:8px;margin-bottom:8px;background:#fff;}
   .mr-top{display:flex;gap:5px;align-items:center;}
   .mr-top select{flex:1;font-size:12px;padding:3px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;min-width:0;}
@@ -879,21 +883,21 @@ function renderRegistry(){
     const card=document.createElement('div'); card.className='regcard';
     const head=document.createElement('div'); head.className='reg-head';
     const img=document.createElement('img'); img.className='pthumb sm'; img.src=makeThumb(p);
-    const nm=document.createElement('input'); nm.className='pname'; nm.placeholder='商品名'; nm.value=p.name||''; nm.oninput=()=>{p.name=nm.value;}; nm.onchange=()=>saveProducts();
+    const ttl=document.createElement('div'); ttl.className='regttl'; ttl.textContent=p.name||'(無名)';
     const del=document.createElement('button'); del.className='del'; del.textContent='✕';
     del.onclick=()=>{ products=products.filter(x=>x!==p); recipe=recipe.filter(r=>r.pid!==p.id); if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; normalizeRecipe(); saveProducts(); renderRegistry(); };
-    head.append(img,nm,del); card.append(head);
+    head.append(img,ttl,del); card.append(head);
+    // 各項目を別入力
+    const field=(lab,el)=>{ const r=document.createElement('div'); r.className='frow'; const l=document.createElement('label'); l.textContent=lab; r.append(l,el); card.append(r); };
+    const txt=(key,ph,after)=>{ const inp=document.createElement('input'); inp.className='skuin'; inp.placeholder=ph; inp.value=p[key]||''; inp.oninput=()=>{p[key]=inp.value; if(after)after(inp.value);}; inp.onchange=()=>saveProducts(); return inp; };
+    field('商品名', txt('name','商品名',v=>{ttl.textContent=v||'(無名)';}));
     // 型・種類（構成は自動）
-    const tr=document.createElement('div'); tr.className='frow';
-    const tl=document.createElement('label'); tl.textContent='型・種類';
     const tsel=document.createElement('select');
     Object.keys(TYPES).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;if(k===p.type)o.selected=true;tsel.appendChild(o);});
     tsel.onchange=()=>{ p.type=tsel.value; p.comps=compsFor(p.type,p.comps.map(c=>c.color)); invalidateThumb(p); saveProducts(); renderRegistry(); };
-    tr.append(tl,tsel); card.append(tr);
-    // SKU 2種
-    const sr=document.createElement('div'); sr.className='frow2';
-    const mk=(lab,key,ph)=>{ const w=document.createElement('div'); w.className='fcell'; const l=document.createElement('label'); l.textContent=lab; const inp=document.createElement('input'); inp.className='skuin'; inp.placeholder=ph; inp.value=p[key]||''; inp.oninput=()=>{p[key]=inp.value;}; inp.onchange=()=>saveProducts(); w.append(l,inp); return w; };
-    sr.append(mk('自社SKU','sku','WS-WAX-…'), mk('仕入SKU','psku','PW-… / DIY-…')); card.append(sr);
+    field('型・種類', tsel);
+    field('自社SKU', txt('sku','WS-WAX-…'));
+    field('仕入れコード', txt('psku','PW-… / DIY-…'));
     // 色（型に応じて本数自動）
     const cr=document.createElement('div'); cr.className='frow';
     const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色';
@@ -902,7 +906,7 @@ function renderRegistry(){
     card.append(cr); regEl.append(card);
   });
 }
-document.getElementById('addProd').onclick=()=>{ products.push({id:pidSeq++,type:'八角(マット)',name:'新規商品',sku:'',psku:'',comps:compsFor('八角(マット)',['#3C8C82'])}); saveProducts(); renderRegistry(); };
+document.getElementById('addProd').onclick=()=>{ const s=document.getElementById('regSearch'); if(s)s.value=''; products.unshift({id:pidSeq++,type:'八角(マット)',name:'新規商品',sku:'',psku:'',comps:compsFor('八角(マット)',['#3C8C82'])}); saveProducts(); renderRegistry(); regView.scrollTop=0; };
 document.getElementById('cardSearch').oninput=()=>renderCards();
 document.getElementById('regSearch').oninput=()=>renderRegistry();
 
