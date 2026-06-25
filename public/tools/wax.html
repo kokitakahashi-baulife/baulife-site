@@ -552,8 +552,8 @@ const sparkleRough=(function(){ const c=document.createElement('canvas'); c.widt
 function makeMarble(cols,size){ size=size||512; const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d');
   const hx=h=>{h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
   x.fillStyle=cols[0]; x.fillRect(0,0,size,size);
-  for(let i=0;i<170;i++){ const rgb=hx(cols[1+Math.floor(Math.random()*(cols.length-1))]);
-    const px=Math.random()*size, py=Math.random()*size, rr=size*(0.07+Math.random()*0.24), a=0.4+Math.random()*0.45;
+  for(let i=0;i<220;i++){ const rgb=hx(cols[1+Math.floor(Math.random()*(cols.length-1))]);
+    const px=Math.random()*size, py=Math.random()*size, rr=size*(0.06+Math.random()*0.26), a=0.55+Math.random()*0.4;
     x.save(); x.translate(px,py); x.rotate(Math.random()*Math.PI); x.scale(1,0.3+Math.random()*0.5);
     const g=x.createRadialGradient(0,0,0,0,0,rr);
     g.addColorStop(0,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`); g.addColorStop(1,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
@@ -562,19 +562,30 @@ function makeMarble(cols,size){ size=size||512; const c=document.createElement('
 // 同系色の濃淡を作る（マットと遠目では同色、近くで混色＝ラメ）
 function shade(hex,f){ const h=hex.replace('#',''); const v=i=>Math.max(0,Math.min(255,Math.round(parseInt(h.slice(i,i+2),16)*f)));
   return '#'+[v(0),v(2),v(4)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
-// ベース色の濃淡中心の同系マーブル（白の要素は控えめ＝実物に近い）
-function marbleOf(base){ return [base, base, shade(base,1.22), shade(base,1.5), '#f4efe8']; }
+// HSLで明度(L)を一定up＝同じ色相のまま白に近づける（純白にはしない）
+function lighten(hex,dL){ const h=hex.replace('#','');
+  let r=parseInt(h.slice(0,2),16)/255,g=parseInt(h.slice(2,4),16)/255,b=parseInt(h.slice(4,6),16)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let l=(mx+mn)/2,s=0,H=0;
+  if(d>0){ s=d/(1-Math.abs(2*l-1)); if(mx===r)H=((g-b)/d)%6; else if(mx===g)H=(b-r)/d+2; else H=(r-g)/d+4; H*=60; if(H<0)H+=360; }
+  l=Math.min(1,l+dL);
+  const C=(1-Math.abs(2*l-1))*s, X=C*(1-Math.abs((H/60)%2-1)), m=l-C/2;
+  let R,G,B; if(H<60){R=C;G=X;B=0;}else if(H<120){R=X;G=C;B=0;}else if(H<180){R=0;G=C;B=X;}
+  else if(H<240){R=0;G=X;B=C;}else if(H<300){R=X;G=0;B=C;}else{R=C;G=0;B=X;}
+  const to=v=>Math.max(0,Math.min(255,Math.round((v+m)*255))).toString(16).padStart(2,'0');
+  return '#'+to(R)+to(G)+to(B); }
+// ベース色＋ベースを明度upした同色相をマーブルに（白が強すぎない＝実物に近い）
+function marbleOf(base){ return [base, base, lighten(base,0.13), lighten(base,0.27)]; }
 
 // A) マット単色（反射ほぼ無し）
 function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.92,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.022,envMapIntensity:0.45}); }
 // B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
 function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.48,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.55,clearcoatRoughness:0.22,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.15}); }
 // C) 星専用：単色ラメ入り 超光沢
-function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.06,clearcoat:1.0,clearcoatRoughness:0.02,metalness:1.0,metalnessMap:sparkleTex,transmission:0.12,thickness:0.6,ior:1.47,iridescence:0.4,iridescenceIOR:1.3,bumpMap:microBump,bumpScale:0.004,envMapIntensity:2.0}); }
+function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({map:makeMarble(marbleOf(hex)),roughness:0.06,clearcoat:1.0,clearcoatRoughness:0.02,metalness:0.9,metalnessMap:sparkleTex,iridescence:0.35,iridescenceIOR:1.3,bumpMap:microBump,bumpScale:0.004,envMapIntensity:1.9}); }
 // 超光沢（ラメなし）：きらめき粒子なしの滑らかな艶
 function finishStarGlossPlain(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.05,clearcoat:1.0,clearcoatRoughness:0.03,metalness:0.0,bumpMap:microBump,bumpScale:0.003,envMapIntensity:1.5}); }
 // ラメ単色：単色＋ラメ（混色なし）
-function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.55,metalness:1.0,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.015,clearcoat:0.35,clearcoatRoughness:0.2,envMapIntensity:1.0}); }
+function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({map:makeMarble(marbleOf(hex)),roughness:0.5,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.015,clearcoat:0.4,clearcoatRoughness:0.2,envMapIntensity:1.05}); }
 
 // 同色で「仕上げ4種」を並べて比較（蝋らしさの検証）
 const group=new THREE.Group(); scene.add(group);
