@@ -39,6 +39,12 @@
   #cardSearch{width:100%;margin-bottom:6px;}
   .regbar{display:flex;gap:8px;margin-bottom:12px;max-width:560px;}
   .regbar .act{flex:0 0 auto;}
+  #selBar{position:fixed;top:54px;left:316px;right:14px;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;z-index:8;pointer-events:none;}
+  #selBar .selitem{pointer-events:auto;position:relative;width:52px;background:rgba(255,255,255,.93);border:1px solid #e3ddd0;border-radius:9px;padding:3px;box-shadow:0 1px 5px rgba(0,0,0,.1);}
+  #selBar .selitem img{width:100%;display:block;border-radius:6px;}
+  #selBar .selitem .x{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border:none;border-radius:50%;background:#7a5c3a;color:#fff;font-size:10px;line-height:18px;text-align:center;cursor:pointer;padding:0;}
+  #mixDock{position:fixed;bottom:14px;right:14px;width:290px;max-height:64vh;overflow-y:auto;background:rgba(255,255,255,.96);border:1px solid #eee;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.13);padding:12px;z-index:9;box-sizing:border-box;}
+  #mixDock .dockhead{font-size:12px;font-weight:bold;color:#7a5c3a;margin-bottom:8px;}
   .mix-row{border:1px solid #e7e2d8;border-radius:8px;padding:8px;margin-bottom:8px;background:#fff;}
   .mr-top{display:flex;gap:5px;align-items:center;}
   .mr-top select{flex:1;font-size:12px;padding:3px;border:1px solid #d8d2c6;border-radius:5px;background:#fff;min-width:0;}
@@ -69,11 +75,16 @@
 </div>
 
 <div id="simView" class="sidebar">
-  <p class="sub">商品カードを選んで調合 → お皿に流し出した見た目で確認。ドラッグで回転・ホイールでズーム。</p>
-  <div class="seclabel">商品（クリックで選択／解除）<span class="selcnt">選択 <span id="selCount">0</span>/6種</span></div>
+  <p class="sub">左で商品を選ぶ → 右上で選択中を確認・解除 → 右下で比率を調整。</p>
+  <div class="seclabel">商品（クリックで選択）<span class="selcnt">選択 <span id="selCount">0</span>/6種</span></div>
   <input id="cardSearch" class="regsearch" placeholder="商品名で検索…">
   <div id="cardGrid" class="cardgrid"></div>
-  <div class="seclabel">配合（合計100%）</div>
+</div>
+<!-- 選択中（右上・ワンタップ解除） -->
+<div id="selBar"></div>
+<!-- 比率＆操作（右下） -->
+<div id="mixDock">
+  <div class="dockhead">配合（合計100%）</div>
   <div id="mixList"></div>
   <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="40" value="20"><span id="totalVal">20</span></div>
   <div class="btnrow">
@@ -755,6 +766,8 @@ const simView=document.getElementById('simView'), regView=document.getElementByI
 function showTab(t){ const sim=t==='sim';
   simView.style.display=sim?'flex':'none'; regView.style.display=sim?'none':'block';
   document.getElementById('c').style.display=sim?'block':'none';
+  document.getElementById('selBar').style.display=sim?'flex':'none';
+  document.getElementById('mixDock').style.display=sim?'block':'none';
   document.getElementById('tabSim').classList.toggle('active',sim);
   document.getElementById('tabReg').classList.toggle('active',!sim);
   if(sim){ renderCards(); renderRecipe(); rebuild(); } else { renderRegistry(); }
@@ -817,6 +830,16 @@ function renderRecipe(){
     row.append(top,bot); panel.append(row); rowRefs.push({rng,rv,cnt});
   });
   updateValues();
+  renderSelBar();
+}
+function renderSelBar(){
+  const sb=document.getElementById('selBar'); if(!sb)return; sb.innerHTML='';
+  recipe.forEach(r=>{ const p=productById(r.pid); if(!p)return;
+    const it=document.createElement('div'); it.className='selitem';
+    const img=document.createElement('img'); img.src=makeThumb(p); img.title=p.name;
+    const x=document.createElement('button'); x.className='x'; x.textContent='✕'; x.onclick=()=>removeFromRecipe(p.id);
+    it.append(img,x); sb.append(it);
+  });
 }
 
 // ===== 商品登録 =====
