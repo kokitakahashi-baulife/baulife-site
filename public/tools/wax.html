@@ -57,6 +57,10 @@
   .fcell label{font-size:10px;color:#999;}
   .skuin{font-size:11px;padding:4px 6px;border:1px solid #d8d2c6;border-radius:5px;width:100%;box-sizing:border-box;}
   .frow input.skuin{flex:1;width:auto;}
+  .colcell{display:flex;align-items:center;gap:4px;}
+  .hexin{width:78px;font-size:11px;padding:4px 6px;border:1px solid #d8d2c6;border-radius:5px;text-transform:uppercase;box-sizing:border-box;}
+  .eyebtn{flex:0 0 auto;padding:3px 8px;border:1px solid #d8c9b6;border-radius:5px;background:#fff;cursor:pointer;font-size:13px;line-height:1;}
+  .eyebtn:hover{background:#f4efe6;}
   .syncbadge{position:fixed;bottom:10px;left:10px;z-index:30;font-size:11px;padding:4px 11px;border-radius:14px;background:rgba(255,255,255,.93);border:1px solid #e3ddd0;color:#7a5c3a;box-shadow:0 1px 5px rgba(0,0,0,.1);pointer-events:none;}
   .syncbadge.local{color:#b4502f;border-color:#e3b4ad;}
   .syncbadge.saving,.syncbadge.loading{color:#999;}
@@ -1042,6 +1046,7 @@ function renderRegistry(){
     }
     ir.append(fig(p.real,'実物',realExtra), fig(makeThumb(p),'再現（シミュレーター）'));
     card.append(ir);
+    const _bigs=ir.querySelectorAll('.bigimg'); const simImg=_bigs[_bigs.length-1]; // 再現サムネ（即時プレビュー用）
     const field=(lab,el)=>{ const r=document.createElement('div'); r.className='frow'; const l=document.createElement('label'); l.textContent=lab; r.append(l,el); card.append(r); };
     if(!ed){
       // 閲覧モード（読み取り専用）
@@ -1066,7 +1071,17 @@ function renderRegistry(){
       field('発注品番', txt('psku','PW-… / DIY-…'));
       const cr=document.createElement('div'); cr.className='frow';
       const cl=document.createElement('label'); cl.textContent=p.comps.length>1?'色（'+p.comps.length+'色）':'色'; cr.append(cl);
-      p.comps.forEach(c=>{ const cc=colInput(c.color,v=>{ c.color=v; invalidateThumb(p); renderRegistry(); }); cr.append(cc); });
+      p.comps.forEach(c=>{
+        const wrap=document.createElement('div'); wrap.className='colcell';
+        const cc=document.createElement('input'); cc.type='color'; cc.value=c.color;
+        const hx=document.createElement('input'); hx.className='hexin'; hx.value=c.color; hx.maxLength=7; hx.spellcheck=false; hx.placeholder='#RRGGBB';
+        const ey=document.createElement('button'); ey.type='button'; ey.className='eyebtn'; ey.textContent='🔍'; ey.title='実物から色を取る（スポイト）';
+        const apply=(hex,from)=>{ if(!/^#?[0-9a-fA-F]{6}$/.test(hex.trim()))return; hex=hex.trim(); if(hex[0]!=='#')hex='#'+hex; c.color=hex; if(from!=='cc')cc.value=hex; if(from!=='hx')hx.value=hex; invalidateThumb(p); if(simImg)simImg.src=makeThumb(p); };
+        cc.oninput=()=>apply(cc.value,'cc');   // ドラッグ中も即時プレビュー
+        hx.oninput=()=>apply(hx.value,'hx');
+        ey.onclick=async()=>{ if(!window.EyeDropper){ alert('このブラウザはスポイト非対応です（Chrome等でご利用ください）'); return; } try{ const r=await new EyeDropper().open(); apply(r.sRGBHex,'ey'); }catch(e){} };
+        wrap.append(cc,hx,ey); cr.append(wrap);
+      });
       card.append(cr);
       // 透け感（半透明）
       const trow=document.createElement('div'); trow.className='frow';
