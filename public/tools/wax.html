@@ -1131,7 +1131,7 @@ function maybeSeedSamples(){ try{
   seedSamples(); localStorage.setItem('waxSamplesSeededV2','1');
   if(packView && packView.style.display!=='none') renderPack();
 }catch(e){} }
-let packSelId=null, packBags=10, packBagG=50, twEditMode=false;
+let packSelId=null, packBags=10, packBagG=55, twEditMode=false;
 function renderPack(){
   const body=document.getElementById('packBody'); if(!body)return;
   const tw=getTypeWeights(), recipes=getRecipes(), twKeys=weightTypeKeys();
