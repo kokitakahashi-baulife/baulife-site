@@ -7,6 +7,7 @@ const DRIVE_ID = process.env.DRIVE_ID ?? "";
 // 社内ポータルのフォルダ構成
 const PORTAL_NAME = "社内ポータル";        // ルート（= FOLDER を改名）
 const COLLAB_FOLDER_NAME = "コラボ企画書"; // 企画書JSONの保存先サブフォルダ
+const ARCHIVE_NAME = "アーカイブ";          // 不要フォルダの退避先（sandbox。削除せず移動）
 
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
@@ -403,6 +404,22 @@ async function listLooseJson(token: string) {
   return (await res.json()).files ?? [];
 }
 
+// FOLDER 直下のサブフォルダ一覧
+async function listSubfolders(token: string) {
+  const params = new URLSearchParams({
+    q: `'${FOLDER}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: "files(id,name)",
+    pageSize: "200",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    corpora: "drive",
+    driveId: DRIVE_ID,
+  });
+  const res = await fetch(`${API}/files?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`subfolder list ${res.status} ${await res.text()}`);
+  return (await res.json()).files ?? [];
+}
+
 export async function organizeDrive(token: string, dryRun: boolean) {
   const report: any = { dryRun, root: {}, folders: {}, moved: [] as string[] };
 
@@ -445,6 +462,31 @@ export async function organizeDrive(token: string, dryRun: boolean) {
     if (!dryRun) {
       if (!collabId) collabId = await ensureSubfolder(token, COLLAB_FOLDER_NAME);
       await moveFile(token, file.id, collabId, FOLDER);
+    }
+  }
+
+  // 6) アーカイブ（sandbox）フォルダを用意
+  const archive = await findFolder(token, ARCHIVE_NAME, FOLDER);
+  let archiveId: string | null = archive?.id ?? null;
+  report.folders[ARCHIVE_NAME] = archive ? "exists" : dryRun ? "will-create" : "created";
+  if (!archive && !dryRun) archiveId = await ensureSubfolder(token, ARCHIVE_NAME);
+
+  // 7) 既定構成にない不要フォルダをアーカイブへ移動（削除はしない・復元可能）
+  const keep = new Set([
+    COLLAB_FOLDER_NAME,
+    WAX_FOLDER_NAME,
+    RANK_FOLDER_NAME,
+    RANK_FOLDER_OLD,
+    ARCHIVE_NAME,
+  ]);
+  report.archived = [] as string[];
+  const subs = await listSubfolders(token);
+  for (const f of subs) {
+    if (keep.has(f.name)) continue;
+    report.archived.push(f.name);
+    if (!dryRun) {
+      if (!archiveId) archiveId = await ensureSubfolder(token, ARCHIVE_NAME);
+      await moveFile(token, f.id, archiveId, FOLDER);
     }
   }
 

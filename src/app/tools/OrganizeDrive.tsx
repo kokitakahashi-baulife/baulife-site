@@ -7,6 +7,7 @@ type Report = {
   root: { from?: string; to?: string; action?: string };
   folders: Record<string, string>;
   moved: string[];
+  archived?: string[];
 };
 
 export default function OrganizeDrive() {
@@ -15,7 +16,13 @@ export default function OrganizeDrive() {
   const [err, setErr] = useState("");
 
   async function run(execute: boolean) {
-    if (execute && !confirm("ドライブを社内ポータル構成に整理します（移動のみ・削除なし）。実行しますか？")) return;
+    if (
+      execute &&
+      !confirm(
+        "社内ポータルフォルダの中身を整理整頓します（移動・リネームのみ／削除なし。不要なフォルダはアーカイブへ退避）。実行しますか？"
+      )
+    )
+      return;
     setBusy(true);
     setErr("");
     try {
@@ -32,9 +39,11 @@ export default function OrganizeDrive() {
 
   return (
     <div className="mt-10 rounded-2xl border border-[#eee] bg-[#fafafa] p-5">
-      <p className="text-[13px] font-bold text-[#1a1a1a] mb-1">管理者：ドライブ整理</p>
+      <p className="text-[13px] font-bold text-[#1a1a1a] mb-1">管理者：社内ポータルフォルダの中身の整理整頓</p>
       <p className="text-[12px] text-[#999] mb-3 leading-relaxed">
-        共有ドライブを「社内ポータル」構成（コラボ企画書／WAXシミュレーター／売上ランク表）に整理します。移動のみで削除はしません。まず「確認」で内容を見てから「実行」してください。
+        社内ポータルフォルダの中を、ツール別フォルダ（コラボ企画書／WAXシミュレーター／売上ランク表）に整理整頓します。
+        <strong>移動・リネームのみで削除はしません。</strong>
+        既定構成にない不要なフォルダは「アーカイブ」フォルダ（sandbox）へ退避します（あとで戻せます）。まず「確認」で内容を見てから実行してください。
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -49,7 +58,7 @@ export default function OrganizeDrive() {
           disabled={busy}
           className="text-[13px] rounded-lg border border-[#e85d75] bg-[#e85d75] text-white px-4 py-2 hover:opacity-90 disabled:opacity-50"
         >
-          実行する
+          整理整頓する
         </button>
         {busy && <span className="text-[12px] text-[#999]">処理中…</span>}
       </div>
@@ -58,7 +67,7 @@ export default function OrganizeDrive() {
 
       {report && (
         <div className="mt-4 text-[12px] text-[#444] leading-relaxed">
-          <p className="font-bold mb-1">{report.dryRun ? "確認結果（未実行）" : "実行結果"}</p>
+          <p className="font-bold mb-1">{report.dryRun ? "確認結果（未実行）" : "整理整頓 実行結果"}</p>
           <p>
             ルート：{report.root.from} → {report.root.to}（{report.root.action}）
           </p>
@@ -73,6 +82,10 @@ export default function OrganizeDrive() {
           <p>
             企画書の移動（{report.moved.length}件）：
             {report.moved.length ? report.moved.join("、 ") : "なし"}
+          </p>
+          <p>
+            アーカイブへ退避（{report.archived?.length ?? 0}件）：
+            {report.archived?.length ? report.archived.join("、 ") : "なし"}
           </p>
         </div>
       )}
