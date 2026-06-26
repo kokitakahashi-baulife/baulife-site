@@ -77,6 +77,9 @@
   .syncbadge.local .dot{background:#c0392b;}
   .syncbadge .spin{width:13px;height:13px;border:2px solid #e0d2bd;border-top-color:#7a5c3a;border-radius:50%;animation:spin .7s linear infinite;flex:0 0 auto;}
   @keyframes spin{to{transform:rotate(360deg);}}
+  .segrow{display:flex;gap:0;margin-bottom:10px;border:1px solid #d8d2c6;border-radius:8px;overflow:hidden;}
+  .seg{flex:1;padding:7px;border:none;background:#fff;color:#888;font-size:12px;cursor:pointer;}
+  .seg.on{background:#7a5c3a;color:#fff;font-weight:bold;}
   .editbtn{flex:0 0 auto;padding:5px 14px;border:none;border-radius:6px;background:#7a5c3a;color:#fff;font-size:11px;cursor:pointer;}
   .imgrow{display:flex;gap:10px;margin:8px 0 6px;}
   .imgfig{margin:0;flex:1;text-align:center;min-width:0;}
@@ -134,6 +137,7 @@
 <!-- 比率＆操作（右下） -->
 <div id="mixDock">
   <div class="dockhead">配合（合計100%）</div>
+  <div class="segrow"><button class="seg on" id="modePlate">お皿</button><button class="seg" id="modeBag">袋（zip）</button></div>
   <div id="mixList"></div>
   <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="80" value="55"><span id="totalVal">55</span></div>
   <div class="btnrow">
@@ -216,6 +220,32 @@ dishBase.position.y=-0.17; dishBase.receiveShadow=true; plate.add(dishBase);
 const dishRim=new THREE.Mesh(new THREE.TorusGeometry(PLATE_R,0.17,18,72), dishMat);
 dishRim.rotation.x=Math.PI/2; dishRim.position.y=0.04; dishRim.receiveShadow=true; plate.add(dishRim);
 scene.add(plate);
+
+// ===== zip bag（透明フィルムの袋）=====
+const BAGW=7.8, BAGH=10.6, BAGD=1.1;
+function roundedRect(w,h,r){ const s=new THREE.Shape(); const x=w/2,y=h/2;
+  s.moveTo(-x+r,-y); s.lineTo(x-r,-y); s.quadraticCurveTo(x,-y,x,-y+r); s.lineTo(x,y-r); s.quadraticCurveTo(x,y,x-r,y);
+  s.lineTo(-x+r,y); s.quadraticCurveTo(-x,y,-x,y-r); s.lineTo(-x,-y+r); s.quadraticCurveTo(-x,-y,-x+r,-y); return s; }
+const bag=new THREE.Group(); bag.visible=false; scene.add(bag);
+const bagBackMat=new THREE.MeshPhysicalMaterial({color:'#f4f2ee',roughness:0.62,clearcoat:0.18,clearcoatRoughness:0.4,envMapIntensity:0.5,side:THREE.DoubleSide});
+const bagBack=new THREE.Mesh(new THREE.ShapeGeometry(roundedRect(BAGW,BAGH,0.7)), bagBackMat); bagBack.position.z=-BAGD/2; bagBack.receiveShadow=true; bag.add(bagBack);
+// 透明フィルム前面（中身が透けて見える）
+const bagFilmMat=new THREE.MeshPhysicalMaterial({color:'#ffffff',transparent:true,opacity:0.18,transmission:0.0,roughness:0.08,metalness:0,clearcoat:1.0,clearcoatRoughness:0.06,envMapIntensity:1.4,side:THREE.DoubleSide,depthWrite:false});
+const bagFilm=new THREE.Mesh(new THREE.ShapeGeometry(roundedRect(BAGW,BAGH,0.7)), bagFilmMat); bagFilm.position.z=BAGD/2; bagFilm.renderOrder=3; bag.add(bagFilm);
+// 上部シール＆ジッパー
+const sealMat=new THREE.MeshPhysicalMaterial({color:'#eceae4',roughness:0.55,clearcoat:0.2});
+const bagSeal=new THREE.Mesh(new THREE.BoxGeometry(BAGW,1.0,BAGD*0.5), sealMat); bagSeal.position.set(0,BAGH/2-0.5,0); bag.add(bagSeal);
+const bagZip=new THREE.Mesh(new THREE.BoxGeometry(BAGW*0.9,0.16,BAGD*0.62), new THREE.MeshPhysicalMaterial({color:'#cfccc4',roughness:0.4,metalness:0.2})); bagZip.position.set(0,BAGH/2-1.05,0); bag.add(bagZip);
+let container='plate'; // 'plate' | 'bag'
+function setContainer(mode){
+  container=mode;
+  plate.visible=(mode==='plate'); bag.visible=(mode==='bag'); if(typeof ground!=='undefined') ground.visible=(mode==='plate');
+  if(mode==='bag'){ camera.position.set(0,0,23); } else { camera.position.set(0,16.5,9.8); }
+  controls.target.set(0,0,0); controls.update();
+  const a=document.getElementById('modePlate'), b=document.getElementById('modeBag');
+  if(a)a.classList.toggle('on',mode==='plate'); if(b)b.classList.toggle('on',mode==='bag');
+  rebuild();
+}
 
 // ---- 形のジオメトリ（八角・星 共通の立体化）----
 function solidify(shape,H,BEV,dome,Rtop){
@@ -816,11 +846,37 @@ function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; r
 function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)); return {x:q.x,y:q.y,z:q.z,w:q.w}; }
 
 // ===== 配置を再構築（ルールベース） =====
+function gscaleOf(beads){ const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
+  const REF=40, usable=Math.PI*Math.pow(PLATE_R-0.30,2)*0.72, unit=Math.PI*avgR*avgR; return Math.min(1, Math.sqrt((usable/unit)/REF)); }
+function rebuildBag(beads,r){
+  const world=new RAPIER.World(new RAPIER.Vector3(0,-16,0));
+  const W=BAGW-1.4, H=BAGH-2.2, halfW=W/2, botY=-H/2;
+  const fix=(x,y,z,hx,hy,hz)=>{ const b=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x,y,z)); world.createCollider(RAPIER.ColliderDesc.cuboid(hx,hy,hz),b); };
+  fix(0,botY-0.3,0, W,0.3,2);                 // 底
+  fix(-(halfW+0.3),0,0, 0.3,H,2); fix(halfW+0.3,0,0, 0.3,H,2);  // 左右
+  fix(0,0,-0.55, W,H,0.2); fix(0,0,0.55, W,H,0.2);              // 前後（薄いスラブ）
+  const gscale=gscaleOf(beads), bodies=[], meshes=[];
+  const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)); // 天面をカメラ(+Z)へ
+  beads.forEach((m)=>{
+    const g=SHAPES[m.shape].geo, s=gscale*(0.95+r()*0.04), rad=g.userData.radius*s*0.82;
+    const bx=(r()*2-1)*(halfW-rad), by=H/2 - r()*1.0;
+    const bd=RAPIER.RigidBodyDesc.dynamic().setTranslation(bx,by,0).setLinearDamping(0.2).lockRotations().enabledTranslations(true,true,false);
+    const body=world.createRigidBody(bd); world.createCollider(RAPIER.ColliderDesc.ball(rad).setFriction(0.6).setRestitution(0.0), body);
+    const me=new THREE.Mesh(g,getMat(m.finish,m.color,m.trans)); me.scale.setScalar(s);
+    const spin=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), r()*Math.PI*2);
+    me.quaternion.copy(spin.multiply(tilt)); me.castShadow=true;
+    group.add(me); bodies.push(body); meshes.push(me);
+  });
+  for(let st=0;st<460;st++) world.step();
+  bodies.forEach((b,i)=>{ const t=b.translation(); meshes[i].position.set(t.x,t.y,t.z); }); // 回転はmesh固定（正面向き）
+  world.free();
+}
 function rebuild(){
   while(group.children.length) group.remove(group.children[0]);
   const beads=resolveBeads();
   const r=mkRng(seed);
   for(let i=beads.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [beads[i],beads[j]]=[beads[j],beads[i]]; }
+  if(container==='bag'){ rebuildBag(beads,r); return; }
   // Rapier物理（平らにロック＝重ねず、皿いっぱいに密に敷き詰める単層）
   const world=new RAPIER.World(new RAPIER.Vector3(0,-12,0));
   const gb=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0,-0.5,0));
@@ -1229,7 +1285,15 @@ document.getElementById('shuffleBtn').onclick=()=>{ seed=(seed*16807+1)&0x7fffff
 const totalRange=document.getElementById('totalRange'), totalVal=document.getElementById('totalVal');
 totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); };
 totalRange.onchange=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); rebuild(); };
-document.getElementById('saveBtn').onclick=()=>{ renderer.render(scene,camera); const a=document.createElement('a'); a.download='wax-mix.png'; a.href=renderer.domElement.toDataURL('image/png'); a.click(); };
+document.getElementById('saveBtn').onclick=()=>{
+  const S=1400; // 正方形で書き出し（企画書添付用）
+  renderer.setSize(S,S); camera.aspect=1; camera.updateProjectionMatrix(); renderer.render(scene,camera);
+  const url=renderer.domElement.toDataURL('image/png');
+  renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  const a=document.createElement('a'); a.download=(container==='bag'?'wax-bag':'wax-mix')+'.png'; a.href=url; a.click();
+};
+document.getElementById('modePlate').onclick=()=>setContainer('plate');
+document.getElementById('modeBag').onclick=()=>setContainer('bag');
 showTab(location.hash==='#products'?'reg':'sim');
 pullShared(); // 起動時に共有データを取得（あれば全員共通のデータで上書き）
 
