@@ -557,7 +557,7 @@ function makeSparkle(size,dots,rep,rmax){
 const microBump=makeBump(256,600,40,0.05,2);     // 蝋の微細な表面ゆらぎ
 const crinkleBump=makeBump(256,1000,95,0.028,2); // マットの皺
 const sparkleTex=makeSparkle(256,800,3);         // ラメの細片（八角マーブル用）
-const sparkleBig=makeSparkle(256,650,2,3.6);     // 大きめ・目立つラメ（星・イチョウ等用）
+const sparkleBig=makeSparkle(256,3000,4,0.6);    // 微細なラメ粒（星・イチョウ等用）
 
 // ラメ用：反転スパークル（粒だけ低ラフネス＝ツヤ）＆マーブル色マップ
 const sparkleRough=(function(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
