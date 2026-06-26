@@ -44,6 +44,29 @@
   .concept-form{border-left:3px solid var(--red);padding-left:10px;margin:14px 0;}
   .concept-form.secret{border-left-color:#b98a3c;}
   .hint{font-size:11px;color:var(--gray);margin:2px 0 0;}
+  .recipe-btn{margin-top:6px;width:100%;border:1px solid var(--line);background:var(--paper);border-radius:7px;
+    padding:6px;font-size:12px;cursor:pointer;color:var(--red);}
+  .recipe-btn:hover{background:var(--tint);}
+  /* レシピ選択モーダル */
+  .rp-overlay{position:fixed;inset:0;background:rgba(40,34,28,.5);z-index:100;display:flex;
+    align-items:center;justify-content:center;padding:24px;}
+  .rp-modal{background:var(--paper);border-radius:14px;max-width:760px;width:100%;max-height:86vh;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);}
+  .rp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);}
+  .rp-head h3{margin:0;font-size:15px;color:var(--red);}
+  .rp-head .x{border:0;background:none;font-size:20px;cursor:pointer;color:var(--gray);line-height:1;}
+  .rp-body{overflow-y:auto;padding:14px 18px;}
+  .rp-search{width:100%;margin-bottom:12px;}
+  .rp-rec{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;margin-bottom:10px;background:#fff;}
+  .rp-rec .rp-name{font-size:13px;font-weight:700;flex:1;min-width:0;}
+  .rp-rec .rp-name small{display:block;font-weight:400;color:var(--gray);font-size:11px;margin-top:3px;line-height:1.4;}
+  .rp-imgs{display:flex;gap:10px;flex:0 0 auto;}
+  .rp-pick{cursor:pointer;text-align:center;border:2px solid transparent;border-radius:8px;padding:3px;background:#f3efe8;}
+  .rp-pick:hover{border-color:var(--red);}
+  .rp-pick img{display:block;width:72px;height:72px;object-fit:cover;border-radius:5px;}
+  .rp-pick span{display:block;font-size:10px;color:var(--gray);margin-top:2px;}
+  .rp-empty{color:var(--gray);font-size:13px;text-align:center;padding:30px 0;}
 
   /* ---------- preview sheet (A4) ---------- */
   .sheet{width:210mm;min-height:297mm;background:#fff;padding:16mm 15mm;box-shadow:0 2px 14px rgba(0,0,0,.15);
@@ -449,6 +472,56 @@ function exportPDF(){
   window.print();
 }
 
+/* ---------- recipe picker (WAXシミュレーターの保存レシピから画像を選ぶ) ---------- */
+let _recipesCache=null;
+async function loadWaxRecipes(){
+  if(_recipesCache) return _recipesCache;
+  const res=await fetch("/api/tools/wax",{headers:{Accept:"application/json"}});
+  if(!res.ok) throw new Error("wax fetch "+res.status);
+  const data=await res.json();
+  const recs=(Array.isArray(data.products)?data.products:[])
+    .filter(p=>p&&p.recipe&&!p.archived)
+    .sort((a,b)=>(b._t||0)-(a._t||0));
+  _recipesCache=recs; return recs;
+}
+function openRecipePicker(cb){
+  const ov=el("div","rp-overlay");
+  ov.onclick=e=>{ if(e.target===ov) document.body.removeChild(ov); };
+  const modal=el("div","rp-modal");
+  modal.innerHTML='<div class="rp-head"><h3>レシピから選択</h3><button class="x" title="閉じる">×</button></div>'+
+    '<div class="rp-body"><div class="rp-empty">レシピを読み込み中…</div></div>';
+  ov.appendChild(modal); document.body.appendChild(ov);
+  modal.querySelector(".x").onclick=()=>document.body.removeChild(ov);
+  const body=modal.querySelector(".rp-body");
+  loadWaxRecipes().then(recs=>{
+    if(!recs.length){ body.innerHTML='<div class="rp-empty">保存されたレシピがありません。<br>WAXシミュレーターで「★ レシピとして保存」してください。</div>'; return; }
+    const search=el("input","rp-search"); search.type="text"; search.placeholder="レシピ名で検索…";
+    const list=el("div");
+    body.innerHTML=""; body.appendChild(search); body.appendChild(list);
+    function paint(q){
+      q=(q||"").trim().toLowerCase();
+      const shown=recs.filter(r=>!q||(r.name||"").toLowerCase().includes(q));
+      list.innerHTML="";
+      if(!shown.length){ list.appendChild(el("div","rp-empty","該当するレシピがありません。")); return; }
+      shown.forEach(r=>{
+        const row=el("div","rp-rec");
+        const desc=(r.items||[]).map(it=>it.name+" "+Math.round(it.ratio)+"%").join(" / ");
+        const nm=el("div","rp-name"); nm.innerHTML=esc(r.name)+"<small>"+esc(desc)+"</small>"; row.appendChild(nm);
+        const imgs=el("div","rp-imgs");
+        [["お皿",r.thumb],["袋",r.thumbBag]].forEach(([lbl,src])=>{
+          if(!src) return;
+          const p=el("div","rp-pick"); p.innerHTML='<img src="'+src+'"><span>'+lbl+'</span>';
+          p.onclick=()=>{ document.body.removeChild(ov); cb(src); };
+          imgs.appendChild(p);
+        });
+        row.appendChild(imgs); list.appendChild(row);
+      });
+    }
+    search.oninput=()=>paint(search.value);
+    paint("");
+  }).catch(err=>{ body.innerHTML='<div class="rp-empty">レシピを読み込めませんでした。<br>'+esc(String(err.message||err))+'</div>'; });
+}
+
 /* ---------- image handling ---------- */
 function pickImage(cb){
   const i=document.createElement("input"); i.type="file"; i.accept="image/*";
@@ -505,7 +578,11 @@ function conceptForm(c,title,secret){
   box.appendChild(el("div","fl","② 商品化イメージ"));
   const g=el("div","row");
   [["スタンプヘッド","stamp"],["ワックスカラー","wax"],["ポストカード","postcard"]].forEach(([nm,k])=>{
-    const d=el("div"); d.appendChild(el("div","hint",nm)); d.appendChild(imgSlot(nm,()=>c[k],v=>c[k]=v)); g.appendChild(d);
+    const d=el("div"); d.appendChild(el("div","hint",nm)); d.appendChild(imgSlot(nm,()=>c[k],v=>c[k]=v));
+    if(k==="wax"){ const b=el("button","recipe-btn","🗂 レシピから選択"); b.type="button";
+      b.onclick=()=>openRecipePicker(img=>{ c.wax=img; buildForm(); render(); autosave(); });
+      d.appendChild(b); }
+    g.appendChild(d);
   });
   box.appendChild(g);
   return box;

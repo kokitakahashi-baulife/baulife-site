@@ -1076,11 +1076,19 @@ function recipeItemsFromCurrent(){ return recipe.filter(r=>productById(r.pid)).m
 // レシピが含むワックスの素材数（絵柄入りは3素材ぶん）。MAXCOMP(=6)を超えさせない
 function itemsCompCount(items){ return (items||[]).reduce((a,it)=>a+((TYPES[it.type]&&TYPES[it.type].length)||1),0); }
 function recipeCompCount(rec){ return itemsCompCount(rec&&rec.items); }
+// お皿と袋、両方のプレビュー画像を撮る（企画書でどちらかを選べるように）
+function captureBothThumbs(){
+  const prev=container;
+  setContainer('plate'); const thumb=captureThumb();
+  setContainer('bag');   const thumbBag=captureThumb();
+  setContainer(prev);
+  return {thumb,thumbBag};
+}
 function saveCurrentRecipe(name){
   const items=recipeItemsFromCurrent(); if(!items.length) return false;
   if(itemsCompCount(items)>MAXCOMP){ alert('ワックスの種類が'+MAXCOMP+'種を超えています（絵柄入りは3種ぶん）。\n'+MAXCOMP+'種以内に減らしてから保存してください。'); return false; }
-  const thumb=captureThumb();
-  products.push({recipe:true,id:Date.now(),name:name,items,thumb,_t:Date.now()}); saveProducts(); return true;
+  const {thumb,thumbBag}=captureBothThumbs();
+  products.push({recipe:true,id:Date.now(),name:name,items,thumb,thumbBag,_t:Date.now()}); saveProducts(); return true;
 }
 function deleteRecipe(id){ const e=products.find(p=>p.recipe&&p.id===id); if(e){ e.archived=true; e._t=Date.now(); saveProducts(); } }
 function loadRecipeToSim(rec){
