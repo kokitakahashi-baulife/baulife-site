@@ -125,9 +125,17 @@
   .card2 .ttl{font-size:13px;font-weight:bold;color:#5a4a32;margin-bottom:6px;}
   .wgrid{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:12px;}
   .wgrid input{width:88px;padding:5px 7px;border:1px solid #d9d2c4;border-radius:6px;font-size:12px;text-align:right;}
-  .recrow{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #e7e2d8;border-radius:10px;background:#fff;padding:10px 12px;margin-bottom:8px;}
+  .recrow{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #e7e2d8;border-radius:10px;background:#fff;padding:10px 12px;margin-bottom:8px;}
+  .recrow .rleft{display:flex;align-items:center;gap:12px;min-width:0;flex:1;}
+  .recrow .rthumb{width:58px;height:58px;border-radius:8px;object-fit:cover;border:1px solid #eee;background:#f3f0ea;flex:0 0 auto;}
   .recrow .rname{font-size:13px;font-weight:bold;color:#5a4a32;}
   .recrow .rdesc{font-size:11px;color:#888;margin-top:2px;line-height:1.5;}
+  /* 型重量カード（コンパクト＋編集ロック） */
+  .twcard .twhead{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .twsummary{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:#888;margin-top:8px;}
+  .twsummary b{color:#5a4a32;font-weight:bold;} .twsummary i{color:#c3b9a6;font-style:normal;}
+  .twedit{padding:5px 12px;font-size:11px;border:none;border-radius:7px;background:#ece7dd;color:#5a4a32;cursor:pointer;flex:0 0 auto;}
+  .twedit.done{background:#7a5c3a;color:#fff;}
   .recrow .ops{display:flex;gap:6px;flex:0 0 auto;}
   .recrow .ops button{padding:6px 10px;font-size:11px;border:none;border-radius:7px;cursor:pointer;background:#ece7dd;color:#5a4a32;}
   .recrow .ops button.primary{background:#7a5c3a;color:#fff;}
@@ -1048,11 +1056,21 @@ function setTypeWeight(type,g){ let e=products.find(p=>p.typeWeights);
   if(!e){ e={typeWeights:true,id:-1,map:{},_t:0}; products.push(e); }
   e.map[type]=g; e._t=Date.now(); saveProducts(); }
 function clearTypeWeight(type){ const e=products.find(p=>p.typeWeights); if(e&&e.map){ delete e.map[type]; e._t=Date.now(); saveProducts(); } }
+// 現在のお皿プレビューを正方形JPEGサムネにして返す（レシピ一覧用）
+function captureThumb(size){ size=size||360;
+  try{
+    renderer.setSize(size,size); camera.aspect=1; camera.updateProjectionMatrix(); renderer.render(scene,camera);
+    const url=renderer.domElement.toDataURL('image/jpeg',0.82);
+    renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+    return url;
+  }catch(e){ try{ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }catch(_){} return ''; }
+}
+function recipeItemsFromCurrent(){ return recipe.filter(r=>productById(r.pid)).map(r=>{ const p=productById(r.pid);
+  return {sku:p.sku||'',name:p.name,color:prodColor(p),type:p.type,ratio:Math.round(r.ratio*10)/10}; }); }
 function saveCurrentRecipe(name){
-  const items=recipe.filter(r=>productById(r.pid)).map(r=>{ const p=productById(r.pid);
-    return {sku:p.sku||'',name:p.name,color:prodColor(p),type:p.type,ratio:Math.round(r.ratio*10)/10}; });
-  if(!items.length) return false;
-  products.push({recipe:true,id:Date.now(),name:name,items,_t:Date.now()}); saveProducts(); return true;
+  const items=recipeItemsFromCurrent(); if(!items.length) return false;
+  const thumb=captureThumb();
+  products.push({recipe:true,id:Date.now(),name:name,items,thumb,_t:Date.now()}); saveProducts(); return true;
 }
 function deleteRecipe(id){ const e=products.find(p=>p.recipe&&p.id===id); if(e){ e.archived=true; e._t=Date.now(); saveProducts(); } }
 function loadRecipeToSim(rec){
@@ -1071,18 +1089,56 @@ function packPlan(rec,bags,bagG){
   const missing=[...new Set(rows.filter(r=>!r.w).map(r=>r.type||r.name))];
   return {T,bags,bagG,rows,missing,totalBeads:rows.reduce((a,r)=>a+r.beads,0)};
 }
-let packSelId=null, packBags=10, packBagG=50;
+// ===== サンプルレシピの初回投入（レシピが空のときだけ・サムネ付き） =====
+function findProdByName(name){ return products.find(p=>isProd(p)&&!p.archived&&p.name===name); }
+function seedSamples(){
+  const defs=[
+    {name:'春のパステルMIX', items:[['ピーチマンゴー',40],['ライトピンク',30],['スノーホワイト',30]]},
+    {name:'ベリーガーデン',   items:[['ベリー',40],['チェリー',30],['ユニコーン',30]]},
+    {name:'ミント＆クリーム', items:[['ライムミント',50],['スノーホワイト',50]]},
+    {name:'サンセットビーチ', items:[['サンドビーチ',40],['フレッシュオレンジ',30],['ピーチマンゴー',30]]},
+    {name:'オーシャンブルー', items:[['ペールブルー',40],['ソーダ',30],['スノーホワイト',30]]},
+  ];
+  const pool=products.filter(p=>isProd(p)&&!p.archived); if(pool.length<2)return;
+  const origRecipe=recipe; let added=0;
+  defs.forEach((d,di)=>{
+    let picks=d.items.map(([nm,rt])=>{ const p=findProdByName(nm); return p?{pid:p.id,ratio:rt}:null; }).filter(Boolean);
+    if(picks.length<2){ const used=new Set(picks.map(x=>x.pid));
+      for(const p of pool){ if(picks.length>=3)break; if(!used.has(p.id)){ picks.push({pid:p.id,ratio:30}); used.add(p.id);} } }
+    if(picks.length<2)return;
+    recipe=picks; normalizeRecipe(); rebuild();
+    products.push({recipe:true,id:Date.now()+di,name:d.name,items:recipeItemsFromCurrent(),thumb:captureThumb(),_t:Date.now()+di});
+    added++;
+  });
+  recipe=origRecipe; normalizeRecipe(); rebuild();
+  if(added) saveProducts();
+}
+function maybeSeedSamples(){ try{
+  if(localStorage.getItem('waxSamplesSeeded')) return;
+  if(getRecipes().length>0){ localStorage.setItem('waxSamplesSeeded','1'); return; }
+  seedSamples(); localStorage.setItem('waxSamplesSeeded','1');
+  if(packView && packView.style.display!=='none') renderPack();
+}catch(e){} }
+let packSelId=null, packBags=10, packBagG=50, twEditMode=false;
 function renderPack(){
   const body=document.getElementById('packBody'); if(!body)return;
-  const tw=getTypeWeights(), recipes=getRecipes();
-  let html='<div class="card2"><div class="ttl">型ごとの1粒重量 (g)</div>'+
-    '<div class="sub" style="margin:0 0 8px">各型の粒を数個まとめて量り、粒数で割った平均gを入れてください（絵柄入りは中身の平均でOK）。梱包計算に使われ、全員で共有されます。</div><div class="wgrid">';
-  Object.keys(TYPES).forEach(t=>{ html+='<label>'+esc(t)+'</label><span><input type="number" min="0" step="0.01" data-tw="'+esc(t)+'" value="'+(tw[t]!=null?tw[t]:'')+'" placeholder="—"> g</span>'; });
-  html+='</div></div>';
+  const tw=getTypeWeights(), recipes=getRecipes(), twKeys=Object.keys(TYPES);
+  let html='<div class="card2 twcard">';
+  if(!twEditMode){
+    html+='<div class="twhead"><span class="ttl" style="margin:0">型ごとの1粒重量</span><button class="twedit" id="twEditBtn">✏ 編集</button></div>';
+    html+='<div class="twsummary">'+ twKeys.map(t=>esc(t)+' <b>'+(tw[t]!=null? tw[t]+'g':'<i>未設定</i>')+'</b>').map(s=>'<span>'+s+'</span>').join('') +'</div>';
+  } else {
+    html+='<div class="twhead"><span class="ttl" style="margin:0">型ごとの1粒重量 (g)</span><button class="twedit done" id="twDoneBtn">完了</button></div>';
+    html+='<div class="sub" style="margin:6px 0 8px">各型の粒を数個まとめて量り、粒数で割った平均gを入力（絵柄入りは中身の平均でOK）。基本は初期設定のみ。全員で共有されます。</div><div class="wgrid">';
+    html+= twKeys.map(t=>'<label>'+esc(t)+'</label><span><input type="number" min="0" step="0.01" data-tw="'+esc(t)+'" value="'+(tw[t]!=null?tw[t]:'')+'" placeholder="—"> g</span>').join('');
+    html+='</div>';
+  }
+  html+='</div>';
   html+='<div class="seclabel" style="border:none;padding-top:0">保存済みレシピ（'+recipes.length+'）</div>';
   if(!recipes.length) html+='<p class="sub">まだありません。「調合シミュレーター」で配合を作り「★ レシピとして保存」を押すと、ここに追加されます。</p>';
   recipes.forEach(rec=>{ const desc=rec.items.map(it=>'<span class="swatch" style="background:'+esc(it.color||'#ccc')+'"></span>'+esc(it.name)+' '+Math.round(it.ratio)+'%').join(' ／ ');
-    html+='<div class="recrow"><div><div class="rname">'+esc(rec.name)+'</div><div class="rdesc">'+desc+'</div></div>'+
+    const thumb=rec.thumb?'<img class="rthumb" src="'+rec.thumb+'" alt="">':'<div class="rthumb"></div>';
+    html+='<div class="recrow"><div class="rleft">'+thumb+'<div><div class="rname">'+esc(rec.name)+'</div><div class="rdesc">'+desc+'</div></div></div>'+
       '<div class="ops"><button class="primary" data-load="'+rec.id+'">呼び出す</button><button data-calc="'+rec.id+'">梱包計算</button><button class="danger" data-del="'+rec.id+'">削除</button></div></div>'; });
   const sel=recipes.find(r=>r.id===packSelId)||recipes[0]||null;
   html+='<div class="card2" id="calcCard"><div class="ttl">梱包計算</div>';
@@ -1092,6 +1148,8 @@ function renderPack(){
       '<label>1袋 <input type="number" id="calcBagG" min="1" step="1" value="'+packBagG+'"> g</label></div><div id="calcResult"></div>';
   html+='</div>';
   body.innerHTML=html;
+  const eb=document.getElementById('twEditBtn'); if(eb)eb.onclick=()=>{ twEditMode=true; renderPack(); };
+  const db=document.getElementById('twDoneBtn'); if(db)db.onclick=()=>{ twEditMode=false; renderPack(); };
   body.querySelectorAll('input[data-tw]').forEach(inp=>{ inp.onchange=()=>{ const t=inp.getAttribute('data-tw'); if(inp.value===''){clearTypeWeight(t);} else setTypeWeight(t,Math.max(0,+inp.value||0)); renderPackResult(); }; });
   body.querySelectorAll('button[data-load]').forEach(b=>b.onclick=()=>{ const r=getRecipes().find(x=>x.id===+b.getAttribute('data-load')); if(r)loadRecipeToSim(r); });
   body.querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{ const id=+b.getAttribute('data-del'); const r=getRecipes().find(x=>x.id===id); if(r&&confirm('レシピ「'+r.name+'」を削除しますか？')){ deleteRecipe(id); if(packSelId===id)packSelId=null; renderPack(); } });
@@ -1464,8 +1522,8 @@ document.getElementById('modePlate').onclick=()=>setContainer('plate');
 document.getElementById('modeBag').onclick=()=>setContainer('bag');
 // 袋画像の設定・位置調整（localStorageに保存）
 setBagTexture('wax-bag.jpg'); // 袋画像は固定（提供画像をバンドル）
-showTab(location.hash==='#products'?'reg':'sim');
-pullShared(); // 起動時に共有データを取得（あれば全員共通のデータで上書き）
+showTab(HASHTAB[location.hash]||'sim');
+pullShared().finally(maybeSeedSamples); // 共有データ取得後、レシピが空ならサンプルを初回投入
 
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
