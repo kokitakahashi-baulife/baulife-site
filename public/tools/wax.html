@@ -80,6 +80,10 @@
   .segrow{display:flex;gap:0;margin-bottom:10px;border:1px solid #d8d2c6;border-radius:8px;overflow:hidden;}
   .seg{flex:1;padding:7px;border:none;background:#fff;color:#888;font-size:12px;cursor:pointer;}
   .seg.on{background:#7a5c3a;color:#fff;font-weight:bold;}
+  #bagCtl{margin-bottom:10px;padding:8px;border:1px solid #eee;border-radius:8px;background:#faf8f4;}
+  .upbtn2{display:inline-block;font-size:11px;padding:5px 12px;border:1px solid #d8c9b6;border-radius:6px;background:#fff;color:#7a5c3a;cursor:pointer;margin-bottom:6px;}
+  .bagslider{display:flex;align-items:center;gap:6px;font-size:11px;color:#888;}
+  .bagslider span{width:34px;flex:0 0 auto;} .bagslider input{flex:1;}
   .editbtn{flex:0 0 auto;padding:5px 14px;border:none;border-radius:6px;background:#7a5c3a;color:#fff;font-size:11px;cursor:pointer;}
   .imgrow{display:flex;gap:10px;margin:8px 0 6px;}
   .imgfig{margin:0;flex:1;text-align:center;min-width:0;}
@@ -138,6 +142,12 @@
 <div id="mixDock">
   <div class="dockhead">配合（合計100%）</div>
   <div class="segrow"><button class="seg on" id="modePlate">お皿</button><button class="seg" id="modeBag">袋（zip）</button></div>
+  <div id="bagCtl" style="display:none">
+    <label class="upbtn2" id="bagUpBtn">📷 袋画像を設定<input type="file" id="bagFile" accept="image/*" hidden></label>
+    <div class="bagslider"><span>横</span><input type="range" id="bagX" min="-4" max="4" step="0.05" value="0"></div>
+    <div class="bagslider"><span>縦</span><input type="range" id="bagY" min="-4" max="3" step="0.05" value="0"></div>
+    <div class="bagslider"><span>大きさ</span><input type="range" id="bagScale" min="0.4" max="1.8" step="0.02" value="1"></div>
+  </div>
   <div id="mixList"></div>
   <div class="totalrow"><span>粒数</span><input type="range" id="totalRange" min="6" max="80" value="55"><span id="totalVal">55</span></div>
   <div class="btnrow">
@@ -168,7 +178,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 await RAPIER.init();
 
 const canvas=document.getElementById('c');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.toneMapping=THREE.NoToneMapping;
@@ -237,14 +247,28 @@ const sealMat=new THREE.MeshPhysicalMaterial({color:'#eceae4',roughness:0.55,cle
 const bagSeal=new THREE.Mesh(new THREE.BoxGeometry(BAGW,1.0,BAGD*0.5), sealMat); bagSeal.position.set(0,BAGH/2-0.5,0); bag.add(bagSeal);
 const bagZip=new THREE.Mesh(new THREE.BoxGeometry(BAGW*0.9,0.16,BAGD*0.62), new THREE.MeshPhysicalMaterial({color:'#cfccc4',roughness:0.4,metalness:0.2})); bagZip.position.set(0,BAGH/2-1.05,0); bag.add(bagZip);
 let container='plate'; // 'plate' | 'bag'
+// 袋画像（提供画像）を3D平面のテクスチャとして配置→手前に粒を合成
+const bagPlane=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({transparent:true,toneMapped:false})); bagPlane.visible=false; bagPlane.position.z=-1.2; scene.add(bagPlane);
+let bagX=0,bagY=0,bagScale=1;
+function hasBagImg(){ return !!bagPlane.material.map; }
+function applyBagTransform(){ if(container==='bag' && hasBagImg()){ group.position.set(bagX,bagY,0); group.scale.setScalar(bagScale); } else { group.position.set(0,0,0); group.scale.setScalar(1); } }
+function setBagTexture(url){ new THREE.TextureLoader().load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; bagPlane.material.map=tex; bagPlane.material.needsUpdate=true;
+  const a=(tex.image&&tex.image.width)? tex.image.width/tex.image.height : 0.75; const H=14; bagPlane.scale.set(H*a,H,1);
+  if(container==='bag') setContainer('bag'); }); }
 function setContainer(mode){
   container=mode;
-  plate.visible=(mode==='plate'); bag.visible=(mode==='bag'); if(typeof ground!=='undefined') ground.visible=(mode==='plate');
+  const img=hasBagImg(), bagImageMode=(mode==='bag'&&img);
+  plate.visible=(mode==='plate');
+  bag.visible=(mode==='bag'&&!img);     // 画像がある時はCG袋を隠す
+  bagPlane.visible=bagImageMode;
+  if(typeof ground!=='undefined') ground.visible=(mode==='plate');
+  scene.background=new THREE.Color('#ffffff');
   if(mode==='bag'){ camera.position.set(0,0,23); } else { camera.position.set(0,16.5,9.8); }
   controls.target.set(0,0,0); controls.update();
-  const a=document.getElementById('modePlate'), b=document.getElementById('modeBag');
-  if(a)a.classList.toggle('on',mode==='plate'); if(b)b.classList.toggle('on',mode==='bag');
-  rebuild();
+  document.getElementById('modePlate').classList.toggle('on',mode==='plate');
+  document.getElementById('modeBag').classList.toggle('on',mode==='bag');
+  const bc=document.getElementById('bagCtl'); if(bc) bc.style.display=(mode==='bag')?'block':'none';
+  rebuild(); applyBagTransform();
 }
 
 // ---- 形のジオメトリ（八角・星 共通の立体化）----
@@ -1294,6 +1318,13 @@ document.getElementById('saveBtn').onclick=()=>{
 };
 document.getElementById('modePlate').onclick=()=>setContainer('plate');
 document.getElementById('modeBag').onclick=()=>setContainer('bag');
+// 袋画像の設定・位置調整（localStorageに保存）
+(function(){ const s=localStorage.getItem('waxBagImg'); if(s) setBagTexture(s);
+  bagX=+(localStorage.getItem('waxBagX')||0); bagY=+(localStorage.getItem('waxBagY')||0); bagScale=+(localStorage.getItem('waxBagScale')||1);
+  const bx=document.getElementById('bagX'),by=document.getElementById('bagY'),bs=document.getElementById('bagScale');
+  if(bx){bx.value=bagX;by.value=bagY;bs.value=bagScale;} })();
+document.getElementById('bagFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ try{localStorage.setItem('waxBagImg',rd.result);}catch(err){alert('画像が大きすぎて保存できません。小さめの画像にしてください');} setBagTexture(rd.result); }; rd.readAsDataURL(f); };
+['bagX','bagY','bagScale'].forEach(id=>{ const el=document.getElementById(id); if(!el)return; el.oninput=()=>{ bagX=+document.getElementById('bagX').value; bagY=+document.getElementById('bagY').value; bagScale=+document.getElementById('bagScale').value; try{localStorage.setItem('waxBagX',bagX);localStorage.setItem('waxBagY',bagY);localStorage.setItem('waxBagScale',bagScale);}catch(e){} applyBagTransform(); }; });
 showTab(location.hash==='#products'?'reg':'sim');
 pullShared(); // 起動時に共有データを取得（あれば全員共通のデータで上書き）
 
