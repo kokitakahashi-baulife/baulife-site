@@ -1089,19 +1089,22 @@ function packPlan(rec,bags,bagG){
   const missing=[...new Set(rows.filter(r=>!r.w).map(r=>r.type||r.name))];
   return {T,bags,bagG,rows,missing,totalBeads:rows.reduce((a,r)=>a+r.beads,0)};
 }
-// ===== サンプルレシピの初回投入（レシピが空のときだけ・サムネ付き） =====
+// ===== サンプルレシピの投入（まだ無い名前だけ追加・サムネ付き） =====
+const SAMPLE_DEFS=[
+  {name:'春のパステルMIX', items:[['ピーチマンゴー',40],['ライトピンク',30],['スノーホワイト',30]]},
+  {name:'ベリーガーデン',   items:[['ベリー',40],['チェリー',30],['ユニコーン',30]]},
+  {name:'ミント＆クリーム', items:[['ライムミント',50],['スノーホワイト',50]]},
+  {name:'サンセットビーチ', items:[['サンドビーチ',40],['フレッシュオレンジ',30],['ピーチマンゴー',30]]},
+  {name:'オーシャンブルー', items:[['ペールブルー',40],['ソーダ',30],['スノーホワイト',30]]},
+];
 function findProdByName(name){ return products.find(p=>isProd(p)&&!p.archived&&p.name===name); }
+// 既存レシピ名と重複しないサンプルだけ追加（何回呼んでも重複しない）
 function seedSamples(){
-  const defs=[
-    {name:'春のパステルMIX', items:[['ピーチマンゴー',40],['ライトピンク',30],['スノーホワイト',30]]},
-    {name:'ベリーガーデン',   items:[['ベリー',40],['チェリー',30],['ユニコーン',30]]},
-    {name:'ミント＆クリーム', items:[['ライムミント',50],['スノーホワイト',50]]},
-    {name:'サンセットビーチ', items:[['サンドビーチ',40],['フレッシュオレンジ',30],['ピーチマンゴー',30]]},
-    {name:'オーシャンブルー', items:[['ペールブルー',40],['ソーダ',30],['スノーホワイト',30]]},
-  ];
-  const pool=products.filter(p=>isProd(p)&&!p.archived); if(pool.length<2)return;
+  const pool=products.filter(p=>isProd(p)&&!p.archived); if(pool.length<2)return 0;
+  const existing=new Set(getRecipes().map(r=>r.name));
   const origRecipe=recipe; let added=0;
-  defs.forEach((d,di)=>{
+  SAMPLE_DEFS.forEach((d,di)=>{
+    if(existing.has(d.name))return;
     let picks=d.items.map(([nm,rt])=>{ const p=findProdByName(nm); return p?{pid:p.id,ratio:rt}:null; }).filter(Boolean);
     if(picks.length<2){ const used=new Set(picks.map(x=>x.pid));
       for(const p of pool){ if(picks.length>=3)break; if(!used.has(p.id)){ picks.push({pid:p.id,ratio:30}); used.add(p.id);} } }
@@ -1112,11 +1115,12 @@ function seedSamples(){
   });
   recipe=origRecipe; normalizeRecipe(); rebuild();
   if(added) saveProducts();
+  return added;
 }
+// 起動時に一度だけ：未投入のサンプルを補完（削除済みの復活を避けるためフラグで一度きり）
 function maybeSeedSamples(){ try{
-  if(localStorage.getItem('waxSamplesSeeded')) return;
-  if(getRecipes().length>0){ localStorage.setItem('waxSamplesSeeded','1'); return; }
-  seedSamples(); localStorage.setItem('waxSamplesSeeded','1');
+  if(localStorage.getItem('waxSamplesSeededV2')) return;
+  seedSamples(); localStorage.setItem('waxSamplesSeededV2','1');
   if(packView && packView.style.display!=='none') renderPack();
 }catch(e){} }
 let packSelId=null, packBags=10, packBagG=50, twEditMode=false;
@@ -1134,7 +1138,9 @@ function renderPack(){
     html+='</div>';
   }
   html+='</div>';
-  html+='<div class="seclabel" style="border:none;padding-top:0">保存済みレシピ（'+recipes.length+'）</div>';
+  const missSamples=SAMPLE_DEFS.filter(d=>!recipes.some(r=>r.name===d.name)).length;
+  html+='<div class="twhead" style="margin:14px 0 6px"><span class="seclabel" style="border:none;padding:0;margin:0">保存済みレシピ（'+recipes.length+'）</span>'+
+    (missSamples? '<button class="twedit" id="addSamplesBtn">＋ サンプルを'+missSamples+'件追加</button>':'')+'</div>';
   if(!recipes.length) html+='<p class="sub">まだありません。「調合シミュレーター」で配合を作り「★ レシピとして保存」を押すと、ここに追加されます。</p>';
   recipes.forEach(rec=>{ const desc=rec.items.map(it=>'<span class="swatch" style="background:'+esc(it.color||'#ccc')+'"></span>'+esc(it.name)+' '+Math.round(it.ratio)+'%').join(' ／ ');
     const thumb=rec.thumb?'<img class="rthumb" src="'+rec.thumb+'" alt="">':'<div class="rthumb"></div>';
@@ -1150,6 +1156,7 @@ function renderPack(){
   body.innerHTML=html;
   const eb=document.getElementById('twEditBtn'); if(eb)eb.onclick=()=>{ twEditMode=true; renderPack(); };
   const db=document.getElementById('twDoneBtn'); if(db)db.onclick=()=>{ twEditMode=false; renderPack(); };
+  const sb=document.getElementById('addSamplesBtn'); if(sb)sb.onclick=()=>{ const n=seedSamples(); renderPack(); };
   body.querySelectorAll('input[data-tw]').forEach(inp=>{ inp.onchange=()=>{ const t=inp.getAttribute('data-tw'); if(inp.value===''){clearTypeWeight(t);} else setTypeWeight(t,Math.max(0,+inp.value||0)); renderPackResult(); }; });
   body.querySelectorAll('button[data-load]').forEach(b=>b.onclick=()=>{ const r=getRecipes().find(x=>x.id===+b.getAttribute('data-load')); if(r)loadRecipeToSim(r); });
   body.querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{ const id=+b.getAttribute('data-del'); const r=getRecipes().find(x=>x.id===id); if(r&&confirm('レシピ「'+r.name+'」を削除しますか？')){ deleteRecipe(id); if(packSelId===id)packSelId=null; renderPack(); } });
