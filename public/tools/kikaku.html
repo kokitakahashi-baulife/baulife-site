@@ -78,6 +78,8 @@
 
   /* ---------- list (案件一覧) ---------- */
   #listScreen{max-width:1040px;margin:0 auto;padding:40px 24px 80px;}
+  .portal-back{display:inline-block;font-size:13px;color:var(--gray);text-decoration:none;margin:0 0 18px;}
+  .portal-back:hover{color:var(--red);}
   .list-head h1{font-size:20px;color:var(--red);margin:0 0 6px;font-weight:700;}
   .list-head p{font-size:13px;color:var(--gray);margin:0 0 24px;}
   .list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
@@ -118,6 +120,7 @@
 <body>
 <div id="listScreen">
   <div class="list-head">
+    <a class="portal-back" href="/tools">← 社内ポータル</a>
     <h1>HOMU コラボ企画書エディター</h1>
     <p>共有ドライブ「株式会社BAULIFE ／ HOMUコラボ企画書」に自動保存されます。カードを選んで開くか、新規作成してください。</p>
   </div>
