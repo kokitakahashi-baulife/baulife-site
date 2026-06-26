@@ -595,11 +595,13 @@ function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THRE
 // B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
 function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.48,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.55,clearcoatRoughness:0.22,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.15}); }
 // C) 星専用：単色ラメ入り 超光沢
-function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({map:makeMarble(marbleOf(hex)),roughness:0.06,clearcoat:1.0,clearcoatRoughness:0.02,metalness:0.9,metalnessMap:sparkleTex,iridescence:0.35,iridescenceIOR:1.3,bumpMap:microBump,bumpScale:0.004,envMapIntensity:1.9}); }
+// 星：マーブルなし。単色＋微細ラメ粒子＋強いパール光沢＋虹彩
+function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.16,metalness:0.7,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.009,clearcoat:1.0,clearcoatRoughness:0.07,iridescence:0.45,iridescenceIOR:1.35,envMapIntensity:1.7}); }
 // 超光沢（ラメなし）：きらめき粒子なしの滑らかな艶
 function finishStarGlossPlain(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.05,clearcoat:1.0,clearcoatRoughness:0.03,metalness:0.0,bumpMap:microBump,bumpScale:0.003,envMapIntensity:1.5}); }
 // ラメ単色：単色＋ラメ（混色なし）
-function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({map:makeMarble(marbleOf(hex)),roughness:0.5,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.015,clearcoat:0.4,clearcoatRoughness:0.2,envMapIntensity:1.05}); }
+// ラメ単色(イチョウ/アジサイ等)：マーブルなし。単色＋微細ラメ粒子＋パール光沢＋虹彩
+function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.4,metalness:0.55,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.012,clearcoat:0.6,clearcoatRoughness:0.25,iridescence:0.3,iridescenceIOR:1.3,envMapIntensity:1.15}); }
 
 // 同色で「仕上げ4種」を並べて比較（蝋らしさの検証）
 const group=new THREE.Group(); scene.add(group);
@@ -1055,7 +1057,7 @@ function _extract3(px){ const km=_kmeans(px,6,9);
   const groups=Array.from({length:km.C.length},()=>[]); km.lab.forEach((j,i)=>groups[j].push(px[i]));
   const order=km.C.map((c,j)=>({c,n:km.cnt[j],j})).filter(o=>o.n>px.length*0.02).sort((a,b)=>b.n-a.n);
   const pick=[], picC=[];
-  for(const o of order){ const [r,g,b]=o.c; if(picC.every(q=>Math.abs(q[0]-r)+Math.abs(q[1]-g)+Math.abs(q[2]-b)>50)){ pick.push(_vivid(groups[o.j])); picC.push(o.c); } if(pick.length>=3)break; }
+  for(const o of order){ const [r,g,b]=o.c; if(picC.every(q=>Math.abs(q[0]-r)+Math.abs(q[1]-g)+Math.abs(q[2]-b)>48)){ pick.push(_vivid(groups[o.j])); picC.push(o.c); } if(pick.length>=3)break; }
   while(pick.length<3) pick.push(pick[pick.length-1]||'#cccccc');
   return pick; }
 async function autoExtractColors(p){ if(!p.real) return false; const data=await _imgPixels(p.real); if(!data) return false; const px=_beadPixels(data); if(px.length<20) return false;
