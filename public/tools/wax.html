@@ -196,7 +196,7 @@ controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
 // lights
-const key=new THREE.DirectionalLight(0xffffff,0.45);
+const key=new THREE.DirectionalLight(0xffffff,0.4);
 key.position.set(6,10,5);
 key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);
@@ -208,8 +208,8 @@ scene.add(key);
 const fill=new THREE.DirectionalLight(0xffffff,0.04); fill.position.set(-6,4,-3); scene.add(fill);
 // リムライト（粒の輪郭・白×白の分離を出す）
 const rim=new THREE.DirectionalLight(0xffffff,0.06); rim.position.set(-4,6,-7); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.16));
-scene.add(new THREE.AmbientLight(0xffffff,0.66));
+scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.12));
+scene.add(new THREE.AmbientLight(0xffffff,0.52));
 
 // ground (catch soft shadow only, keep bg color)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.3}));
@@ -278,7 +278,7 @@ function setContainer(mode){
   const bc=document.getElementById('bagCtl'); if(bc) bc.style.display=(mode==='bag')?'block':'none';
   // 袋モードは粒数を固定（変更不可・粒数バーを隠す）
   const trow=document.getElementById('totalRange')?.closest('.totalrow');
-  if(mode==='bag'){ if(prev!=='bag') plateTotal=total; total=BAG_TOTAL; if(trow)trow.style.display='none'; }
+  if(mode==='bag'){ if(prev!=='bag') plateTotal=total; total=bagCount(); if(trow)trow.style.display='none'; }
   else { total=plateTotal; if(trow)trow.style.display=''; const tr=document.getElementById('totalRange'),tv=document.getElementById('totalVal'); if(tr)tr.value=total; if(tv)tv.textContent=total; }
   rebuild(); applyBagTransform(); if(typeof renderRecipe==='function') renderRecipe();
 }
@@ -662,9 +662,10 @@ function lighten(hex,dL){ const h=hex.replace('#','');
 function marbleOf(base){ return [base, base, lighten(base,0.13), lighten(base,0.27)]; }
 
 // A) マット単色（反射ほぼ無し）
-function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.95,metalness:0.0,clearcoat:0.0,bumpMap:crinkleBump,bumpScale:0.012,envMapIntensity:0.08}); }
+// マット：拡散はマットのまま、クリアコートで縁・面ごとの光沢（フレネル）を出し立体感を付与
+function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.86,metalness:0.0,clearcoat:0.6,clearcoatRoughness:0.38,bumpMap:crinkleBump,bumpScale:0.016,envMapIntensity:0.45}); }
 // B) ラメ混色（大理石調＝関連色マーブル＋微細ラメ＋サテン）
-function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.48,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.55,clearcoatRoughness:0.22,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.15}); }
+function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.44,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.8,clearcoatRoughness:0.18,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.3}); }
 // C) 星専用：単色ラメ入り 超光沢
 // 星：マーブルなし。単色＋微細ラメ粒子＋強いパール光沢＋虹彩
 function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.28,metalness:0.0,emissive:new THREE.Color(0xffffff),emissiveMap:sparkleBig,emissiveIntensity:0.6,bumpMap:sparkleBig,bumpScale:0.022,clearcoat:1.0,clearcoatRoughness:0.1,iridescence:0.4,iridescenceIOR:1.35,envMapIntensity:1.3}); }
@@ -875,8 +876,12 @@ async function pullShared(){ setSync('loading'); try{
     localSavedAt=Date.now(); await pushShared(); setSync('shared',data.by);
   }catch(e){ syncReady=true; setSync('local'); } }
 function productById(id){ return products.find(p=>p.id===id); }
-let recipe=[ {pid:1,ratio:40}, {pid:11,ratio:30}, {pid:12,ratio:30} ].filter(r=>productById(r.pid));
-if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
+// 前回の選択をブラウザに保存して復元（毎回固定の3種に戻らないように）
+const RECIPEKEY='waxRecipeV1';
+function saveRecipe(){ try{ localStorage.setItem(RECIPEKEY, JSON.stringify(recipe)); }catch(e){} }
+function loadRecipe(){ try{ const a=JSON.parse(localStorage.getItem(RECIPEKEY)); return Array.isArray(a)? a:null; }catch(e){ return null; } }
+let recipe=(loadRecipe()||[]).filter(r=>r&&productById(r.pid));
+if(!recipe.length && products[0]) recipe=[{pid:products[0].id,ratio:100}];
 let total=55, seed=12345;
 function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
 function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)); return {x:q.x,y:q.y,z:q.z,w:q.w}; }
@@ -884,13 +889,19 @@ function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Eule
 // ===== 配置を再構築（ルールベース） =====
 function gscaleOf(beads){ const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
   const REF=40, usable=Math.PI*Math.pow(PLATE_R-0.30,2)*0.72, unit=Math.PI*avgR*avgR; return Math.min(1, Math.sqrt((usable/unit)/REF)); }
+const BAG_IW=BAGW-1.6, BAG_IH=BAGH-2.6; // 袋の内寸（敷き詰め範囲）
+const BAG_BEAD_R=0.4, BAG_PACK=0.8; // 袋内の粒半径（固定見た目）と詰め密度
+// 袋サイズに合う粒数を見立てる（粒サイズは固定、隙間なく詰まって見える数）
+function bagCount(){ const cell=(2*BAG_BEAD_R)/BAG_PACK;
+  const cols=Math.max(4,Math.round(BAG_IW/cell)), rows=Math.max(5,Math.round(BAG_IH/cell)); return cols*rows; }
 function rebuildBag(beads,r){
   // 袋は重力で底に溜めず、窓全体にジッターgrid で均等に敷き詰める（中身が詰まった袋）
-  const N=beads.length||1; const W=BAGW-1.6, H=BAGH-2.6, hw=W/2, hh=H/2;
+  const N=beads.length||1, W=BAG_IW, H=BAG_IH, hw=W/2, hh=H/2;
   const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
   const cols=Math.max(1,Math.round(Math.sqrt(N*W/H))), rows=Math.ceil(N/cols);
   const cw=W/cols, ch=H/rows;
-  const gscale=Math.min(1, (Math.min(cw,ch)*0.62)/avgR); // セルに収まる固定サイズ
+  // 粒数は袋サイズから固定(bagCount)なのでセルも一定→粒サイズも一定。隙間なく詰まって見える
+  const gscale=Math.min(1, (Math.min(cw,ch)*0.62)/avgR);
   const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)); // 天面をカメラ(+Z)へ
   let i=0;
   for(let ry=0; ry<rows && i<N; ry++) for(let cxi=0; cxi<cols && i<N; cxi++){
@@ -1087,6 +1098,7 @@ const panel=document.getElementById('mixList');
 let rowRefs=[];
 function updateValues(){ const counts=recipeCounts(); rowRefs.forEach((ref,i)=>{ ref.rng.value=Math.round(recipe[i].ratio); ref.rv.textContent=Math.round(recipe[i].ratio)+'%'; ref.cnt.textContent=counts[i]+'粒'; }); }
 function renderRecipe(){
+  saveRecipe();
   panel.innerHTML=''; rowRefs=[];
   recipe.forEach((r,idx)=>{ const p=productById(r.pid); if(!p)return;
     const row=document.createElement('div'); row.className='mix-row';
