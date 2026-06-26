@@ -17,11 +17,11 @@ export async function POST(req: Request) {
   const token = await getAccessToken();
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
-    const { products } = await req.json();
+    const { products, savedAt } = await req.json();
     if (!Array.isArray(products)) {
       return NextResponse.json({ error: "products must be an array" }, { status: 400 });
     }
-    const r = await saveWax(token, products);
+    const r = await saveWax(token, products, typeof savedAt === "number" ? savedAt : undefined);
     return NextResponse.json({ ok: true, modifiedTime: r.modifiedTime ?? null });
   } catch (e: any) {
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 });
