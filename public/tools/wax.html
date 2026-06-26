@@ -306,9 +306,10 @@ function applyBagTransform(){
   const sc=Math.min(BAG_WIN.hw*2/w, BAG_WIN.hh*2/h)*0.98;
   group.scale.set(sc,sc,sc*0.4); group.position.set(BAG_WIN.x-cx*sc, BAG_WIN.y-cy*sc, 0.1);
 }
+let bagReadyResolve; const bagReady=new Promise(r=>{bagReadyResolve=r;}); // 袋テクスチャ読込完了を待つ
 function setBagTexture(url){ bagImgURL=url; new THREE.TextureLoader().load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; bagPlane.material.map=tex; bagPlane.material.needsUpdate=true;
   const a=(tex.image&&tex.image.width)? tex.image.width/tex.image.height : 0.75; const H=14; bagPlane.scale.set(H*a,H,1); bagFilm2.scale.set(H*a*0.96,H*0.96,1);
-  if(container==='bag') setContainer('bag'); }); }
+  if(container==='bag') setContainer('bag'); if(bagReadyResolve){ bagReadyResolve(); bagReadyResolve=null; } }); }
 function setContainer(mode){
   const prev=container; container=mode;
   const img=hasBagImg(), bagImageMode=(mode==='bag'&&img);
@@ -1062,11 +1063,14 @@ function setTypeWeight(type,g){ let e=products.find(p=>p.typeWeights);
   if(!e){ e={typeWeights:true,id:-1,map:{},_t:0}; products.push(e); }
   e.map[type]=g; e._t=Date.now(); saveProducts(); }
 function clearTypeWeight(type){ const e=products.find(p=>p.typeWeights); if(e&&e.map){ delete e.map[type]; e._t=Date.now(); saveProducts(); } }
-// 現在のお皿プレビューを正方形JPEGサムネにして返す（レシピ一覧用）
-function captureThumb(size){ size=size||360;
+// 袋の縦横比でタイトに撮る（余白少なめ。レシピ一覧・企画書・ダウンロード共通）
+function captureBagImage(h, mime, q){ h=h||480; mime=mime||'image/jpeg';
+  if(container!=='bag') setContainer('bag');
+  const a=(bagPlane && bagPlane.scale.y) ? (bagPlane.scale.x/bagPlane.scale.y) : 0.7; // 袋画像の縦横比
+  const w=Math.max(1,Math.round(h*a));
   try{
-    renderer.setSize(size,size); camera.aspect=1; camera.updateProjectionMatrix(); renderer.render(scene,camera);
-    const url=renderer.domElement.toDataURL('image/jpeg',0.82);
+    renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.render(scene,camera);
+    const url=renderer.domElement.toDataURL(mime, q||0.85);
     renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
     return url;
   }catch(e){ try{ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }catch(_){} return ''; }
@@ -1077,18 +1081,19 @@ function recipeItemsFromCurrent(){ return recipe.filter(r=>productById(r.pid)).m
 function itemsCompCount(items){ return (items||[]).reduce((a,it)=>a+((TYPES[it.type]&&TYPES[it.type].length)||1),0); }
 function recipeCompCount(rec){ return itemsCompCount(rec&&rec.items); }
 // 袋プレビュー画像を撮る（レシピ一覧・企画書で使用）
-function captureBagThumb(){ if(container!=='bag') setContainer('bag'); return captureThumb(); }
+function captureBagThumb(){ return captureBagImage(480); }
 function saveCurrentRecipe(name){
   const items=recipeItemsFromCurrent(); if(!items.length) return false;
   if(itemsCompCount(items)>MAXCOMP){ alert('ワックスの種類が'+MAXCOMP+'種を超えています（絵柄入りは3種ぶん）。\n'+MAXCOMP+'種以内に減らしてから保存してください。'); return false; }
   const thumbBag=captureBagThumb();
   products.push({recipe:true,id:Date.now(),name:name,items,thumbBag,_t:Date.now()}); saveProducts(); return true;
 }
-// 起動時：袋画像が無い既存レシピに袋画像を生成して埋める
+// 起動時：袋画像が無い／旧フォーマット(正方形)の既存レシピを、縦長タイト画像で再生成
 function backfillRecipeThumbs(){
   try{
-    const targets=products.filter(p=>p.recipe && !p.archived && !p.thumbBag);
-    if(!targets.length) return;
+    const portraitDone=localStorage.getItem('waxThumbPortrait1'); // 余白少ない縦長へ一度だけ移行
+    const targets=products.filter(p=>p.recipe && !p.archived && (!p.thumbBag || !portraitDone));
+    if(!targets.length){ if(!portraitDone) localStorage.setItem('waxThumbPortrait1','1'); return; }
     const origRecipe=recipe; let changed=0;
     targets.forEach(rec=>{
       const picks=[]; (rec.items||[]).forEach(it=>{ const p=recItemProduct(it); if(p)picks.push({pid:p.id,ratio:it.ratio}); });
@@ -1098,6 +1103,7 @@ function backfillRecipeThumbs(){
       if(thumbBag){ rec.thumbBag=thumbBag; rec._t=Date.now(); changed++; }
     });
     recipe=origRecipe; normalizeRecipe(); setContainer('bag');
+    localStorage.setItem('waxThumbPortrait1','1');
     if(changed) saveProducts();
   }catch(e){}
 }
@@ -1547,11 +1553,8 @@ const totalRange=document.getElementById('totalRange'), totalVal=document.getEle
 totalRange.oninput=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); };
 totalRange.onchange=()=>{ total=+totalRange.value; totalVal.textContent=total; updateValues(); rebuild(); };
 document.getElementById('saveBtn').onclick=()=>{
-  const S=1400; // 正方形で書き出し（企画書添付用）
-  renderer.setSize(S,S); camera.aspect=1; camera.updateProjectionMatrix(); renderer.render(scene,camera);
-  const url=renderer.domElement.toDataURL('image/png');
-  renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
-  const a=document.createElement('a'); a.download=(container==='bag'?'wax-bag':'wax-mix')+'.png'; a.href=url; a.click();
+  const url=captureBagImage(1400,'image/png'); if(!url)return; // 袋の縦横比でタイトに書き出し
+  const a=document.createElement('a'); a.download='wax-bag.png'; a.href=url; a.click();
 };
 document.getElementById('modePlate').onclick=()=>setContainer('plate');
 document.getElementById('modeBag').onclick=()=>setContainer('bag');
@@ -1559,7 +1562,8 @@ document.getElementById('modeBag').onclick=()=>setContainer('bag');
 setBagTexture('wax-bag.jpg'); // 袋画像は固定（提供画像をバンドル）
 showTab(HASHTAB[location.hash]||'sim');
 setContainer('bag'); // 袋プレビュー専用
-pullShared().finally(()=>{ backfillRecipeThumbs(); if(packView&&packView.style.display!=='none')renderPack(); }); // 共有データ取得後、袋画像が無いレシピを補完して再描画
+// 共有データ取得＋袋テクスチャ読込の両方を待ってから、袋画像を補完して再描画
+Promise.all([pullShared(), bagReady]).finally(()=>{ backfillRecipeThumbs(); if(packView&&packView.style.display!=='none')renderPack(); });
 
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
