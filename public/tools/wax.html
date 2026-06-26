@@ -1078,10 +1078,13 @@ function loadRecipeToSim(rec){
   if(!next.length){ alert('このレシピの商品が見つかりません（削除/改名された可能性があります）'); return; }
   recipe=next; normalizeRecipe(); saveRecipe(); showTab('sim');
 }
+// 重量はラメ有無で変わらないので、八角・星はラメ違いを1グループに統一して扱う
+function weightTypeOf(t){ if(t==='八角(マット)'||t==='八角(ラメ混色)')return '八角'; if(t==='星(ラメ)'||t==='星(ラメなし)')return '星'; return t||null; }
+function weightTypeKeys(){ return [...new Set(Object.keys(TYPES).map(weightTypeOf))]; }
 // 粒数比→重量変換：g(色i)=総量×(比率i×1粒重量i)/Σ(比率j×1粒重量j)
 function packPlan(rec,bags,bagG){
   const T=Math.max(0,bags)*Math.max(0,bagG), tw=getTypeWeights();
-  const rows=rec.items.map(it=>{ const p=recItemProduct(it); const type=(p&&p.type)||it.type||null;
+  const rows=rec.items.map(it=>{ const p=recItemProduct(it); const type=weightTypeOf((p&&p.type)||it.type||null);
     const w=type?(+tw[type]||0):0; return {name:it.name,color:it.color||prodColor(p),type,ratio:Math.max(0,it.ratio),w}; });
   const sumR=rows.reduce((a,r)=>a+r.ratio,0)||1; rows.forEach(r=>r.rN=r.ratio/sumR);
   const denom=rows.reduce((a,r)=>a+r.rN*r.w,0);
@@ -1126,7 +1129,7 @@ function maybeSeedSamples(){ try{
 let packSelId=null, packBags=10, packBagG=50, twEditMode=false;
 function renderPack(){
   const body=document.getElementById('packBody'); if(!body)return;
-  const tw=getTypeWeights(), recipes=getRecipes(), twKeys=Object.keys(TYPES);
+  const tw=getTypeWeights(), recipes=getRecipes(), twKeys=weightTypeKeys();
   let html='<div class="card2 twcard">';
   if(!twEditMode){
     html+='<div class="twhead"><span class="ttl" style="margin:0">型ごとの1粒重量</span><button class="twedit" id="twEditBtn">✏ 編集</button></div>';
