@@ -249,14 +249,22 @@ const bagZip=new THREE.Mesh(new THREE.BoxGeometry(BAGW*0.9,0.16,BAGD*0.62), new 
 let container='plate'; // 'plate' | 'bag'
 // 袋画像（提供画像）を3D平面のテクスチャとして配置→手前に粒を合成
 const bagPlane=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({transparent:true,toneMapped:false})); bagPlane.visible=false; bagPlane.position.z=-1.2; scene.add(bagPlane);
-let bagX=0,bagY=0,bagScale=1;
+let bagX=0,bagY=0,bagScale=1,bagImgURL='';
+const BAG_TOTAL=64; // 袋モードの粒数（一番きれいに見える固定値）
+let plateTotal=55;
 function hasBagImg(){ return !!bagPlane.material.map; }
 function applyBagTransform(){ if(container==='bag' && hasBagImg()){ group.position.set(bagX,bagY,0); group.scale.setScalar(bagScale); } else { group.position.set(0,0,0); group.scale.setScalar(1); } }
-function setBagTexture(url){ new THREE.TextureLoader().load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; bagPlane.material.map=tex; bagPlane.material.needsUpdate=true;
+function setBagTexture(url){ bagImgURL=url; new THREE.TextureLoader().load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; bagPlane.material.map=tex; bagPlane.material.needsUpdate=true;
   const a=(tex.image&&tex.image.width)? tex.image.width/tex.image.height : 0.75; const H=14; bagPlane.scale.set(H*a,H,1);
   if(container==='bag') setContainer('bag'); }); }
+// 袋設定は商品データに相乗りして全員と共有（id:-1 の設定エントリ）
+function getCfg(){ let c=products.find(p=>p&&p.cfg); if(!c){ c={id:-1,cfg:true,_t:0,bag:{img:'',x:0,y:0,scale:1}}; products.push(c); } return c; }
+function applyCfg(){ const c=products.find(p=>p&&p.cfg); if(!c||!c.bag)return; bagX=+c.bag.x||0; bagY=+c.bag.y||0; bagScale=+c.bag.scale||1;
+  const bx=document.getElementById('bagX'),by=document.getElementById('bagY'),bs=document.getElementById('bagScale'); if(bx){bx.value=bagX;by.value=bagY;bs.value=bagScale;}
+  if(c.bag.img && c.bag.img!==bagImgURL) setBagTexture(c.bag.img); else if(container==='bag') applyBagTransform(); }
+function saveCfg(){ const c=getCfg(); c.bag={img:bagImgURL||'',x:bagX,y:bagY,scale:bagScale}; c._t=Date.now(); saveProducts(); }
 function setContainer(mode){
-  container=mode;
+  const prev=container; container=mode;
   const img=hasBagImg(), bagImageMode=(mode==='bag'&&img);
   plate.visible=(mode==='plate');
   bag.visible=(mode==='bag'&&!img);     // 画像がある時はCG袋を隠す
@@ -268,6 +276,10 @@ function setContainer(mode){
   document.getElementById('modePlate').classList.toggle('on',mode==='plate');
   document.getElementById('modeBag').classList.toggle('on',mode==='bag');
   const bc=document.getElementById('bagCtl'); if(bc) bc.style.display=(mode==='bag')?'block':'none';
+  // 袋モードは粒数を固定（変更不可・粒数バーを隠す）
+  const trow=document.getElementById('totalRange')?.closest('.totalrow');
+  if(mode==='bag'){ if(prev!=='bag') plateTotal=total; total=BAG_TOTAL; if(trow)trow.style.display='none'; }
+  else { total=plateTotal; if(trow)trow.style.display=''; const tr=document.getElementById('totalRange'),tv=document.getElementById('totalVal'); if(tr)tr.value=total; if(tv)tv.textContent=total; }
   rebuild(); applyBagTransform();
 }
 
@@ -857,7 +869,7 @@ async function pullShared(){ setSync('loading'); try{
       const merged=mergeById(products, migrate(data.products)); resync(merged);
       products=merged; pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
       try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){}
-      syncReady=true; refreshView();
+      syncReady=true; applyCfg(); refreshView();
     } else { syncReady=true; }
     // マージ結果（または初回データ）をDriveへ反映＝全員の編集が残る
     localSavedAt=Date.now(); await pushShared(); setSync('shared',data.by);
@@ -1049,7 +1061,7 @@ function renderCards(){
   const used=usedComps();
   const sc=document.getElementById('selCount'); if(sc) sc.textContent=used;
   const q=(document.getElementById('cardSearch')?.value||'').trim().toLowerCase();
-  const avail=products.filter(p=>!p.archived);
+  const avail=products.filter(p=>!p.archived && !p.cfg);
   const list=q? avail.filter(p=>p.name.toLowerCase().includes(q) || recipe.find(r=>r.pid===p.id)) : avail;
   list.forEach(p=>{
     const isSel=!!recipe.find(r=>r.pid===p.id);
@@ -1200,7 +1212,7 @@ function renderRegistry(){
   endPick();
   regEl.innerHTML='';
   const q=(document.getElementById('regSearch')?.value||'').trim().toLowerCase();
-  const pool=products.filter(p=> showArchive? p.archived : !p.archived);
+  const pool=products.filter(p=> !p.cfg && (showArchive? p.archived : !p.archived));
   const list=q? pool.filter(p=>((p.name||'')+(p.sku||'')+(p.psku||'')).toLowerCase().includes(q)) : pool;
   const nArch=products.filter(p=>p.archived).length, nActive=products.length-nArch;
   const cnt=document.getElementById('regCount'); if(cnt) cnt.textContent= showArchive? ('アーカイブ '+list.length+'件') : (list.length+'/'+nActive);
@@ -1319,12 +1331,11 @@ document.getElementById('saveBtn').onclick=()=>{
 document.getElementById('modePlate').onclick=()=>setContainer('plate');
 document.getElementById('modeBag').onclick=()=>setContainer('bag');
 // 袋画像の設定・位置調整（localStorageに保存）
-(function(){ const s=localStorage.getItem('waxBagImg'); if(s) setBagTexture(s);
-  bagX=+(localStorage.getItem('waxBagX')||0); bagY=+(localStorage.getItem('waxBagY')||0); bagScale=+(localStorage.getItem('waxBagScale')||1);
-  const bx=document.getElementById('bagX'),by=document.getElementById('bagY'),bs=document.getElementById('bagScale');
-  if(bx){bx.value=bagX;by.value=bagY;bs.value=bagScale;} })();
-document.getElementById('bagFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ try{localStorage.setItem('waxBagImg',rd.result);}catch(err){alert('画像が大きすぎて保存できません。小さめの画像にしてください');} setBagTexture(rd.result); }; rd.readAsDataURL(f); };
-['bagX','bagY','bagScale'].forEach(id=>{ const el=document.getElementById(id); if(!el)return; el.oninput=()=>{ bagX=+document.getElementById('bagX').value; bagY=+document.getElementById('bagY').value; bagScale=+document.getElementById('bagScale').value; try{localStorage.setItem('waxBagX',bagX);localStorage.setItem('waxBagY',bagY);localStorage.setItem('waxBagScale',bagScale);}catch(e){} applyBagTransform(); }; });
+applyCfg(); // 起動時：共有された袋設定を反映
+document.getElementById('bagFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ const im=new Image(); im.onload=()=>{
+    const mx=Math.max(im.width,im.height), sc=Math.min(1,900/mx); const cv=document.createElement('canvas'); cv.width=Math.round(im.width*sc); cv.height=Math.round(im.height*sc); cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+    setBagTexture(cv.toDataURL('image/jpeg',0.85)); saveCfg(); }; im.src=rd.result; }; rd.readAsDataURL(f); };
+['bagX','bagY','bagScale'].forEach(id=>{ const el=document.getElementById(id); if(!el)return; el.oninput=()=>{ bagX=+document.getElementById('bagX').value; bagY=+document.getElementById('bagY').value; bagScale=+document.getElementById('bagScale').value; applyBagTransform(); saveCfg(); }; });
 showTab(location.hash==='#products'?'reg':'sim');
 pullShared(); // 起動時に共有データを取得（あれば全員共通のデータで上書き）
 
