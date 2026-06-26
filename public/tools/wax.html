@@ -196,7 +196,7 @@ controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
 // lights
-const key=new THREE.DirectionalLight(0xffffff,0.6);
+const key=new THREE.DirectionalLight(0xffffff,0.45);
 key.position.set(6,10,5);
 key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);
@@ -208,8 +208,8 @@ scene.add(key);
 const fill=new THREE.DirectionalLight(0xffffff,0.04); fill.position.set(-6,4,-3); scene.add(fill);
 // リムライト（粒の輪郭・白×白の分離を出す）
 const rim=new THREE.DirectionalLight(0xffffff,0.06); rim.position.set(-4,6,-7); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.2));
-scene.add(new THREE.AmbientLight(0xffffff,0.78));
+scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.16));
+scene.add(new THREE.AmbientLight(0xffffff,0.66));
 
 // ground (catch soft shadow only, keep bg color)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.3}));
@@ -246,7 +246,7 @@ const bagPlane=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicM
 // 前面の透明フィルム（粒の手前。中身が膜の内側に入って見えるようガラス質の艶を重ねる）
 const bagFilm2=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshPhysicalMaterial({transparent:true,opacity:0.07,color:'#ffffff',roughness:0.18,clearcoat:1.0,clearcoatRoughness:0.1,metalness:0,depthWrite:false})); bagFilm2.visible=false; bagFilm2.position.z=0.8; bagFilm2.renderOrder=5; scene.add(bagFilm2);
 let bagX=0,bagY=0,bagScale=1,bagImgURL='';
-const BAG_TOTAL=40; // 袋モードの粒数（固定）
+const BAG_TOTAL=80; // 袋モードの粒数（固定）
 let plateTotal=55;
 function hasBagImg(){ return !!bagPlane.material.map; }
 // 粒の山を袋画像の透明窓に自動フィット（手動調整なし）
@@ -885,27 +885,23 @@ function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Eule
 function gscaleOf(beads){ const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
   const REF=40, usable=Math.PI*Math.pow(PLATE_R-0.30,2)*0.72, unit=Math.PI*avgR*avgR; return Math.min(1, Math.sqrt((usable/unit)/REF)); }
 function rebuildBag(beads,r){
-  const world=new RAPIER.World(new RAPIER.Vector3(0,-16,0));
-  const W=BAGW-1.4, H=BAGH-2.2, halfW=W/2, botY=-H/2;
-  const fix=(x,y,z,hx,hy,hz)=>{ const b=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x,y,z)); world.createCollider(RAPIER.ColliderDesc.cuboid(hx,hy,hz),b); };
-  fix(0,botY-0.3,0, W,0.3,2);                 // 底
-  fix(-(halfW+0.3),0,0, 0.3,H,2); fix(halfW+0.3,0,0, 0.3,H,2);  // 左右
-  fix(0,0,-0.55, W,H,0.2); fix(0,0,0.55, W,H,0.2);              // 前後（薄いスラブ）
-  const gscale=gscaleOf(beads), bodies=[], meshes=[];
+  // 袋は重力で底に溜めず、窓全体にジッターgrid で均等に敷き詰める（中身が詰まった袋）
+  const N=beads.length||1; const W=BAGW-1.6, H=BAGH-2.6, hw=W/2, hh=H/2;
+  const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
+  const cols=Math.max(1,Math.round(Math.sqrt(N*W/H))), rows=Math.ceil(N/cols);
+  const cw=W/cols, ch=H/rows;
+  const gscale=Math.min(1, (Math.min(cw,ch)*0.62)/avgR); // セルに収まる固定サイズ
   const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)); // 天面をカメラ(+Z)へ
-  beads.forEach((m)=>{
-    const g=SHAPES[m.shape].geo, s=gscale*(0.95+r()*0.04), rad=g.userData.radius*s*0.82;
-    const bx=(r()*2-1)*(halfW-rad), by=H/2 - r()*1.0;
-    const bd=RAPIER.RigidBodyDesc.dynamic().setTranslation(bx,by,0).setLinearDamping(0.2).lockRotations().enabledTranslations(true,true,false);
-    const body=world.createRigidBody(bd); world.createCollider(RAPIER.ColliderDesc.ball(rad).setFriction(0.6).setRestitution(0.0), body);
+  let i=0;
+  for(let ry=0; ry<rows && i<N; ry++) for(let cxi=0; cxi<cols && i<N; cxi++){
+    const m=beads[i++]; const g=SHAPES[m.shape].geo, s=gscale*(0.9+r()*0.15);
+    const px=-hw+cw*(cxi+0.5)+(r()-0.5)*cw*0.55;
+    const py=hh-ch*(ry+0.5)-(r()-0.5)*ch*0.55;
     const me=new THREE.Mesh(g,getMat(m.finish,m.color,m.trans)); me.scale.setScalar(s);
     const spin=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), r()*Math.PI*2);
-    me.quaternion.copy(spin.multiply(tilt)); me.castShadow=true;
-    group.add(me); bodies.push(body); meshes.push(me);
-  });
-  for(let st=0;st<460;st++) world.step();
-  bodies.forEach((b,i)=>{ const t=b.translation(); meshes[i].position.set(t.x,t.y,t.z); }); // 回転はmesh固定（正面向き）
-  world.free();
+    me.quaternion.copy(spin.multiply(tilt)); me.position.set(px,py,(r()-0.5)*0.25); me.castShadow=true;
+    group.add(me);
+  }
 }
 function rebuild(){
   while(group.children.length) group.remove(group.children[0]);
