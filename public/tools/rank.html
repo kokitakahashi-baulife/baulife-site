@@ -70,7 +70,7 @@
   .tl-nomemo{color:#b0a99a;background:transparent;padding:0;margin-top:5px;}
 
   /* ポスター */
-  .poster{background:var(--pbg);border:1px solid var(--gold);border-radius:14px;padding:18px 14px 14px;color:var(--ptext);}
+  .poster{background:var(--pbg);border:1px solid var(--gold);border-radius:14px;padding:18px 14px 14px;color:var(--ptext);margin:0 0 22px;}
   .phead{text-align:center;border-bottom:1px solid var(--pline);padding-bottom:11px;margin-bottom:12px;}
   .phead .en{font-size:11px;letter-spacing:4px;color:var(--gold);font-weight:700;}
   .phead .ja{font-size:21px;font-weight:700;margin-top:4px;}
@@ -101,6 +101,18 @@
     会社の売上規模を8段階のランクに見立てた一覧です。<strong>1ランク＝桁が1つ上がる</strong>／各ランクは Ⅳ→Ⅰ の4ティア。
     月商を主軸に年商を併記しています。下の入力に自社の売上を入れると、現在地のランクと「次の昇格まであといくら」が出ます。
   </p>
+
+  <div class="poster">
+    <div class="phead">
+      <div class="en">REVENUE RANKED</div>
+      <div class="ja">売上ランク表</div>
+      <div class="note">列＝ランク（右ほど上位）／ 行＝tier（上Ⅰ〜下Ⅳ）／ 上段＝月商・下段＝年商</div>
+    </div>
+    <div class="scroll">
+      <div class="grid" id="grid"></div>
+    </div>
+    <div class="pfoot">世界トップ100の入口 ≈ ¥12〜15兆（Master上位〜Apex Predator） ／ 世界最大級 ≈ ¥100兆（ウォルマート級）</div>
+  </div>
 
   <div class="finder">
     <h2>あなたの現在地を判定</h2>
@@ -141,17 +153,6 @@
     <div id="timeline"></div>
   </div>
 
-  <div class="poster">
-    <div class="phead">
-      <div class="en">REVENUE RANKED</div>
-      <div class="ja">売上ランク表</div>
-      <div class="note">列＝ランク（右ほど上位）／ 行＝tier（上Ⅰ〜下Ⅳ）／ 上段＝月商・下段＝年商</div>
-    </div>
-    <div class="scroll">
-      <div class="grid" id="grid"></div>
-    </div>
-    <div class="pfoot">世界トップ100の入口 ≈ ¥12〜15兆（Master上位〜Apex Predator） ／ 世界最大級 ≈ ¥100兆（ウォルマート級）</div>
-  </div>
 </div>
 
 <script>
