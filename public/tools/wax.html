@@ -196,7 +196,7 @@ controls.enableDamping=true;
 controls.maxPolarAngle=Math.PI*0.49;
 
 // lights
-const key=new THREE.DirectionalLight(0xffffff,1.05);
+const key=new THREE.DirectionalLight(0xffffff,0.6);
 key.position.set(6,10,5);
 key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);
@@ -208,8 +208,8 @@ scene.add(key);
 const fill=new THREE.DirectionalLight(0xffffff,0.04); fill.position.set(-6,4,-3); scene.add(fill);
 // リムライト（粒の輪郭・白×白の分離を出す）
 const rim=new THREE.DirectionalLight(0xffffff,0.06); rim.position.set(-4,6,-7); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.25));
-scene.add(new THREE.AmbientLight(0xffffff,0.92));
+scene.add(new THREE.HemisphereLight(0xffffff,0xb6b6b6,0.2));
+scene.add(new THREE.AmbientLight(0xffffff,0.78));
 
 // ground (catch soft shadow only, keep bg color)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:0.3}));
