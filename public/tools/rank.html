@@ -119,7 +119,7 @@
 
   <div class="record">
     <h2>現在地を記録する</h2>
-    <p class="rec-help">上で今月の売上を判定したあと、日付とメモ（次のランクに上がるために起こす変化）を書いて残せます。<br>※記録はこのブラウザに保存されます（端末ごと）。</p>
+    <p class="rec-help">上で今月の売上を判定したあと、日付とメモ（次のランクに上がるために起こす変化）を書いて残せます。<br>※記録はあなたのGoogleドライブ（「売上ランク記録」フォルダ）に保存され、どの端末からでも見られます。</p>
     <div class="rec-row">
       <span class="rec-lab">日付</span>
       <input type="date" id="recDate">
@@ -311,29 +311,42 @@ function judge(){
 document.getElementById("judge").addEventListener("click",judge);
 document.getElementById("amount").addEventListener("keydown",e=>{ if(e.key==="Enter")judge(); });
 
-// ===== 記録・タイムライン（localStorage 保存） =====
-const LOGKEY="baulife_rank_log_v1";
-function loadLog(){try{return JSON.parse(localStorage.getItem(LOGKEY)||"[]");}catch(e){return [];}}
-function saveLog(a){localStorage.setItem(LOGKEY,JSON.stringify(a));}
+// ===== 記録・タイムライン（Googleドライブ保存・端末間で同期） =====
+const LOGKEY="baulife_rank_log_v1";  // 旧localStorageからの自動移行用
 function pad(n){return n<10?"0"+n:""+n;}
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function fmtDate(s){return s?s.replace(/-/g,"/"):s;}
 function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
+let logCache=[];
+async function apiGet(){const r=await fetch("/api/tools/rank",{cache:"no-store"});if(r.status===401)throw new Error("ログインが必要です");if(!r.ok)throw new Error("load "+r.status);return (await r.json()).entries||[];}
+async function apiPut(entries){const r=await fetch("/api/tools/rank",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({entries})});if(!r.ok)throw new Error("save "+r.status);}
+
 const recDate=document.getElementById("recDate");
 recDate.value=todayStr();
-document.getElementById("recSave").addEventListener("click",()=>{
+const recSaveBtn=document.getElementById("recSave");
+recSaveBtn.addEventListener("click",async ()=>{
   const note=document.getElementById("recNote");
   if(!last){ note.style.color="#b0432f"; note.textContent="先に今月の売上を入力して『判定する』を押してください。"; return; }
   const memo=document.getElementById("recMemo").value.trim();
   const entry={id:Date.now(),date:recDate.value||todayStr(),rank:last.rank,tier:last.tier,color:last.color,amount:last.amount,next:last.next,memo:memo};
-  const a=loadLog(); a.push(entry); saveLog(a);
-  document.getElementById("recMemo").value="";
-  note.style.color="#7a6f5e"; note.textContent="記録しました。";
-  renderTimeline();
+  const prev=logCache.slice();
+  logCache.push(entry); renderTimeline();
+  recSaveBtn.disabled=true; note.style.color="#7a6f5e"; note.textContent="保存中…";
+  try{ await apiPut(logCache); document.getElementById("recMemo").value=""; note.textContent="Googleドライブに保存しました。"; }
+  catch(e){ logCache=prev; renderTimeline(); note.style.color="#b0432f"; note.textContent="保存に失敗しました（"+e.message+"）"; }
+  finally{ recSaveBtn.disabled=false; }
 });
+
+async function deleteEntry(id){
+  const prev=logCache.slice();
+  logCache=logCache.filter(x=>x.id!==id); renderTimeline();
+  try{ await apiPut(logCache); }
+  catch(e){ logCache=prev; renderTimeline(); alert("削除に失敗しました（"+e.message+"）"); }
+}
+
 function renderTimeline(){
-  const a=loadLog().sort((x,y)=>{ if(x.date!==y.date) return x.date<y.date?1:-1; return y.id-x.id; });
+  const a=logCache.slice().sort((x,y)=>{ if(x.date!==y.date) return x.date<y.date?1:-1; return y.id-x.id; });
   const tl=document.getElementById("timeline");
   const empty=document.getElementById("tlEmpty");
   if(!a.length){ tl.innerHTML=""; empty.style.display="block"; return; }
@@ -348,12 +361,19 @@ function renderTimeline(){
     '</div>').join("");
   tl.querySelectorAll(".tl-del").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("この記録を削除しますか？"))return;
-    const id=Number(b.dataset.id);
-    saveLog(loadLog().filter(x=>x.id!==id));
-    renderTimeline();
+    deleteEntry(Number(b.dataset.id));
   }));
 }
-renderTimeline();
+
+(async()=>{
+  const empty=document.getElementById("tlEmpty");
+  try{
+    logCache=await apiGet();
+    // 旧localStorageの記録があり、クラウドが空なら自動でドライブへ移行
+    try{ const old=JSON.parse(localStorage.getItem(LOGKEY)||"[]"); if(!logCache.length && old.length){ logCache=old; await apiPut(logCache); localStorage.removeItem(LOGKEY); } }catch(_){}
+    renderTimeline();
+  }catch(e){ empty.style.display="block"; empty.textContent="記録の読み込みに失敗しました（"+e.message+"）。ページを再読み込みしてください。"; }
+})();
 </script>
 </body>
 </html>

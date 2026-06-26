@@ -229,3 +229,83 @@ export async function saveWax(token: string, products: unknown[], savedAt?: numb
   if (!res.ok) throw new Error(`wax create ${res.status} ${await res.text()}`);
   return res.json();
 }
+
+// ===== 売上ランク表：記録タイムライン（ユーザー個人の My Drive に保存） =====
+// 共有ドライブではなく、ログイン中ユーザー自身の Google ドライブに保存する。
+// → 端末をまたいで同期され、かつ本人だけが閲覧できる。
+const RANK_FOLDER_NAME = "売上ランク記録";
+const RANK_FILE_NAME = "rank-log.json";
+
+// My Drive 直下の保存フォルダを取得（無ければ作成）
+async function getRankFolder(token: string): Promise<string> {
+  const params = new URLSearchParams({
+    q: `name='${RANK_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`,
+    fields: "files(id)",
+    pageSize: "1",
+  });
+  const res = await fetch(`${API}/files?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`rank folder list ${res.status} ${await res.text()}`);
+  const f = (await res.json()).files?.[0];
+  if (f) return f.id;
+  const cr = await fetch(`${API}/files?fields=id`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: RANK_FOLDER_NAME,
+      mimeType: "application/vnd.google-apps.folder",
+    }),
+  });
+  if (!cr.ok) throw new Error(`rank folder create ${cr.status} ${await cr.text()}`);
+  return (await cr.json()).id;
+}
+
+async function findRankFile(token: string, folderId: string) {
+  const params = new URLSearchParams({
+    q: `'${folderId}' in parents and name='${RANK_FILE_NAME}' and trashed=false`,
+    fields: "files(id,modifiedTime)",
+    pageSize: "1",
+  });
+  const res = await fetch(`${API}/files?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`rank list ${res.status} ${await res.text()}`);
+  return (await res.json()).files?.[0] ?? null;
+}
+
+export async function loadRankLog(token: string): Promise<{ entries: unknown[] }> {
+  const folderId = await getRankFolder(token);
+  const f = await findRankFile(token, folderId);
+  if (!f) return { entries: [] };
+  const content: any = await readProject(token, f.id);
+  return { entries: Array.isArray(content?.entries) ? content.entries : [] };
+}
+
+export async function saveRankLog(token: string, entries: unknown[]) {
+  const folderId = await getRankFolder(token);
+  const f = await findRankFile(token, folderId);
+  const content = { entries, savedAt: Date.now() };
+  if (f) {
+    const res = await fetch(
+      `${UPLOAD}/files/${f.id}?uploadType=multipart&fields=id,modifiedTime`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${BOUNDARY}` },
+        body: multipartBody({ name: RANK_FILE_NAME }, content),
+      }
+    );
+    if (!res.ok) throw new Error(`rank save ${res.status} ${await res.text()}`);
+    return res.json();
+  }
+  const res = await fetch(
+    `${UPLOAD}/files?uploadType=multipart&fields=id,modifiedTime`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${BOUNDARY}` },
+      body: multipartBody({ name: RANK_FILE_NAME, parents: [folderId], mimeType: "application/json" }, content),
+    }
+  );
+  if (!res.ok) throw new Error(`rank create ${res.status} ${await res.text()}`);
+  return res.json();
+}
