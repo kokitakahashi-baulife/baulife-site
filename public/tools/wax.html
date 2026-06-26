@@ -546,16 +546,18 @@ function makeBump(size,blobs,contrast,soft,rep){
     x.fillStyle=g; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep||2,rep||2); return t;
 }
-function makeSparkle(size,dots,rep){
+function makeSparkle(size,dots,rep,rmax){
+  rmax=rmax||1.6;
   const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d');
   x.fillStyle='#000'; x.fillRect(0,0,size,size);
-  for(let i=0;i<dots;i++){ const px=Math.random()*size,py=Math.random()*size,r=Math.random()*1.6+0.4;
+  for(let i=0;i<dots;i++){ const px=Math.random()*size,py=Math.random()*size,r=Math.random()*rmax+0.4;
     x.fillStyle=`rgba(255,255,255,${0.6+Math.random()*0.4})`; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep||3,rep||3); return t;
 }
 const microBump=makeBump(256,600,40,0.05,2);     // 蝋の微細な表面ゆらぎ
 const crinkleBump=makeBump(256,1000,95,0.028,2); // マットの皺
-const sparkleTex=makeSparkle(256,800,3);         // ラメの細片
+const sparkleTex=makeSparkle(256,800,3);         // ラメの細片（八角マーブル用）
+const sparkleBig=makeSparkle(256,650,2,3.6);     // 大きめ・目立つラメ（星・イチョウ等用）
 
 // ラメ用：反転スパークル（粒だけ低ラフネス＝ツヤ）＆マーブル色マップ
 const sparkleRough=(function(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
@@ -596,12 +598,12 @@ function finishMatte(hex){ return new THREE.MeshPhysicalMaterial({color:new THRE
 function finishMarble(cols){ return new THREE.MeshPhysicalMaterial({map:makeMarble(cols),roughness:0.48,metalness:0.85,metalnessMap:sparkleTex,roughnessMap:sparkleRough,clearcoat:0.55,clearcoatRoughness:0.22,bumpMap:microBump,bumpScale:0.008,envMapIntensity:1.15}); }
 // C) 星専用：単色ラメ入り 超光沢
 // 星：マーブルなし。単色＋微細ラメ粒子＋強いパール光沢＋虹彩
-function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.16,metalness:0.7,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.009,clearcoat:1.0,clearcoatRoughness:0.07,iridescence:0.45,iridescenceIOR:1.35,envMapIntensity:1.7}); }
+function finishStarGloss(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.22,metalness:0.88,metalnessMap:sparkleBig,roughnessMap:sparkleRough,bumpMap:sparkleBig,bumpScale:0.03,clearcoat:1.0,clearcoatRoughness:0.1,iridescence:0.45,iridescenceIOR:1.35,envMapIntensity:2.1}); }
 // 超光沢（ラメなし）：きらめき粒子なしの滑らかな艶
 function finishStarGlossPlain(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.05,clearcoat:1.0,clearcoatRoughness:0.03,metalness:0.0,bumpMap:microBump,bumpScale:0.003,envMapIntensity:1.5}); }
 // ラメ単色：単色＋ラメ（混色なし）
 // ラメ単色(イチョウ/アジサイ等)：マーブルなし。単色＋微細ラメ粒子＋パール光沢＋虹彩
-function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.4,metalness:0.55,metalnessMap:sparkleTex,roughnessMap:sparkleRough,bumpMap:sparkleTex,bumpScale:0.012,clearcoat:0.6,clearcoatRoughness:0.25,iridescence:0.3,iridescenceIOR:1.3,envMapIntensity:1.15}); }
+function finishGlitterSolid(hex){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(hex),roughness:0.42,metalness:0.82,metalnessMap:sparkleBig,roughnessMap:sparkleRough,bumpMap:sparkleBig,bumpScale:0.028,clearcoat:0.6,clearcoatRoughness:0.25,iridescence:0.3,iridescenceIOR:1.3,envMapIntensity:1.5}); }
 
 // 同色で「仕上げ4種」を並べて比較（蝋らしさの検証）
 const group=new THREE.Group(); scene.add(group);
