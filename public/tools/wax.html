@@ -1072,15 +1072,22 @@ function captureThumb(size){ size=size||360;
 }
 function recipeItemsFromCurrent(){ return recipe.filter(r=>productById(r.pid)).map(r=>{ const p=productById(r.pid);
   return {sku:p.sku||'',name:p.name,color:prodColor(p),type:p.type,ratio:Math.round(r.ratio*10)/10}; }); }
+// レシピが含むワックスの素材数（絵柄入りは3素材ぶん）。MAXCOMP(=6)を超えさせない
+function itemsCompCount(items){ return (items||[]).reduce((a,it)=>a+((TYPES[it.type]&&TYPES[it.type].length)||1),0); }
+function recipeCompCount(rec){ return itemsCompCount(rec&&rec.items); }
 function saveCurrentRecipe(name){
   const items=recipeItemsFromCurrent(); if(!items.length) return false;
+  if(itemsCompCount(items)>MAXCOMP){ alert('ワックスの種類が'+MAXCOMP+'種を超えています（絵柄入りは3種ぶん）。\n'+MAXCOMP+'種以内に減らしてから保存してください。'); return false; }
   const thumb=captureThumb();
   products.push({recipe:true,id:Date.now(),name:name,items,thumb,_t:Date.now()}); saveProducts(); return true;
 }
 function deleteRecipe(id){ const e=products.find(p=>p.recipe&&p.id===id); if(e){ e.archived=true; e._t=Date.now(); saveProducts(); } }
 function loadRecipeToSim(rec){
-  const next=[]; rec.items.forEach(it=>{ const p=recItemProduct(it); if(p) next.push({pid:p.id,ratio:it.ratio}); });
+  let next=[], comps=0, trimmed=false;
+  rec.items.forEach(it=>{ const p=recItemProduct(it); if(!p)return;
+    if(comps+p.comps.length>MAXCOMP){ trimmed=true; return; } next.push({pid:p.id,ratio:it.ratio}); comps+=p.comps.length; });
   if(!next.length){ alert('このレシピの商品が見つかりません（削除/改名された可能性があります）'); return; }
+  if(trimmed) alert('このレシピは'+MAXCOMP+'種を超えていたため、'+MAXCOMP+'種ぶんだけ読み込みました。');
   recipe=next; normalizeRecipe(); saveRecipe(); showTab('sim');
 }
 // 重量はラメ有無で変わらないので、八角・星はラメ違いを1グループに統一して扱う
@@ -1113,9 +1120,10 @@ function seedSamples(){
   const origRecipe=recipe; let added=0;
   SAMPLE_DEFS.forEach((d,di)=>{
     if(existing.has(d.name))return;
-    let picks=d.items.map(([nm,rt])=>{ const p=findProdByName(nm); return p?{pid:p.id,ratio:rt}:null; }).filter(Boolean);
+    let picks=[], comps=0; // 6素材を超えないように積む（絵柄入りは3素材）
+    for(const [nm,rt] of d.items){ const p=findProdByName(nm); if(!p)continue; if(comps+p.comps.length>MAXCOMP)continue; picks.push({pid:p.id,ratio:rt}); comps+=p.comps.length; }
     if(picks.length<2){ const used=new Set(picks.map(x=>x.pid));
-      for(const p of pool){ if(picks.length>=3)break; if(!used.has(p.id)){ picks.push({pid:p.id,ratio:30}); used.add(p.id);} } }
+      for(const p of pool){ if(picks.length>=3)break; if(used.has(p.id))continue; if(comps+p.comps.length>MAXCOMP)continue; picks.push({pid:p.id,ratio:30}); comps+=p.comps.length; used.add(p.id);} }
     if(picks.length<2)return;
     recipe=picks; normalizeRecipe(); rebuild();
     products.push({recipe:true,id:Date.now()+di,name:d.name,items:recipeItemsFromCurrent(),thumb:captureThumb(),_t:Date.now()+di});
@@ -1125,6 +1133,15 @@ function seedSamples(){
   if(added) saveProducts();
   return added;
 }
+// 起動時に一度だけ：6素材超で投入された過去のサンプルを除去し、修正版を入れ直す
+function migrateRecipes(){ try{
+  if(localStorage.getItem('waxRecipeFix1')) return;
+  const names=new Set(SAMPLE_DEFS.map(d=>d.name)); let changed=false;
+  products.forEach(p=>{ if(p.recipe && !p.archived && names.has(p.name) && recipeCompCount(p)>MAXCOMP){ p.archived=true; p._t=Date.now(); changed=true; } });
+  localStorage.setItem('waxRecipeFix1','1');
+  const added=seedSamples();
+  if(changed && !added) saveProducts();
+}catch(e){} }
 // 起動時に一度だけ：未投入のサンプルを補完（削除済みの復活を避けるためフラグで一度きり）
 function maybeSeedSamples(){ try{
   if(localStorage.getItem('waxSamplesSeededV2')) return;
@@ -1182,9 +1199,9 @@ function renderPackResult(){
   const el=document.getElementById('calcResult'); if(!el)return;
   const recipes=getRecipes(), sel=recipes.find(r=>r.id===packSelId)||recipes[0]; if(!sel){el.innerHTML='';return;}
   const plan=packPlan(sel,packBags,packBagG);
-  let h='<table class="ptable"><thead><tr><th>色（商品）</th><th>型</th><th>比率</th><th>用意するg</th><th>概算粒数</th></tr></thead><tbody>';
-  plan.rows.forEach(r=>{ h+='<tr><td><span class="swatch" style="background:'+esc(r.color||'#ccc')+'"></span>'+esc(r.name)+'</td><td>'+esc(r.type||'—')+'</td><td>'+Math.round(r.ratio)+'%</td><td>'+(r.w? r.grams.toFixed(1):'—')+'</td><td>'+(r.w? Math.round(r.beads):'—')+'</td></tr>'; });
-  h+='</tbody><tfoot><tr><td>合計</td><td></td><td></td><td>'+plan.T.toFixed(0)+' g</td><td>'+Math.round(plan.totalBeads)+'</td></tr></tfoot></table>';
+  let h='<table class="ptable"><thead><tr><th>色（商品）</th><th>型</th><th>比率</th><th>用意するg</th></tr></thead><tbody>';
+  plan.rows.forEach(r=>{ h+='<tr><td><span class="swatch" style="background:'+esc(r.color||'#ccc')+'"></span>'+esc(r.name)+'</td><td>'+esc(r.type||'—')+'</td><td>'+Math.round(r.ratio)+'%</td><td>'+(r.w? r.grams.toFixed(1):'—')+'</td></tr>'; });
+  h+='</tbody><tfoot><tr><td>合計</td><td></td><td></td><td>'+plan.T.toFixed(0)+' g</td></tr></tfoot></table>';
   h+='<div class="sub" style="margin-top:6px">'+plan.bags+'袋 × '+plan.bagG+'g ＝ 総量 '+plan.T.toFixed(0)+'g。各色を上表のgで量って混ぜ、'+plan.bagG+'gずつ小分けしてください。</div>';
   if(plan.missing.length) h+='<div class="warn">⚠ 1粒重量が未登録の型があります（'+esc(plan.missing.join('、'))+'）。上の「型ごとの1粒重量」に入力すると計算されます。</div>';
   el.innerHTML=h;
@@ -1542,7 +1559,7 @@ document.getElementById('modeBag').onclick=()=>setContainer('bag');
 // 袋画像の設定・位置調整（localStorageに保存）
 setBagTexture('wax-bag.jpg'); // 袋画像は固定（提供画像をバンドル）
 showTab(HASHTAB[location.hash]||'sim');
-pullShared().finally(maybeSeedSamples); // 共有データ取得後、レシピが空ならサンプルを初回投入
+pullShared().finally(()=>{ migrateRecipes(); maybeSeedSamples(); if(packView&&packView.style.display!=='none')renderPack(); }); // 共有データ取得後、壊れたサンプルを修正＋未投入分を補完
 
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
