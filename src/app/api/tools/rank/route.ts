@@ -40,6 +40,8 @@ export async function POST(req: Request) {
       amount: String(b.amount || ""),
       next: String(b.next || ""),
       memo: String(b.memo || "").slice(0, 2000),
+      monthly: Number(b.monthly) || 0,
+      annual: Number(b.annual) || 0,
     };
     const { entries } = await appendRankEntry(token, entry);
     return NextResponse.json({ entries });

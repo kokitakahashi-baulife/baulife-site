@@ -54,6 +54,8 @@
   .rec-row2{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
   .rec-note{font-size:12px;color:var(--gray);}
   .timeline-wrap{margin:0 0 26px;}
+  .chart-wrap{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--gray);margin:0 0 6px;}
   .tl-empty{font-size:13px;color:var(--gray);}
   .tl-item{border:1px solid var(--line);border-left:3px solid #ccc;border-radius:10px;padding:10px 13px;margin:0 0 10px;background:var(--paper);}
   .tl-top{display:flex;align-items:center;gap:9px;margin-bottom:5px;}
@@ -134,6 +136,7 @@
 
   <div class="timeline-wrap">
     <h2>記録タイムライン（チーム共有）</h2>
+    <div id="chartWrap" class="chart-wrap" style="display:none"></div>
     <p class="tl-empty" id="tlEmpty">まだ記録がありません。売上を判定して、上のフォームから残しましょう。</p>
     <div id="timeline"></div>
   </div>
@@ -295,7 +298,7 @@ function judge(){
   const msg=ex.msgs[Math.floor(Math.random()*ex.msgs.length)];
   const amountStr=(mode==="month"?"月商 "+fmt(entered)+"（年商 "+fmt(annual)+"）":"年商 "+fmt(annual));
   const nextStr=next?("次の "+next.d.n+" "+next.v.l+" まで 月商 +"+fmt((next.v.lo-annual)/12)):"最高ランク到達 🏆";
-  last={rank:cur.d.n,tier:cur.v.l,color:cur.d.f,amount:amountStr,next:nextStr};
+  last={rank:cur.d.n,tier:cur.v.l,color:cur.d.f,amount:amountStr,next:nextStr,monthly:Math.round(annual/12),annual:Math.round(annual)};
   res.className="result show";
   res.innerHTML='<span class="badge" style="background:'+cur.d.f+'">'+cur.d.n+' '+cur.v.l+'</span>'+
     '月商 '+cur.v.mo+' ／ 年商 '+cur.v.yr+'<br>'+
@@ -330,7 +333,7 @@ recSaveBtn.addEventListener("click",async ()=>{
   const note=document.getElementById("recNote");
   if(!last){ note.style.color="#b0432f"; note.textContent="先に今月の売上を入力して『判定する』を押してください。"; return; }
   const memo=document.getElementById("recMemo").value.trim();
-  const entry={date:recDate.value||todayStr(),rank:last.rank,tier:last.tier,color:last.color,amount:last.amount,next:last.next,memo:memo};
+  const entry={date:recDate.value||todayStr(),rank:last.rank,tier:last.tier,color:last.color,amount:last.amount,next:last.next,memo:memo,monthly:last.monthly,annual:last.annual};
   recSaveBtn.disabled=true; note.style.color="#7a6f5e"; note.textContent="保存中…";
   try{ logCache=await apiPost(entry); renderTimeline(); document.getElementById("recMemo").value=""; note.textContent="チームのタイムラインに保存しました。"; }
   catch(e){ note.style.color="#b0432f"; note.textContent="保存に失敗しました（"+e.message+"）"; }
@@ -342,7 +345,30 @@ async function deleteEntry(id){
   catch(e){ alert("削除に失敗しました（"+e.message+"）"); }
 }
 
+function fmtShort(n){return fmt(n).replace("円","");}
+function renderChart(pts){
+  const wrap=document.getElementById("chartWrap");
+  const d=pts.filter(e=>typeof e.monthly==="number" && e.monthly>0);
+  if(d.length<2){ wrap.style.display="none"; wrap.innerHTML=""; return; }
+  wrap.style.display="block";
+  const W=640,H=260,mL=64,mR=16,mT=20,mB=36,pw=W-mL-mR,ph=H-mT-mB;
+  const vals=d.map(e=>e.monthly); let lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals);
+  if(hi===lo){ hi=lo*1.1||1; lo=0; }
+  const pv=(hi-lo)*0.15,yMax=hi+pv,yMin=Math.max(0,lo-pv),n=d.length;
+  const X=i=> n===1? mL+pw/2 : mL+pw*i/(n-1);
+  const Y=v=> mT+(1-(v-yMin)/(yMax-yMin))*ph;
+  let g=""; [yMin,(yMin+yMax)/2,yMax].forEach(v=>{const y=Y(v);g+='<line x1="'+mL+'" y1="'+y.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+y.toFixed(1)+'" stroke="#e3dccf" stroke-width="1"/><text x="'+(mL-6)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="10" fill="#8a7f70">'+fmtShort(v)+'</text>';});
+  let path=""; d.forEach((e,i)=>{ path+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(e.monthly).toFixed(1)+' '; });
+  let cir="",lab="",xl=""; const step=Math.ceil(n/6);
+  d.forEach((e,i)=>{ const x=X(i),y=Y(e.monthly);
+    cir+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+(e.color||"#e85d75")+'" stroke="#fff" stroke-width="1"/>';
+    if(n<=8) lab+='<text x="'+x.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle" font-size="9" fill="#3a332b">'+fmtShort(e.monthly)+'</text>';
+    if(i%step===0||i===n-1) xl+='<text x="'+x.toFixed(1)+'" y="'+(H-mB+16)+'" text-anchor="middle" font-size="9" fill="#8a7f70">'+(e.date?String(e.date).slice(5).replace("-","/"):"")+'</text>';
+  });
+  wrap.innerHTML='<div class="chart-title">売上推移（月商）</div><svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="月商の推移を示す折れ線グラフ">'+g+'<path d="'+path+'" fill="none" stroke="#e85d75" stroke-width="2"/>'+cir+lab+xl+'</svg>';
+}
 function renderTimeline(){
+  renderChart(logCache.slice().sort((x,y)=>{ if(x.date!==y.date) return x.date<y.date?-1:1; return (x.createdAt||0)-(y.createdAt||0); }));
   const a=logCache.slice().sort((x,y)=>{ if(x.date!==y.date) return x.date<y.date?1:-1; return (y.createdAt||0)-(x.createdAt||0); });
   const tl=document.getElementById("timeline");
   const empty=document.getElementById("tlEmpty");
