@@ -70,10 +70,13 @@
   .bigimg.picking{outline:3px solid #7a5c3a;outline-offset:-3px;cursor:crosshair;}
   .pickbar{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:50;background:#7a5c3a;color:#fff;font-size:12px;padding:8px 16px;border-radius:22px;box-shadow:0 3px 14px rgba(0,0,0,.28);display:flex;align-items:center;gap:14px;}
   .pickbar button{background:#fff;color:#7a5c3a;border:none;border-radius:14px;padding:5px 16px;font-size:12px;cursor:pointer;font-weight:bold;}
-  .syncbadge{position:fixed;bottom:10px;left:10px;z-index:30;font-size:11px;padding:4px 11px;border-radius:14px;background:rgba(255,255,255,.93);border:1px solid #e3ddd0;color:#7a5c3a;box-shadow:0 1px 5px rgba(0,0,0,.1);pointer-events:none;}
-  .syncbadge.local{color:#b4502f;border-color:#e3b4ad;}
-  .syncbadge.saving,.syncbadge.loading{color:#999;}
-  .syncbadge:empty{display:none;}
+  .syncbadge{margin-left:auto;display:flex;align-items:center;gap:7px;padding:0 16px;font-size:12px;color:#5a7a52;white-space:nowrap;}
+  .syncbadge.local{color:#b4502f;}
+  .syncbadge .dot{width:8px;height:8px;border-radius:50%;background:#7cc06a;flex:0 0 auto;}
+  .syncbadge.saved .dot{background:#5cb85c;}
+  .syncbadge.local .dot{background:#c0392b;}
+  .syncbadge .spin{width:13px;height:13px;border:2px solid #e0d2bd;border-top-color:#7a5c3a;border-radius:50%;animation:spin .7s linear infinite;flex:0 0 auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
   .editbtn{flex:0 0 auto;padding:5px 14px;border:none;border-radius:6px;background:#7a5c3a;color:#fff;font-size:11px;cursor:pointer;}
   .imgrow{display:flex;gap:10px;margin:8px 0 6px;}
   .imgfig{margin:0;flex:1;text-align:center;min-width:0;}
@@ -117,8 +120,8 @@
   <a href="/tools" class="backlink" title="社内ポータルへ戻る">← ポータル</a>
   <button id="tabSim" class="tab active">調合シミュレーター</button>
   <button id="tabReg" class="tab">商品登録</button>
+  <div id="syncStatus" class="syncbadge"></div>
 </div>
-<div id="syncStatus" class="syncbadge"></div>
 
 <div id="simView" class="sidebar">
   <p class="sub">左で商品を選ぶ → 右上で選択中を確認・解除 → 右下で比率を調整。</p>
@@ -557,7 +560,7 @@ function makeSparkle(size,dots,rep,rmax){
 const microBump=makeBump(256,600,40,0.05,2);     // 蝋の微細な表面ゆらぎ
 const crinkleBump=makeBump(256,1000,95,0.028,2); // マットの皺
 const sparkleTex=makeSparkle(256,800,3);         // ラメの細片（八角マーブル用）
-const sparkleBig=makeSparkle(256,3000,4,0.6);    // 微細なラメ粒（星・イチョウ等用）
+const sparkleBig=makeSparkle(256,2600,4,0.95);   // 微細なラメ粒（少しだけ目立つ：星・イチョウ等用）
 
 // ラメ用：反転スパークル（粒だけ低ラフネス＝ツヤ）＆マーブル色マップ
 const sparkleRough=(function(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
@@ -773,8 +776,10 @@ let pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
 let pushTimer=null, syncReady=false, dirty=false;
 let localSavedAt=+(localStorage.getItem(LSKEY+'_t')||0); // ローカル編集の最終時刻（新しい方を採用するため）
 function setSync(state,by){ const el=document.getElementById('syncStatus'); if(!el)return;
-  const m={loading:'☁ 共有データ取得中…',shared:'☁ 共有中'+(by?'（最終: '+by+'）':''),saving:'☁ 保存中…',saved:'☁ 共有に保存済み',local:'⚠ ローカルのみ（共有未接続）'};
-  el.textContent=m[state]||''; el.className='syncbadge '+state; }
+  const m={loading:'共有データを取得中…',shared:'共有中'+(by?'（最終更新: '+by+'）':''),saving:'保存中…',saved:'保存しました',local:'ローカルのみ（未接続）'};
+  el.className='syncbadge '+state;
+  const icon=(state==='saving'||state==='loading')?'<span class="spin"></span>':'<span class="dot"></span>';
+  el.innerHTML=icon+'<span>'+(m[state]||'')+'</span>'; }
 function saveProducts(){ localSavedAt=Date.now(); dirty=true; try{ localStorage.setItem(LSKEY,JSON.stringify(products)); localStorage.setItem(LSKEY+'_t',String(localSavedAt)); }catch(e){} schedulePush(); }
 function schedulePush(){ if(!syncReady)return; clearTimeout(pushTimer); setSync('saving'); pushTimer=setTimeout(pushShared,600); }
 async function pushShared(){ try{
@@ -784,21 +789,25 @@ async function pushShared(){ try{
 addEventListener('pagehide',()=>{ if(syncReady && dirty){ try{ fetch('/api/tools/wax',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({products,savedAt:localSavedAt}),keepalive:true}); }catch(e){} } });
 function refreshView(){ recipe=recipe.filter(r=>productById(r.pid)); if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; if(recipe.length)normalizeRecipe();
   if(regView.style.display!=='none') renderRegistry(); else { renderCards(); renderRecipe(); rebuild(); } }
+// 商品ごとに新しい方を採用してマージ（複数人が別商品を編集しても両方残る）
+function mergeById(localArr, driveArr){
+  const by={}; (localArr||[]).forEach(p=>{ by[p.id]=p; });
+  (driveArr||[]).forEach(dp=>{ const lp=by[dp.id]; if(!lp || (+dp._t||0) >= (+lp._t||0)) by[dp.id]=dp; });
+  return Object.values(by);
+}
 async function pullShared(){ setSync('loading'); try{
     const res=await fetch('/api/tools/wax',{headers:{'Accept':'application/json'}});
-    if(!res.ok){ setSync('local'); return; }
+    if(!res.ok){ syncReady=true; setSync('local'); return; }
     const data=await res.json();
-    const driveAt=+(data.savedAt||0);
-    if(Array.isArray(data.products) && data.products.length && driveAt>localSavedAt){
-      // Driveの方が新しい→共有データを採用
-      products=migrate(data.products); pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1; localSavedAt=driveAt;
-      try{ localStorage.setItem(LSKEY,JSON.stringify(products)); localStorage.setItem(LSKEY+'_t',String(driveAt)); }catch(e){}
-      syncReady=true; refreshView(); setSync('shared',data.by);
-    } else {
-      // ローカルが新しい/同等、または共有未作成→ローカルを保持しDriveへ反映（編集が消えないように）
-      syncReady=true; if(!localSavedAt)localSavedAt=Date.now(); await pushShared(); setSync('shared',data.by);
-    }
-  }catch(e){ setSync('local'); } }
+    if(Array.isArray(data.products) && data.products.length){
+      const merged=mergeById(products, migrate(data.products)); resync(merged);
+      products=merged; pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
+      try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){}
+      syncReady=true; refreshView();
+    } else { syncReady=true; }
+    // マージ結果（または初回データ）をDriveへ反映＝全員の編集が残る
+    localSavedAt=Date.now(); await pushShared(); setSync('shared',data.by);
+  }catch(e){ syncReady=true; setSync('local'); } }
 function productById(id){ return products.find(p=>p.id===id); }
 let recipe=[ {pid:1,ratio:40}, {pid:11,ratio:30}, {pid:12,ratio:30} ].filter(r=>productById(r.pid));
 if(!recipe.length) recipe=[{pid:products[0].id,ratio:100}];
@@ -1033,10 +1042,13 @@ function compsFor(type,colors){
   const base=TYPES[type]||TYPES['八角(マット)']; const rs=base.length===3?[34,33,33]:[100];
   return base.map((b,i)=>({shape:b.shape,finish:b.finish,color:(colors&&colors[i])||'#CCCCCC',ratio:rs[i]}));
 }
+// 形・素材は「型」が正：古い形(clover等)が残らないよう型から再生成（色は保持）
+function resync(arr){ (arr||[]).forEach(p=>{ if(p && TYPES[p.type] && Array.isArray(p.comps)) p.comps=compsFor(p.type, p.comps.map(c=>c.color)); }); return arr; }
+resync(products);
 const editing=new Set(), snap={}, newIds=new Set();
 function pclone(o){ return JSON.parse(JSON.stringify(o)); }
 function startEdit(p){ editing.add(p.id); snap[p.id]=pclone(p); renderRegistry(); }
-function saveEdit(p){ editing.delete(p.id); delete snap[p.id]; newIds.delete(p.id); invalidateThumb(p); saveProducts(); renderRegistry(); }
+function saveEdit(p){ p._t=Date.now(); editing.delete(p.id); delete snap[p.id]; newIds.delete(p.id); invalidateThumb(p); saveProducts(); renderRegistry(); }
 function cancelEdit(p){
   if(newIds.has(p.id)){ products=products.filter(x=>x!==p); newIds.delete(p.id); saveProducts(); }
   else if(snap[p.id]){ Object.assign(p, pclone(snap[p.id])); }
@@ -1044,12 +1056,12 @@ function cancelEdit(p){
 }
 let showArchive=false;
 function archiveProduct(p){
-  p.archived=true; recipe=recipe.filter(r=>r.pid!==p.id);
+  p.archived=true; p._t=Date.now(); recipe=recipe.filter(r=>r.pid!==p.id);
   if(!recipe.length){ const a=products.find(x=>!x.archived); if(a)recipe=[{pid:a.id,ratio:100}]; }
   if(recipe.length)normalizeRecipe();
   editing.delete(p.id); delete snap[p.id]; newIds.delete(p.id); saveProducts(); renderRegistry();
 }
-function restoreProduct(p){ p.archived=false; saveProducts(); renderRegistry(); }
+function restoreProduct(p){ p.archived=false; p._t=Date.now(); saveProducts(); renderRegistry(); }
 function purgeProduct(p){ products=products.filter(x=>x!==p); saveProducts(); renderRegistry(); }
 // ===== 実物画像から色を自動抽出（再現色に適用） =====
 function _rgb2hsv(r,g,b){ r/=255;g/=255;b/=255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0; if(d){ if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if(h<0)h+=360; } return [h, mx?d/mx:0, mx]; }
@@ -1072,7 +1084,7 @@ function _extract3(px){ const km=_kmeans(px,6,9);
   return pick; }
 async function autoExtractColors(p){ if(!p.real) return false; const data=await _imgPixels(p.real); if(!data) return false; const px=_beadPixels(data); if(px.length<20) return false;
   if(p.comps.length>=3){ const cols=_extract3(px); p.comps.forEach((c,i)=>c.color=cols[i%cols.length]); } else { const col=_vivid(px); p.comps.forEach(c=>c.color=col); }
-  invalidateThumb(p); return true; }
+  p._t=Date.now(); invalidateThumb(p); return true; }
 async function autoExtractAll(){ const list=products.filter(p=>!p.archived && p.real); let done=0; const btn=document.getElementById('autoColor');
   for(const p of list){ try{ await autoExtractColors(p); }catch(e){} done++; if(btn)btn.textContent='抽出中… '+done+'/'+list.length; }
   saveProducts(); if(btn)btn.textContent='🎨 実物から色を抽出'; renderRegistry(); }
@@ -1206,7 +1218,7 @@ function renderRegistry(){
     regEl.append(card);
   });
 }
-document.getElementById('addProd').onclick=()=>{ const s=document.getElementById('regSearch'); if(s)s.value=''; showArchive=false; const id=pidSeq++; products.unshift({id,type:'八角(マット)',name:'新規商品',sku:'',psku:'',comps:compsFor('八角(マット)',['#3C8C82'])}); newIds.add(id); editing.add(id); saveProducts(); renderRegistry(); regView.scrollTop=0; };
+document.getElementById('addProd').onclick=()=>{ const s=document.getElementById('regSearch'); if(s)s.value=''; showArchive=false; const id=pidSeq++; products.unshift({id,type:'八角(マット)',name:'新規商品',sku:'',psku:'',_t:Date.now(),comps:compsFor('八角(マット)',['#3C8C82'])}); newIds.add(id); editing.add(id); saveProducts(); renderRegistry(); regView.scrollTop=0; };
 document.getElementById('archiveToggle').onclick=()=>{ showArchive=!showArchive; const s=document.getElementById('regSearch'); if(s)s.value=''; renderRegistry(); regView.scrollTop=0; };
 document.getElementById('autoColor').onclick=()=>{ if(showArchive)return; if(confirm('表示中の全商品の色を、実物画像から自動抽出して上書きします。\n（個別に手動修正した色も上書きされます）\nよろしいですか？')) autoExtractAll(); };
 document.getElementById('cardSearch').oninput=()=>renderCards();
