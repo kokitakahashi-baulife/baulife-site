@@ -43,6 +43,29 @@
   .result .life{font-size:13px;color:var(--gray);line-height:1.6;margin-top:5px;}
   .result .msg{margin-top:11px;padding:11px 13px;background:#fff7ea;border:1px solid #f0dca8;border-radius:10px;color:#8a6d1f;font-weight:700;font-size:14px;line-height:1.65;}
 
+  /* 記録・タイムライン */
+  .record{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 22px;}
+  .record h2,.timeline-wrap h2{font-size:13px;font-weight:700;color:var(--pink);margin:0 0 8px;}
+  .rec-help{font-size:12px;color:var(--gray);margin:0 0 10px;line-height:1.6;}
+  .rec-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .rec-lab{font-size:12px;color:var(--gray);}
+  .record input[type=date]{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
+  .record textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;min-height:64px;resize:vertical;line-height:1.6;}
+  .rec-row2{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .rec-note{font-size:12px;color:var(--gray);}
+  .timeline-wrap{margin:0 0 26px;}
+  .tl-empty{font-size:13px;color:var(--gray);}
+  .tl-item{border:1px solid var(--line);border-left:3px solid #ccc;border-radius:10px;padding:10px 13px;margin:0 0 10px;background:var(--paper);}
+  .tl-top{display:flex;align-items:center;gap:9px;margin-bottom:5px;}
+  .tl-date{font-size:13px;font-weight:700;color:var(--ink);}
+  .tl-badge{color:#fff;border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;}
+  .tl-del{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--gray);border-radius:7px;padding:3px 9px;font-size:11px;cursor:pointer;}
+  .tl-del:hover{color:var(--red);border-color:var(--red);}
+  .tl-amount{font-size:13px;color:var(--ink);}
+  .tl-next{font-size:12px;color:var(--gray);margin-top:2px;}
+  .tl-memo{font-size:13px;color:var(--ink);margin-top:7px;line-height:1.65;background:#fbf8f1;border-radius:8px;padding:8px 10px;}
+  .tl-nomemo{color:#b0a99a;background:transparent;padding:0;margin-top:5px;}
+
   /* ポスター */
   .poster{background:var(--pbg);border:1px solid var(--gold);border-radius:14px;padding:18px 14px 14px;color:var(--ptext);}
   .phead{text-align:center;border-bottom:1px solid var(--pline);padding-bottom:11px;margin-bottom:12px;}
@@ -92,6 +115,26 @@
       <button class="btn" id="judge">判定する</button>
     </div>
     <div class="result" id="result"></div>
+  </div>
+
+  <div class="record">
+    <h2>現在地を記録する</h2>
+    <p class="rec-help">上で今月の売上を判定したあと、日付とメモ（次のランクに上がるために起こす変化）を書いて残せます。<br>※記録はこのブラウザに保存されます（端末ごと）。</p>
+    <div class="rec-row">
+      <span class="rec-lab">日付</span>
+      <input type="date" id="recDate">
+    </div>
+    <textarea id="recMemo" placeholder="次のランクに上がるために、何を変える？（例：客単価を1.5倍／新規チャネル開拓／値上げ／採用で生産能力UP …）"></textarea>
+    <div class="rec-row2">
+      <button class="btn" id="recSave">この内容で記録する</button>
+      <span class="rec-note" id="recNote"></span>
+    </div>
+  </div>
+
+  <div class="timeline-wrap">
+    <h2>記録タイムライン</h2>
+    <p class="tl-empty" id="tlEmpty">まだ記録がありません。売上を判定して、上のフォームから残しましょう。</p>
+    <div id="timeline"></div>
   </div>
 
   <div class="poster">
@@ -211,6 +254,7 @@ const FLAT=[];
 RANKS.forEach((d,ri)=>{ for(let ti=3;ti>=0;ti--){ FLAT.push({ri,ti,d,v:d.tiers[ti]}); } });
 
 let mode="month";
+let last=null;   // 直近の判定結果（記録に使う）
 const modeSeg=document.getElementById("modeSeg");
 modeSeg.addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b)return;
@@ -248,6 +292,9 @@ function judge(){
   const pay=Math.max(0,Math.min(P*0.4, ex.cap));   // 上限=利益の4割、かつ一般水準のcapで頭打ち
   const left=P-pay;                                // 役員報酬後に会社へ残る黒字
   const msg=ex.msgs[Math.floor(Math.random()*ex.msgs.length)];
+  const amountStr=(mode==="month"?"月商 "+fmt(entered)+"（年商 "+fmt(annual)+"）":"年商 "+fmt(annual));
+  const nextStr=next?("次の "+next.d.n+" "+next.v.l+" まで 月商 +"+fmt((next.v.lo-annual)/12)):"最高ランク到達 🏆";
+  last={rank:cur.d.n,tier:cur.v.l,color:cur.d.f,amount:amountStr,next:nextStr};
   res.className="result show";
   res.innerHTML='<span class="badge" style="background:'+cur.d.f+'">'+cur.d.n+' '+cur.v.l+'</span>'+
     '月商 '+cur.v.mo+' ／ 年商 '+cur.v.yr+'<br>'+
@@ -263,6 +310,50 @@ function judge(){
 }
 document.getElementById("judge").addEventListener("click",judge);
 document.getElementById("amount").addEventListener("keydown",e=>{ if(e.key==="Enter")judge(); });
+
+// ===== 記録・タイムライン（localStorage 保存） =====
+const LOGKEY="baulife_rank_log_v1";
+function loadLog(){try{return JSON.parse(localStorage.getItem(LOGKEY)||"[]");}catch(e){return [];}}
+function saveLog(a){localStorage.setItem(LOGKEY,JSON.stringify(a));}
+function pad(n){return n<10?"0"+n:""+n;}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function fmtDate(s){return s?s.replace(/-/g,"/"):s;}
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+const recDate=document.getElementById("recDate");
+recDate.value=todayStr();
+document.getElementById("recSave").addEventListener("click",()=>{
+  const note=document.getElementById("recNote");
+  if(!last){ note.style.color="#b0432f"; note.textContent="先に今月の売上を入力して『判定する』を押してください。"; return; }
+  const memo=document.getElementById("recMemo").value.trim();
+  const entry={id:Date.now(),date:recDate.value||todayStr(),rank:last.rank,tier:last.tier,color:last.color,amount:last.amount,next:last.next,memo:memo};
+  const a=loadLog(); a.push(entry); saveLog(a);
+  document.getElementById("recMemo").value="";
+  note.style.color="#7a6f5e"; note.textContent="記録しました。";
+  renderTimeline();
+});
+function renderTimeline(){
+  const a=loadLog().sort((x,y)=>{ if(x.date!==y.date) return x.date<y.date?1:-1; return y.id-x.id; });
+  const tl=document.getElementById("timeline");
+  const empty=document.getElementById("tlEmpty");
+  if(!a.length){ tl.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display="none";
+  tl.innerHTML=a.map(e=>'<div class="tl-item" style="border-left-color:'+(e.color||"#ccc")+'">'+
+    '<div class="tl-top"><span class="tl-date">'+fmtDate(e.date)+'</span>'+
+    '<span class="tl-badge" style="background:'+(e.color||"#888")+'">'+e.rank+' '+e.tier+'</span>'+
+    '<button class="tl-del" data-id="'+e.id+'">削除</button></div>'+
+    '<div class="tl-amount">'+e.amount+'</div>'+
+    (e.next?'<div class="tl-next">'+e.next+'</div>':'')+
+    (e.memo?'<div class="tl-memo">'+escapeHtml(e.memo).replace(/\n/g,"<br>")+'</div>':'<div class="tl-memo tl-nomemo">（メモなし）</div>')+
+    '</div>').join("");
+  tl.querySelectorAll(".tl-del").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("この記録を削除しますか？"))return;
+    const id=Number(b.dataset.id);
+    saveLog(loadLog().filter(x=>x.id!==id));
+    renderTimeline();
+  }));
+}
+renderTimeline();
 </script>
 </body>
 </html>
