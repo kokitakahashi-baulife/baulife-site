@@ -120,7 +120,12 @@
   .totalrow{display:flex;gap:8px;align-items:center;margin:10px 0 4px;font-size:12px;}
   .totalrow input{flex:1;}
   /* レシピ・梱包ビュー */
-  .pcol{max-width:720px;}
+  .pcol{max-width:1080px;}
+  .packwrap{display:flex;gap:22px;align-items:flex-start;}
+  .packleft{flex:1 1 0;min-width:0;}
+  .packright{flex:0 0 400px;position:sticky;top:0;}
+  @media(max-width:880px){ .packwrap{flex-direction:column;} .packright{flex:1 1 auto;width:100%;position:static;} }
+  .recrow.selrow{border-color:#7a5c3a;box-shadow:0 0 0 2px rgba(122,92,58,.15);}
   .card2{border:1px solid #e7e2d8;border-radius:10px;background:#fff;padding:12px 14px;margin-bottom:10px;}
   .card2 .ttl{font-size:13px;font-weight:bold;color:#5a4a32;margin-bottom:6px;}
   .wgrid{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:12px;}
@@ -1130,33 +1135,37 @@ let packSelId=null, packBags=10, packBagG=50, twEditMode=false;
 function renderPack(){
   const body=document.getElementById('packBody'); if(!body)return;
   const tw=getTypeWeights(), recipes=getRecipes(), twKeys=weightTypeKeys();
-  let html='<div class="card2 twcard">';
+  // --- 型ごとの1粒重量カード ---
+  let twHtml='<div class="card2 twcard">';
   if(!twEditMode){
-    html+='<div class="twhead"><span class="ttl" style="margin:0">型ごとの1粒重量</span><button class="twedit" id="twEditBtn">✏ 編集</button></div>';
-    html+='<div class="twsummary">'+ twKeys.map(t=>esc(t)+' <b>'+(tw[t]!=null? tw[t]+'g':'<i>未設定</i>')+'</b>').map(s=>'<span>'+s+'</span>').join('') +'</div>';
+    twHtml+='<div class="twhead"><span class="ttl" style="margin:0">型ごとの1粒重量</span><button class="twedit" id="twEditBtn">✏ 編集</button></div>';
+    twHtml+='<div class="twsummary">'+ twKeys.map(t=>esc(t)+' <b>'+(tw[t]!=null? tw[t]+'g':'<i>未設定</i>')+'</b>').map(s=>'<span>'+s+'</span>').join('') +'</div>';
   } else {
-    html+='<div class="twhead"><span class="ttl" style="margin:0">型ごとの1粒重量 (g)</span><button class="twedit done" id="twDoneBtn">完了</button></div>';
-    html+='<div class="sub" style="margin:6px 0 8px">各型の粒を数個まとめて量り、粒数で割った平均gを入力（絵柄入りは中身の平均でOK）。基本は初期設定のみ。全員で共有されます。</div><div class="wgrid">';
-    html+= twKeys.map(t=>'<label>'+esc(t)+'</label><span><input type="number" min="0" step="0.01" data-tw="'+esc(t)+'" value="'+(tw[t]!=null?tw[t]:'')+'" placeholder="—"> g</span>').join('');
-    html+='</div>';
+    twHtml+='<div class="twhead"><span class="ttl" style="margin:0">型ごとの1粒重量 (g)</span><button class="twedit done" id="twDoneBtn">完了</button></div>';
+    twHtml+='<div class="sub" style="margin:6px 0 8px">各型の粒を数個まとめて量り、粒数で割った平均gを入力（絵柄入りは中身の平均でOK）。基本は初期設定のみ。全員で共有されます。</div><div class="wgrid">';
+    twHtml+= twKeys.map(t=>'<label>'+esc(t)+'</label><span><input type="number" min="0" step="0.01" data-tw="'+esc(t)+'" value="'+(tw[t]!=null?tw[t]:'')+'" placeholder="—"> g</span>').join('');
+    twHtml+='</div>';
   }
-  html+='</div>';
+  twHtml+='</div>';
+  // --- 保存済みレシピ（左カラム） ---
   const missSamples=SAMPLE_DEFS.filter(d=>!recipes.some(r=>r.name===d.name)).length;
-  html+='<div class="twhead" style="margin:14px 0 6px"><span class="seclabel" style="border:none;padding:0;margin:0">保存済みレシピ（'+recipes.length+'）</span>'+
+  let recHtml='<div class="twhead" style="margin:0 0 8px"><span class="seclabel" style="border:none;padding:0;margin:0">保存済みレシピ（'+recipes.length+'）</span>'+
     (missSamples? '<button class="twedit" id="addSamplesBtn">＋ サンプルを'+missSamples+'件追加</button>':'')+'</div>';
-  if(!recipes.length) html+='<p class="sub">まだありません。「調合シミュレーター」で配合を作り「★ レシピとして保存」を押すと、ここに追加されます。</p>';
+  if(!recipes.length) recHtml+='<p class="sub">まだありません。「調合シミュレーター」で配合を作り「★ レシピとして保存」を押すと、ここに追加されます。</p>';
   recipes.forEach(rec=>{ const desc=rec.items.map(it=>'<span class="swatch" style="background:'+esc(it.color||'#ccc')+'"></span>'+esc(it.name)+' '+Math.round(it.ratio)+'%').join(' ／ ');
     const thumb=rec.thumb?'<img class="rthumb" src="'+rec.thumb+'" alt="">':'<div class="rthumb"></div>';
-    html+='<div class="recrow"><div class="rleft">'+thumb+'<div><div class="rname">'+esc(rec.name)+'</div><div class="rdesc">'+desc+'</div></div></div>'+
+    const onsel=(packSelId===rec.id)?' selrow':'';
+    recHtml+='<div class="recrow'+onsel+'"><div class="rleft">'+thumb+'<div><div class="rname">'+esc(rec.name)+'</div><div class="rdesc">'+desc+'</div></div></div>'+
       '<div class="ops"><button class="primary" data-load="'+rec.id+'">呼び出す</button><button data-calc="'+rec.id+'">梱包計算</button><button class="danger" data-del="'+rec.id+'">削除</button></div></div>'; });
+  // --- 梱包計算（右カラム） ---
   const sel=recipes.find(r=>r.id===packSelId)||recipes[0]||null;
-  html+='<div class="card2" id="calcCard"><div class="ttl">梱包計算</div>';
-  if(!sel) html+='<p class="sub">レシピを保存すると計算できます。</p>';
-  else html+='<div class="packin"><label>レシピ <select id="calcSel">'+recipes.map(r=>'<option value="'+r.id+'"'+(r.id===sel.id?' selected':'')+'>'+esc(r.name)+'</option>').join('')+'</select></label>'+
+  let calcHtml='<div class="card2" id="calcCard"><div class="ttl">梱包計算</div>';
+  if(!sel) calcHtml+='<p class="sub">レシピを保存すると計算できます。</p>';
+  else calcHtml+='<div class="packin"><label>レシピ <select id="calcSel">'+recipes.map(r=>'<option value="'+r.id+'"'+(r.id===sel.id?' selected':'')+'>'+esc(r.name)+'</option>').join('')+'</select></label>'+
       '<label>袋数 <input type="number" id="calcBags" min="1" value="'+packBags+'"></label>'+
       '<label>1袋 <input type="number" id="calcBagG" min="1" step="1" value="'+packBagG+'"> g</label></div><div id="calcResult"></div>';
-  html+='</div>';
-  body.innerHTML=html;
+  calcHtml+='</div>';
+  body.innerHTML='<div class="packwrap"><div class="packleft">'+recHtml+'</div><div class="packright">'+calcHtml+twHtml+'</div></div>';
   const eb=document.getElementById('twEditBtn'); if(eb)eb.onclick=()=>{ twEditMode=true; renderPack(); };
   const db=document.getElementById('twDoneBtn'); if(db)db.onclick=()=>{ twEditMode=false; renderPack(); };
   const sb=document.getElementById('addSamplesBtn'); if(sb)sb.onclick=()=>{ const n=seedSamples(); renderPack(); };
