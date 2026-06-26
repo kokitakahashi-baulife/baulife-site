@@ -27,6 +27,13 @@ const tools: Tool[] = [
     href: "/tools/wax.html",
     tag: "HOMU",
   },
+  {
+    name: "売上ランク表",
+    description:
+      "会社の売上規模を Apex 風の8ランク×4ティアに見立てた一覧。月商・年商を併記。自社の売上を入れると現在地ランクと次の昇格までの金額を表示。",
+    href: "/tools/rank.html",
+    tag: "社内",
+  },
 ];
 
 export default function ToolsPortal() {
