@@ -126,6 +126,7 @@
   .packright{flex:0 0 400px;position:sticky;top:0;}
   @media(max-width:880px){ .packwrap{flex-direction:column;} .packright{flex:1 1 auto;width:100%;position:static;} }
   .recrow.selrow{border-color:#7a5c3a;box-shadow:0 0 0 2px rgba(122,92,58,.15);}
+  .recrow .delbadge{font-size:10px;color:#a14a4a;background:#f3e3e3;border-radius:5px;padding:3px 7px;align-self:center;white-space:nowrap;}
   .card2{border:1px solid #e7e2d8;border-radius:10px;background:#fff;padding:12px 14px;margin-bottom:10px;}
   .card2 .ttl{font-size:13px;font-weight:bold;color:#5a4a32;margin-bottom:6px;}
   .wgrid{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:12px;}
@@ -1104,51 +1105,20 @@ function packPlan(rec,bags,bagG){
   const missing=[...new Set(rows.filter(r=>!r.w).map(r=>r.type||r.name))];
   return {T,bags,bagG,rows,missing,totalBeads:rows.reduce((a,r)=>a+r.beads,0)};
 }
-// ===== サンプルレシピの投入（まだ無い名前だけ追加・サムネ付き） =====
-const SAMPLE_DEFS=[
-  {name:'春のパステルMIX', items:[['ピーチマンゴー',40],['ライトピンク',30],['スノーホワイト',30]]},
-  {name:'ベリーガーデン',   items:[['ベリー',40],['チェリー',30],['ユニコーン',30]]},
-  {name:'ミント＆クリーム', items:[['ライムミント',50],['スノーホワイト',50]]},
-  {name:'サンセットビーチ', items:[['サンドビーチ',40],['フレッシュオレンジ',30],['ピーチマンゴー',30]]},
-  {name:'オーシャンブルー', items:[['ペールブルー',40],['ソーダ',30],['スノーホワイト',30]]},
-];
-function findProdByName(name){ return products.find(p=>isProd(p)&&!p.archived&&p.name===name); }
-// 既存レシピ名と重複しないサンプルだけ追加（何回呼んでも重複しない）
-function seedSamples(){
-  const pool=products.filter(p=>isProd(p)&&!p.archived); if(pool.length<2)return 0;
-  const existing=new Set(getRecipes().map(r=>r.name));
-  const origRecipe=recipe; let added=0;
-  SAMPLE_DEFS.forEach((d,di)=>{
-    if(existing.has(d.name))return;
-    let picks=[], comps=0; // 6素材を超えないように積む（絵柄入りは3素材）
-    for(const [nm,rt] of d.items){ const p=findProdByName(nm); if(!p)continue; if(comps+p.comps.length>MAXCOMP)continue; picks.push({pid:p.id,ratio:rt}); comps+=p.comps.length; }
-    if(picks.length<2){ const used=new Set(picks.map(x=>x.pid));
-      for(const p of pool){ if(picks.length>=3)break; if(used.has(p.id))continue; if(comps+p.comps.length>MAXCOMP)continue; picks.push({pid:p.id,ratio:30}); comps+=p.comps.length; used.add(p.id);} }
-    if(picks.length<2)return;
-    recipe=picks; normalizeRecipe(); rebuild();
-    products.push({recipe:true,id:Date.now()+di,name:d.name,items:recipeItemsFromCurrent(),thumb:captureThumb(),_t:Date.now()+di});
-    added++;
-  });
-  recipe=origRecipe; normalizeRecipe(); rebuild();
-  if(added) saveProducts();
-  return added;
+// ===== アーカイブ（削除/過去のレシピ） =====
+function getArchivedRecipes(){ return products.filter(p=>p.recipe && p.archived).sort((a,b)=>(b._t||0)-(a._t||0)); }
+function restoreRecipe(id){ const e=products.find(p=>p.recipe&&p.id===id); if(e){ e.archived=false; e._t=Date.now(); saveProducts(); } }
+const RECENT_RECIPES=10; // 一覧に出す直近件数。それ以外はアーカイブから
+let packSelId=null, packBags=10, packBagG=55, twEditMode=false, recipeArchiveView=false, recipeSearch='';
+function recipeRowHtml(rec, mode){
+  const desc=rec.items.map(it=>'<span class="swatch" style="background:'+esc(it.color||'#ccc')+'"></span>'+esc(it.name)+' '+Math.round(it.ratio)+'%').join(' ／ ');
+  const thumb=rec.thumb?'<img class="rthumb" src="'+rec.thumb+'" alt="">':'<div class="rthumb"></div>';
+  const onsel=(packSelId===rec.id)?' selrow':'';
+  const ops= mode==='deleted'
+    ? '<span class="delbadge">削除済み</span><button class="primary" data-restore="'+rec.id+'">復元</button>'
+    : '<button class="primary" data-load="'+rec.id+'">呼び出す</button><button data-calc="'+rec.id+'">梱包計算</button><button class="danger" data-del="'+rec.id+'">削除</button>';
+  return '<div class="recrow'+onsel+'"><div class="rleft">'+thumb+'<div><div class="rname">'+esc(rec.name)+'</div><div class="rdesc">'+desc+'</div></div></div><div class="ops">'+ops+'</div></div>';
 }
-// 起動時に一度だけ：6素材超で投入された過去のサンプルを除去し、修正版を入れ直す
-function migrateRecipes(){ try{
-  if(localStorage.getItem('waxRecipeFix1')) return;
-  const names=new Set(SAMPLE_DEFS.map(d=>d.name)); let changed=false;
-  products.forEach(p=>{ if(p.recipe && !p.archived && names.has(p.name) && recipeCompCount(p)>MAXCOMP){ p.archived=true; p._t=Date.now(); changed=true; } });
-  localStorage.setItem('waxRecipeFix1','1');
-  const added=seedSamples();
-  if(changed && !added) saveProducts();
-}catch(e){} }
-// 起動時に一度だけ：未投入のサンプルを補完（削除済みの復活を避けるためフラグで一度きり）
-function maybeSeedSamples(){ try{
-  if(localStorage.getItem('waxSamplesSeededV2')) return;
-  seedSamples(); localStorage.setItem('waxSamplesSeededV2','1');
-  if(packView && packView.style.display!=='none') renderPack();
-}catch(e){} }
-let packSelId=null, packBags=10, packBagG=55, twEditMode=false;
 function renderPack(){
   const body=document.getElementById('packBody'); if(!body)return;
   const tw=getTypeWeights(), recipes=getRecipes(), twKeys=weightTypeKeys();
@@ -1164,16 +1134,24 @@ function renderPack(){
     twHtml+='</div>';
   }
   twHtml+='</div>';
-  // --- 保存済みレシピ（左カラム） ---
-  const missSamples=SAMPLE_DEFS.filter(d=>!recipes.some(r=>r.name===d.name)).length;
-  let recHtml='<div class="twhead" style="margin:0 0 8px"><span class="seclabel" style="border:none;padding:0;margin:0">保存済みレシピ（'+recipes.length+'）</span>'+
-    (missSamples? '<button class="twedit" id="addSamplesBtn">＋ サンプルを'+missSamples+'件追加</button>':'')+'</div>';
-  if(!recipes.length) recHtml+='<p class="sub">まだありません。「調合シミュレーター」で配合を作り「★ レシピとして保存」を押すと、ここに追加されます。</p>';
-  recipes.forEach(rec=>{ const desc=rec.items.map(it=>'<span class="swatch" style="background:'+esc(it.color||'#ccc')+'"></span>'+esc(it.name)+' '+Math.round(it.ratio)+'%').join(' ／ ');
-    const thumb=rec.thumb?'<img class="rthumb" src="'+rec.thumb+'" alt="">':'<div class="rthumb"></div>';
-    const onsel=(packSelId===rec.id)?' selrow':'';
-    recHtml+='<div class="recrow'+onsel+'"><div class="rleft">'+thumb+'<div><div class="rname">'+esc(rec.name)+'</div><div class="rdesc">'+desc+'</div></div></div>'+
-      '<div class="ops"><button class="primary" data-load="'+rec.id+'">呼び出す</button><button data-calc="'+rec.id+'">梱包計算</button><button class="danger" data-del="'+rec.id+'">削除</button></div></div>'; });
+  // --- 保存済みレシピ（左カラム）：直近10件＋アーカイブ ---
+  const archived=getArchivedRecipes(), oldActive=recipes.slice(RECENT_RECIPES);
+  let recHtml='';
+  if(!recipeArchiveView){
+    const shown=recipes.slice(0,RECENT_RECIPES), archCount=oldActive.length+archived.length;
+    recHtml+='<div class="twhead" style="margin:0 0 8px"><span class="seclabel" style="border:none;padding:0;margin:0">レシピ（直近'+shown.length+'件'+(recipes.length>RECENT_RECIPES?' / 全'+recipes.length+'件':'')+'）</span>'+
+      '<button class="twedit" id="archToggle">🗂 アーカイブ'+(archCount?'（'+archCount+'）':'')+'</button></div>';
+    if(!recipes.length) recHtml+='<p class="sub">まだありません。「調合シミュレーター」で配合を作り「★ レシピとして保存」を押すと、ここに追加されます。</p>';
+    shown.forEach(rec=> recHtml+=recipeRowHtml(rec,'active'));
+  } else {
+    recHtml+='<div class="twhead" style="margin:0 0 8px"><span class="seclabel" style="border:none;padding:0;margin:0">アーカイブ（過去・削除したレシピ）</span>'+
+      '<button class="twedit done" id="archBack">← 一覧へ戻る</button></div>';
+    recHtml+='<input id="recSearch" class="regsearch" placeholder="レシピ名で検索…" value="'+esc(recipeSearch)+'" style="margin-bottom:10px">';
+    let list=[...oldActive.map(r=>({r,mode:'active'})), ...archived.map(r=>({r,mode:'deleted'}))];
+    const q=recipeSearch.trim().toLowerCase(); if(q) list=list.filter(o=>(o.r.name||'').toLowerCase().includes(q));
+    if(!list.length) recHtml+='<p class="sub">'+(q?'該当するレシピがありません。':'アーカイブはまだありません（直近10件を超えたレシピと、削除したレシピがここに入ります）。')+'</p>';
+    list.forEach(o=> recHtml+=recipeRowHtml(o.r,o.mode));
+  }
   // --- 梱包計算（右カラム） ---
   const sel=recipes.find(r=>r.id===packSelId)||recipes[0]||null;
   let calcHtml='<div class="card2" id="calcCard"><div class="ttl">梱包計算</div>';
@@ -1185,10 +1163,13 @@ function renderPack(){
   body.innerHTML='<div class="packwrap"><div class="packleft">'+recHtml+'</div><div class="packright">'+calcHtml+twHtml+'</div></div>';
   const eb=document.getElementById('twEditBtn'); if(eb)eb.onclick=()=>{ twEditMode=true; renderPack(); };
   const db=document.getElementById('twDoneBtn'); if(db)db.onclick=()=>{ twEditMode=false; renderPack(); };
-  const sb=document.getElementById('addSamplesBtn'); if(sb)sb.onclick=()=>{ const n=seedSamples(); renderPack(); };
+  const at=document.getElementById('archToggle'); if(at)at.onclick=()=>{ recipeArchiveView=true; recipeSearch=''; renderPack(); };
+  const ab=document.getElementById('archBack'); if(ab)ab.onclick=()=>{ recipeArchiveView=false; renderPack(); };
+  const rs=document.getElementById('recSearch'); if(rs)rs.oninput=()=>{ recipeSearch=rs.value; renderPack(); const e=document.getElementById('recSearch'); if(e){ e.focus(); e.setSelectionRange(e.value.length,e.value.length); } };
+  body.querySelectorAll('button[data-restore]').forEach(b=>b.onclick=()=>{ restoreRecipe(+b.getAttribute('data-restore')); renderPack(); });
   body.querySelectorAll('input[data-tw]').forEach(inp=>{ inp.onchange=()=>{ const t=inp.getAttribute('data-tw'); if(inp.value===''){clearTypeWeight(t);} else setTypeWeight(t,Math.max(0,+inp.value||0)); renderPackResult(); }; });
   body.querySelectorAll('button[data-load]').forEach(b=>b.onclick=()=>{ const r=getRecipes().find(x=>x.id===+b.getAttribute('data-load')); if(r)loadRecipeToSim(r); });
-  body.querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{ const id=+b.getAttribute('data-del'); const r=getRecipes().find(x=>x.id===id); if(r&&confirm('レシピ「'+r.name+'」を削除しますか？')){ deleteRecipe(id); if(packSelId===id)packSelId=null; renderPack(); } });
+  body.querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{ const id=+b.getAttribute('data-del'); const r=getRecipes().find(x=>x.id===id); if(r&&confirm('レシピ「'+r.name+'」を削除しますか？\n（アーカイブに移動し、後で復元できます）')){ deleteRecipe(id); if(packSelId===id)packSelId=null; renderPack(); } });
   body.querySelectorAll('button[data-calc]').forEach(b=>b.onclick=()=>{ packSelId=+b.getAttribute('data-calc'); renderPack(); document.getElementById('calcCard')?.scrollIntoView({behavior:'smooth',block:'center'}); });
   const cs=document.getElementById('calcSel'); if(cs)cs.onchange=()=>{ packSelId=+cs.value; renderPackResult(); };
   const cb=document.getElementById('calcBags'); if(cb)cb.oninput=()=>{ packBags=Math.max(1,+cb.value||1); renderPackResult(); };
@@ -1559,7 +1540,7 @@ document.getElementById('modeBag').onclick=()=>setContainer('bag');
 // 袋画像の設定・位置調整（localStorageに保存）
 setBagTexture('wax-bag.jpg'); // 袋画像は固定（提供画像をバンドル）
 showTab(HASHTAB[location.hash]||'sim');
-pullShared().finally(()=>{ migrateRecipes(); maybeSeedSamples(); if(packView&&packView.style.display!=='none')renderPack(); }); // 共有データ取得後、壊れたサンプルを修正＋未投入分を補完
+pullShared().finally(()=>{ if(packView&&packView.style.display!=='none')renderPack(); }); // 共有データ取得後に再描画
 
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
