@@ -119,6 +119,28 @@
   button.act.ghost{background:#ece7dd;color:#5a4a32;}
   .totalrow{display:flex;gap:8px;align-items:center;margin:10px 0 4px;font-size:12px;}
   .totalrow input{flex:1;}
+  /* レシピ・梱包ビュー */
+  .pcol{max-width:720px;}
+  .card2{border:1px solid #e7e2d8;border-radius:10px;background:#fff;padding:12px 14px;margin-bottom:10px;}
+  .card2 .ttl{font-size:13px;font-weight:bold;color:#5a4a32;margin-bottom:6px;}
+  .wgrid{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:12px;}
+  .wgrid input{width:88px;padding:5px 7px;border:1px solid #d9d2c4;border-radius:6px;font-size:12px;text-align:right;}
+  .recrow{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #e7e2d8;border-radius:10px;background:#fff;padding:10px 12px;margin-bottom:8px;}
+  .recrow .rname{font-size:13px;font-weight:bold;color:#5a4a32;}
+  .recrow .rdesc{font-size:11px;color:#888;margin-top:2px;line-height:1.5;}
+  .recrow .ops{display:flex;gap:6px;flex:0 0 auto;}
+  .recrow .ops button{padding:6px 10px;font-size:11px;border:none;border-radius:7px;cursor:pointer;background:#ece7dd;color:#5a4a32;}
+  .recrow .ops button.primary{background:#7a5c3a;color:#fff;}
+  .recrow .ops button.danger{background:#f3e3e3;color:#a14a4a;}
+  .ptable{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+  .ptable th,.ptable td{border-bottom:1px solid #eee;padding:6px 8px;text-align:right;}
+  .ptable th:first-child,.ptable td:first-child{text-align:left;}
+  .ptable tfoot td{font-weight:bold;border-top:2px solid #ddd;border-bottom:none;}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;border:1px solid rgba(0,0,0,.15);vertical-align:-1px;margin-right:6px;}
+  .packin{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:12px;margin-bottom:4px;}
+  .packin input{width:80px;padding:5px 7px;border:1px solid #d9d2c4;border-radius:6px;font-size:12px;}
+  .packin select{padding:5px 7px;border:1px solid #d9d2c4;border-radius:6px;font-size:12px;max-width:240px;}
+  .warn{color:#a14a4a;font-size:11px;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -127,6 +149,7 @@
   <a href="/tools" class="backlink" title="社内ポータルへ戻る">← ポータル</a>
   <button id="tabSim" class="tab active">調合シミュレーター</button>
   <button id="tabReg" class="tab">商品登録</button>
+  <button id="tabPack" class="tab">レシピ・梱包</button>
   <div id="syncStatus" class="syncbadge"></div>
 </div>
 
@@ -148,6 +171,9 @@
     <button class="act ghost" id="shuffleBtn">再配置</button>
     <button class="act" id="saveBtn">PNG保存</button>
   </div>
+  <div class="btnrow">
+    <button class="act ghost" id="saveRecipeBtn" style="flex:1">★ レシピとして保存</button>
+  </div>
 </div>
 
 <div id="regView" class="page" style="display:none">
@@ -155,6 +181,12 @@
   <p class="sub">色・形・素材を％配分で自由に作成（複数素材＝MIX）。登録はこのブラウザに保存されます。</p>
   <div class="regbar"><input id="regSearch" class="regsearch" placeholder="商品名・SKUで検索…"><button class="act ghost" id="archiveToggle">🗑 アーカイブ</button><button class="act" id="addProd">＋ 商品を追加</button></div>
   <div id="regList"></div>
+</div>
+
+<div id="packView" class="page" style="display:none">
+  <h2>レシピ・梱包計算</h2>
+  <p class="sub">調合で作った配合を「レシピ」として保存し、型ごとの1粒重量(g)をもとに、何袋ぶん作るときに各色を何g用意すればいいかを計算します。</p>
+  <div class="pcol" id="packBody"></div>
 </div>
 <script type="importmap">
 {"imports":{
@@ -837,7 +869,9 @@ function migrate(arr){ (arr||[]).forEach(p=>{
   if(NAMEFIX[p.sku] && (!p.name || p.name===p.sku || /^WS-WAX/.test(p.name))) p.name=NAMEFIX[p.sku];
 }); return arr; }
 migrate(products);
-let pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
+// 商品配列には商品のほかにレシピ(recipe)・型重量(typeWeights)エントリも相乗りする
+function isProd(p){ return !!p && !p.cfg && !p.recipe && !p.typeWeights; }
+let pidSeq=products.filter(isProd).reduce((m,p)=>Math.max(m,p.id||0),0)+1;
 
 // ===== 共有保存（Google Drive／全員で同じデータ） =====
 let pushTimer=null, syncReady=false, dirty=false;
@@ -859,7 +893,12 @@ function refreshView(){ recipe=recipe.filter(r=>productById(r.pid)); if(!recipe.
 // 商品ごとに新しい方を採用してマージ（複数人が別商品を編集しても両方残る）
 function mergeById(localArr, driveArr){
   const by={}; (localArr||[]).forEach(p=>{ by[p.id]=p; });
-  (driveArr||[]).forEach(dp=>{ const lp=by[dp.id]; if(!lp || (+dp._t||0) >= (+lp._t||0)) by[dp.id]=dp; });
+  (driveArr||[]).forEach(dp=>{ const lp=by[dp.id];
+    if(dp.typeWeights && lp && lp.typeWeights){ // 型重量マップはキー単位で統合し、別々の人の入力を消さない
+      const newer=(+dp._t||0)>=(+lp._t||0)?dp:lp, older=newer===dp?lp:dp;
+      by[dp.id]={typeWeights:true,id:dp.id,map:Object.assign({},older.map||{},newer.map||{}),_t:Math.max(+dp._t||0,+lp._t||0)};
+    } else if(!lp || (+dp._t||0) >= (+lp._t||0)) by[dp.id]=dp;
+  });
   return Object.values(by);
 }
 async function pullShared(){ setSync('loading'); try{
@@ -868,7 +907,7 @@ async function pullShared(){ setSync('loading'); try{
     const data=await res.json();
     if(Array.isArray(data.products) && data.products.length){
       const merged=mergeById(products, migrate(data.products)); resync(merged);
-      products=merged; pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
+      products=merged; pidSeq=products.filter(isProd).reduce((m,p)=>Math.max(m,p.id||0),0)+1;
       try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){}
       syncReady=true; refreshView();
     } else { syncReady=true; }
@@ -999,6 +1038,81 @@ function resolveBeads(){
   return beads;
 }
 
+// ===== レシピ登録・型重量・梱包計算 =====
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function prodColor(p){ return (p&&p.comps&&p.comps[0]&&p.comps[0].color)||'#cccccc'; }
+function recItemProduct(it){ return (it.sku && products.find(x=>isProd(x)&&x.sku===it.sku)) || products.find(x=>isProd(x)&&x.name===it.name) || null; }
+function getRecipes(){ return products.filter(p=>p.recipe && !p.archived).sort((a,b)=>(b._t||0)-(a._t||0)); }
+function getTypeWeights(){ const e=products.find(p=>p.typeWeights); return (e&&e.map)||{}; }
+function setTypeWeight(type,g){ let e=products.find(p=>p.typeWeights);
+  if(!e){ e={typeWeights:true,id:-1,map:{},_t:0}; products.push(e); }
+  e.map[type]=g; e._t=Date.now(); saveProducts(); }
+function clearTypeWeight(type){ const e=products.find(p=>p.typeWeights); if(e&&e.map){ delete e.map[type]; e._t=Date.now(); saveProducts(); } }
+function saveCurrentRecipe(name){
+  const items=recipe.filter(r=>productById(r.pid)).map(r=>{ const p=productById(r.pid);
+    return {sku:p.sku||'',name:p.name,color:prodColor(p),type:p.type,ratio:Math.round(r.ratio*10)/10}; });
+  if(!items.length) return false;
+  products.push({recipe:true,id:Date.now(),name:name,items,_t:Date.now()}); saveProducts(); return true;
+}
+function deleteRecipe(id){ const e=products.find(p=>p.recipe&&p.id===id); if(e){ e.archived=true; e._t=Date.now(); saveProducts(); } }
+function loadRecipeToSim(rec){
+  const next=[]; rec.items.forEach(it=>{ const p=recItemProduct(it); if(p) next.push({pid:p.id,ratio:it.ratio}); });
+  if(!next.length){ alert('このレシピの商品が見つかりません（削除/改名された可能性があります）'); return; }
+  recipe=next; normalizeRecipe(); saveRecipe(); showTab('sim');
+}
+// 粒数比→重量変換：g(色i)=総量×(比率i×1粒重量i)/Σ(比率j×1粒重量j)
+function packPlan(rec,bags,bagG){
+  const T=Math.max(0,bags)*Math.max(0,bagG), tw=getTypeWeights();
+  const rows=rec.items.map(it=>{ const p=recItemProduct(it); const type=(p&&p.type)||it.type||null;
+    const w=type?(+tw[type]||0):0; return {name:it.name,color:it.color||prodColor(p),type,ratio:Math.max(0,it.ratio),w}; });
+  const sumR=rows.reduce((a,r)=>a+r.ratio,0)||1; rows.forEach(r=>r.rN=r.ratio/sumR);
+  const denom=rows.reduce((a,r)=>a+r.rN*r.w,0);
+  rows.forEach(r=>{ r.grams=denom>0? T*(r.rN*r.w)/denom : 0; r.beads=r.w>0? r.grams/r.w : 0; });
+  const missing=[...new Set(rows.filter(r=>!r.w).map(r=>r.type||r.name))];
+  return {T,bags,bagG,rows,missing,totalBeads:rows.reduce((a,r)=>a+r.beads,0)};
+}
+let packSelId=null, packBags=10, packBagG=50;
+function renderPack(){
+  const body=document.getElementById('packBody'); if(!body)return;
+  const tw=getTypeWeights(), recipes=getRecipes();
+  let html='<div class="card2"><div class="ttl">型ごとの1粒重量 (g)</div>'+
+    '<div class="sub" style="margin:0 0 8px">各型の粒を数個まとめて量り、粒数で割った平均gを入れてください（絵柄入りは中身の平均でOK）。梱包計算に使われ、全員で共有されます。</div><div class="wgrid">';
+  Object.keys(TYPES).forEach(t=>{ html+='<label>'+esc(t)+'</label><span><input type="number" min="0" step="0.01" data-tw="'+esc(t)+'" value="'+(tw[t]!=null?tw[t]:'')+'" placeholder="—"> g</span>'; });
+  html+='</div></div>';
+  html+='<div class="seclabel" style="border:none;padding-top:0">保存済みレシピ（'+recipes.length+'）</div>';
+  if(!recipes.length) html+='<p class="sub">まだありません。「調合シミュレーター」で配合を作り「★ レシピとして保存」を押すと、ここに追加されます。</p>';
+  recipes.forEach(rec=>{ const desc=rec.items.map(it=>'<span class="swatch" style="background:'+esc(it.color||'#ccc')+'"></span>'+esc(it.name)+' '+Math.round(it.ratio)+'%').join(' ／ ');
+    html+='<div class="recrow"><div><div class="rname">'+esc(rec.name)+'</div><div class="rdesc">'+desc+'</div></div>'+
+      '<div class="ops"><button class="primary" data-load="'+rec.id+'">呼び出す</button><button data-calc="'+rec.id+'">梱包計算</button><button class="danger" data-del="'+rec.id+'">削除</button></div></div>'; });
+  const sel=recipes.find(r=>r.id===packSelId)||recipes[0]||null;
+  html+='<div class="card2" id="calcCard"><div class="ttl">梱包計算</div>';
+  if(!sel) html+='<p class="sub">レシピを保存すると計算できます。</p>';
+  else html+='<div class="packin"><label>レシピ <select id="calcSel">'+recipes.map(r=>'<option value="'+r.id+'"'+(r.id===sel.id?' selected':'')+'>'+esc(r.name)+'</option>').join('')+'</select></label>'+
+      '<label>袋数 <input type="number" id="calcBags" min="1" value="'+packBags+'"></label>'+
+      '<label>1袋 <input type="number" id="calcBagG" min="1" step="1" value="'+packBagG+'"> g</label></div><div id="calcResult"></div>';
+  html+='</div>';
+  body.innerHTML=html;
+  body.querySelectorAll('input[data-tw]').forEach(inp=>{ inp.onchange=()=>{ const t=inp.getAttribute('data-tw'); if(inp.value===''){clearTypeWeight(t);} else setTypeWeight(t,Math.max(0,+inp.value||0)); renderPackResult(); }; });
+  body.querySelectorAll('button[data-load]').forEach(b=>b.onclick=()=>{ const r=getRecipes().find(x=>x.id===+b.getAttribute('data-load')); if(r)loadRecipeToSim(r); });
+  body.querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{ const id=+b.getAttribute('data-del'); const r=getRecipes().find(x=>x.id===id); if(r&&confirm('レシピ「'+r.name+'」を削除しますか？')){ deleteRecipe(id); if(packSelId===id)packSelId=null; renderPack(); } });
+  body.querySelectorAll('button[data-calc]').forEach(b=>b.onclick=()=>{ packSelId=+b.getAttribute('data-calc'); renderPack(); document.getElementById('calcCard')?.scrollIntoView({behavior:'smooth',block:'center'}); });
+  const cs=document.getElementById('calcSel'); if(cs)cs.onchange=()=>{ packSelId=+cs.value; renderPackResult(); };
+  const cb=document.getElementById('calcBags'); if(cb)cb.oninput=()=>{ packBags=Math.max(1,+cb.value||1); renderPackResult(); };
+  const cg=document.getElementById('calcBagG'); if(cg)cg.oninput=()=>{ packBagG=Math.max(1,+cg.value||1); renderPackResult(); };
+  renderPackResult();
+}
+function renderPackResult(){
+  const el=document.getElementById('calcResult'); if(!el)return;
+  const recipes=getRecipes(), sel=recipes.find(r=>r.id===packSelId)||recipes[0]; if(!sel){el.innerHTML='';return;}
+  const plan=packPlan(sel,packBags,packBagG);
+  let h='<table class="ptable"><thead><tr><th>色（商品）</th><th>型</th><th>比率</th><th>用意するg</th><th>概算粒数</th></tr></thead><tbody>';
+  plan.rows.forEach(r=>{ h+='<tr><td><span class="swatch" style="background:'+esc(r.color||'#ccc')+'"></span>'+esc(r.name)+'</td><td>'+esc(r.type||'—')+'</td><td>'+Math.round(r.ratio)+'%</td><td>'+(r.w? r.grams.toFixed(1):'—')+'</td><td>'+(r.w? Math.round(r.beads):'—')+'</td></tr>'; });
+  h+='</tbody><tfoot><tr><td>合計</td><td></td><td></td><td>'+plan.T.toFixed(0)+' g</td><td>'+Math.round(plan.totalBeads)+'</td></tr></tfoot></table>';
+  h+='<div class="sub" style="margin-top:6px">'+plan.bags+'袋 × '+plan.bagG+'g ＝ 総量 '+plan.T.toFixed(0)+'g。各色を上表のgで量って混ぜ、'+plan.bagG+'gずつ小分けしてください。</div>';
+  if(plan.missing.length) h+='<div class="warn">⚠ 1粒重量が未登録の型があります（'+esc(plan.missing.join('、'))+'）。上の「型ごとの1粒重量」に入力すると計算されます。</div>';
+  el.innerHTML=h;
+}
+
 // ===== 共通セレクタ =====
 function shapeSel(val,onCh){ const s=document.createElement('select'); Object.entries(SHAPES).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v.label;if(k===val)o.selected=true;s.appendChild(o);}); s.onchange=()=>onCh(s.value); return s; }
 function finSel(shape,val,onCh){ const s=document.createElement('select'); SHAPES[shape].fin.forEach(fk=>{const o=document.createElement('option');o.value=fk;o.textContent=FINISHES[fk].label;if(fk===val)o.selected=true;s.appendChild(o);}); s.disabled=SHAPES[shape].fin.length<2; s.onchange=()=>onCh(s.value); return s; }
@@ -1043,20 +1157,31 @@ function makeThumb(p){
 function invalidateThumb(p){ delete thumbCache[thumbSig(p)]; }
 
 // ===== タブ切替 =====
-const simView=document.getElementById('simView'), regView=document.getElementById('regView');
-function showTab(t){ const sim=t==='sim';
-  simView.style.display=sim?'flex':'none'; regView.style.display=sim?'none':'block';
+const simView=document.getElementById('simView'), regView=document.getElementById('regView'), packView=document.getElementById('packView');
+function showTab(t){ const sim=t==='sim', reg=t==='reg', pack=t==='pack';
+  simView.style.display=sim?'flex':'none'; regView.style.display=reg?'block':'none'; packView.style.display=pack?'block':'none';
   document.getElementById('c').style.display=sim?'block':'none';
   document.getElementById('selBar').style.display=sim?'flex':'none';
   document.getElementById('mixDock').style.display=sim?'block':'none';
   document.getElementById('tabSim').classList.toggle('active',sim);
-  document.getElementById('tabReg').classList.toggle('active',!sim);
-  const h=sim?'#mix':'#products'; if(location.hash!==h){ try{history.replaceState(null,'',h);}catch(e){location.hash=h;} }
-  if(sim){ renderCards(); renderRecipe(); rebuild(); } else { renderRegistry(); }
+  document.getElementById('tabReg').classList.toggle('active',reg);
+  document.getElementById('tabPack').classList.toggle('active',pack);
+  const h=sim?'#mix':(reg?'#products':'#pack'); if(location.hash!==h){ try{history.replaceState(null,'',h);}catch(e){location.hash=h;} }
+  if(sim){ renderCards(); renderRecipe(); rebuild(); } else if(reg){ renderRegistry(); } else { renderPack(); }
 }
+const HASHTAB={'#products':'reg','#pack':'pack','#mix':'sim'};
 document.getElementById('tabSim').onclick=()=>showTab('sim');
 document.getElementById('tabReg').onclick=()=>showTab('reg');
-window.addEventListener('hashchange',()=>{ const want=location.hash==='#products'?'reg':'sim'; const cur=document.getElementById('tabReg').classList.contains('active')?'reg':'sim'; if(want!==cur)showTab(want); });
+document.getElementById('tabPack').onclick=()=>showTab('pack');
+window.addEventListener('hashchange',()=>{ const want=HASHTAB[location.hash]||'sim';
+  const cur=document.getElementById('tabReg').classList.contains('active')?'reg':(document.getElementById('tabPack').classList.contains('active')?'pack':'sim');
+  if(want!==cur)showTab(want); });
+document.getElementById('saveRecipeBtn').onclick=()=>{
+  if(!recipe.filter(r=>productById(r.pid)).length){ alert('先に商品を選んでください'); return; }
+  const def=recipe.map(r=>{const p=productById(r.pid);return p?p.name:'';}).filter(Boolean).slice(0,3).join('＋');
+  const name=prompt('レシピ名を入力',def||'新しいレシピ'); if(name==null)return; const nm=name.trim(); if(!nm)return;
+  if(saveCurrentRecipe(nm)) alert('レシピ「'+nm+'」を保存しました（「レシピ・梱包」タブで確認できます）');
+};
 
 // ===== 調合：商品カード =====
 const cardGrid=document.getElementById('cardGrid');
@@ -1068,7 +1193,7 @@ function renderCards(){
   const used=usedComps();
   const sc=document.getElementById('selCount'); if(sc) sc.textContent=used;
   const q=(document.getElementById('cardSearch')?.value||'').trim().toLowerCase();
-  const avail=products.filter(p=>!p.archived && !p.cfg);
+  const avail=products.filter(p=>!p.archived && isProd(p));
   const list=q? avail.filter(p=>p.name.toLowerCase().includes(q) || recipe.find(r=>r.pid===p.id)) : avail;
   list.forEach(p=>{
     const isSel=!!recipe.find(r=>r.pid===p.id);
@@ -1220,9 +1345,9 @@ function renderRegistry(){
   endPick();
   regEl.innerHTML='';
   const q=(document.getElementById('regSearch')?.value||'').trim().toLowerCase();
-  const pool=products.filter(p=> !p.cfg && (showArchive? p.archived : !p.archived));
+  const pool=products.filter(p=> isProd(p) && (showArchive? p.archived : !p.archived));
   const list=q? pool.filter(p=>((p.name||'')+(p.sku||'')+(p.psku||'')).toLowerCase().includes(q)) : pool;
-  const nArch=products.filter(p=>p.archived).length, nActive=products.length-nArch;
+  const prodAll=products.filter(isProd); const nArch=prodAll.filter(p=>p.archived).length, nActive=prodAll.length-nArch;
   const cnt=document.getElementById('regCount'); if(cnt) cnt.textContent= showArchive? ('アーカイブ '+list.length+'件') : (list.length+'/'+nActive);
   const ab=document.getElementById('archiveToggle'); if(ab) ab.textContent= showArchive? '← 商品一覧へ戻る' : ('🗑 アーカイブ ('+nArch+')');
   if(showArchive){
