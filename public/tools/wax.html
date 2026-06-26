@@ -159,7 +159,7 @@
 <div id="regView" class="page" style="display:none">
   <h2>商品登録 <span class="selcnt"><span id="regCount"></span></span></h2>
   <p class="sub">色・形・素材を％配分で自由に作成（複数素材＝MIX）。登録はこのブラウザに保存されます。</p>
-  <div class="regbar"><input id="regSearch" class="regsearch" placeholder="商品名・SKUで検索…"><button class="act ghost" id="autoColor">🎨 実物から色を抽出</button><button class="act ghost" id="archiveToggle">🗑 アーカイブ</button><button class="act" id="addProd">＋ 商品を追加</button></div>
+  <div class="regbar"><input id="regSearch" class="regsearch" placeholder="商品名・SKUで検索…"><button class="act ghost" id="archiveToggle">🗑 アーカイブ</button><button class="act" id="addProd">＋ 商品を追加</button></div>
   <div id="regList"></div>
 </div>
 <script type="importmap">
@@ -248,14 +248,16 @@ const bagSeal=new THREE.Mesh(new THREE.BoxGeometry(BAGW,1.0,BAGD*0.5), sealMat);
 const bagZip=new THREE.Mesh(new THREE.BoxGeometry(BAGW*0.9,0.16,BAGD*0.62), new THREE.MeshPhysicalMaterial({color:'#cfccc4',roughness:0.4,metalness:0.2})); bagZip.position.set(0,BAGH/2-1.05,0); bag.add(bagZip);
 let container='plate'; // 'plate' | 'bag'
 // 袋画像（提供画像）を3D平面のテクスチャとして配置→手前に粒を合成
-const bagPlane=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({transparent:true,toneMapped:false})); bagPlane.visible=false; bagPlane.position.z=-1.2; scene.add(bagPlane);
+const bagPlane=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({transparent:true,toneMapped:false})); bagPlane.visible=false; bagPlane.position.z=-0.5; scene.add(bagPlane);
+// 前面の透明フィルム（粒の手前。中身が膜の内側に入って見えるようガラス質の艶を重ねる）
+const bagFilm2=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshPhysicalMaterial({transparent:true,opacity:0.07,color:'#ffffff',roughness:0.18,clearcoat:1.0,clearcoatRoughness:0.1,metalness:0,depthWrite:false})); bagFilm2.visible=false; bagFilm2.position.z=0.8; bagFilm2.renderOrder=5; scene.add(bagFilm2);
 let bagX=0,bagY=0,bagScale=1,bagImgURL='';
 const BAG_TOTAL=64; // 袋モードの粒数（一番きれいに見える固定値）
 let plateTotal=55;
 function hasBagImg(){ return !!bagPlane.material.map; }
-function applyBagTransform(){ if(container==='bag' && hasBagImg()){ group.position.set(bagX,bagY,0); group.scale.setScalar(bagScale); } else { group.position.set(0,0,0); group.scale.setScalar(1); } }
+function applyBagTransform(){ if(container==='bag' && hasBagImg()){ group.position.set(bagX,bagY,0.1); group.scale.set(bagScale,bagScale,bagScale*0.4); } else { group.position.set(0,0,0); group.scale.set(1,1,1); } }
 function setBagTexture(url){ bagImgURL=url; new THREE.TextureLoader().load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; bagPlane.material.map=tex; bagPlane.material.needsUpdate=true;
-  const a=(tex.image&&tex.image.width)? tex.image.width/tex.image.height : 0.75; const H=14; bagPlane.scale.set(H*a,H,1);
+  const a=(tex.image&&tex.image.width)? tex.image.width/tex.image.height : 0.75; const H=14; bagPlane.scale.set(H*a,H,1); bagFilm2.scale.set(H*a*0.96,H*0.96,1);
   if(container==='bag') setContainer('bag'); }); }
 // 袋設定は商品データに相乗りして全員と共有（id:-1 の設定エントリ）
 function getCfg(){ let c=products.find(p=>p&&p.cfg); if(!c){ c={id:-1,cfg:true,_t:0,bag:{img:'',x:0,y:0,scale:1}}; products.push(c); } return c; }
@@ -268,11 +270,11 @@ function setContainer(mode){
   const img=hasBagImg(), bagImageMode=(mode==='bag'&&img);
   plate.visible=(mode==='plate');
   bag.visible=(mode==='bag'&&!img);     // 画像がある時はCG袋を隠す
-  bagPlane.visible=bagImageMode;
+  bagPlane.visible=bagImageMode; bagFilm2.visible=bagImageMode;
   if(typeof ground!=='undefined') ground.visible=(mode==='plate');
   scene.background=new THREE.Color('#ffffff');
   if(mode==='bag'){ camera.position.set(0,0,23); } else { camera.position.set(0,16.5,9.8); }
-  controls.target.set(0,0,0); controls.update();
+  controls.target.set(0,0,0); controls.enableRotate=(mode!=='bag'); controls.update(); // 袋は正面固定（回転で浮きが露呈しないように）
   document.getElementById('modePlate').classList.toggle('on',mode==='plate');
   document.getElementById('modeBag').classList.toggle('on',mode==='bag');
   const bc=document.getElementById('bagCtl'); if(bc) bc.style.display=(mode==='bag')?'block':'none';
@@ -1312,7 +1314,6 @@ function renderRegistry(){
 }
 document.getElementById('addProd').onclick=()=>{ const s=document.getElementById('regSearch'); if(s)s.value=''; showArchive=false; const id=pidSeq++; products.unshift({id,type:'八角(マット)',name:'新規商品',sku:'',psku:'',_t:Date.now(),comps:compsFor('八角(マット)',['#3C8C82'])}); newIds.add(id); editing.add(id); saveProducts(); renderRegistry(); regView.scrollTop=0; };
 document.getElementById('archiveToggle').onclick=()=>{ showArchive=!showArchive; const s=document.getElementById('regSearch'); if(s)s.value=''; renderRegistry(); regView.scrollTop=0; };
-document.getElementById('autoColor').onclick=()=>{ if(showArchive)return; if(confirm('表示中の全商品の色を、実物画像から自動抽出して上書きします。\n（個別に手動修正した色も上書きされます）\nよろしいですか？')) autoExtractAll(); };
 document.getElementById('cardSearch').oninput=()=>renderCards();
 document.getElementById('regSearch').oninput=()=>renderRegistry();
 
