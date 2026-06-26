@@ -89,6 +89,22 @@
   .pv-cap{font-size:9pt;color:var(--gray);text-align:center;margin-top:4px;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  /* ② 商品化イメージ：ワックスを大きく＋色チップ */
+  .pv2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;align-items:start;}
+  .pv-waxbig{height:262px;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;}
+  .pv-waxbig .pv-img{width:100%;height:100%;object-fit:contain;}
+  .pv2-side > div{margin-bottom:10px;}
+  .wax-chips{display:flex;flex-wrap:wrap;gap:5px 8px;margin-top:8px;}
+  .wax-chip{display:inline-flex;align-items:center;gap:5px;font-size:9.5pt;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:20px;padding:2px 10px 2px 4px;}
+  .wax-chip i{width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,0,0,.12);display:inline-block;flex:0 0 auto;}
+  /* 画像クリックで拡大（ライトボックス） */
+  .pv-img{cursor:zoom-in;}
+  .lb-overlay{position:fixed;inset:0;background:rgba(20,16,12,.82);z-index:200;display:flex;
+    align-items:center;justify-content:center;padding:30px;cursor:zoom-out;}
+  .lb-overlay img{max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);background:#fff;}
+  @media print{ .pv-img{cursor:default;} }
   .pcard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0;background:#fdfbf7;break-inside:avoid;}
   .pcard.secret{background:var(--secret);}
   .pcard .ph{font-size:12pt;font-weight:700;color:var(--red);margin-bottom:8px;}
@@ -202,7 +218,7 @@ const SCHED = [
 ];
 
 const CIRCLED=["①","②","③","④","⑤","⑥"];
-function blankConcept(){return {title:"",genga:"",stamp:"",wax:"",postcard:""};}
+function blankConcept(){return {title:"",genga:"",stamp:"",wax:"",postcard:"",waxColors:null};}
 function defaultData(){
   return {
     fileName:"",
@@ -511,7 +527,8 @@ function openRecipePicker(cb){
         const src=r.thumbBag||r.thumb||"";  // 袋画像を使う（無い場合だけお皿で代用）
         if(src){
           const p=el("div","rp-pick"); p.innerHTML='<img src="'+src+'">'+(r.thumbBag?'':'<span>お皿のみ</span>');
-          p.onclick=()=>{ document.body.removeChild(ov); cb(src); };
+          const colors=(r.items||[]).map(it=>({color:it.color,name:it.name,ratio:it.ratio}));
+          p.onclick=()=>{ document.body.removeChild(ov); cb(src, colors); };
           imgs.appendChild(p);
         } else { imgs.appendChild(el("div","hint","画像なし（シミュレーターで保存し直してください）")); }
         row.appendChild(imgs); list.appendChild(row);
@@ -521,6 +538,16 @@ function openRecipePicker(cb){
     paint("");
   }).catch(err=>{ body.innerHTML='<div class="rp-empty">レシピを読み込めませんでした。<br>'+esc(String(err.message||err))+'</div>'; });
 }
+
+/* ---------- プレビュー画像クリックで拡大（ライトボックス） ---------- */
+document.addEventListener("click",function(e){
+  const img=e.target&&e.target.closest&&e.target.closest(".pv-img");
+  if(!img||!img.src) return;
+  const ov=document.createElement("div"); ov.className="lb-overlay";
+  const big=document.createElement("img"); big.src=img.src; ov.appendChild(big);
+  ov.onclick=()=>{ if(ov.parentNode) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+});
 
 /* ---------- image handling ---------- */
 function pickImage(cb){
@@ -578,9 +605,11 @@ function conceptForm(c,title,secret){
   box.appendChild(el("div","fl","② 商品化イメージ"));
   const g=el("div","row");
   [["スタンプヘッド","stamp"],["ワックスカラー","wax"],["ポストカード","postcard"]].forEach(([nm,k])=>{
-    const d=el("div"); d.appendChild(el("div","hint",nm)); d.appendChild(imgSlot(nm,()=>c[k],v=>c[k]=v));
+    const d=el("div"); d.appendChild(el("div","hint",nm));
+    const setter = k==="wax" ? (v=>{ c.wax=v; c.waxColors=null; }) : (v=>c[k]=v); // 手動アップロード時は色チップを消す
+    d.appendChild(imgSlot(nm,()=>c[k],setter));
     if(k==="wax"){ const b=el("button","recipe-btn","🗂 レシピから選択"); b.type="button";
-      b.onclick=()=>openRecipePicker(img=>{ c.wax=img; buildForm(); render(); autosave(); });
+      b.onclick=()=>openRecipePicker((img,colors)=>{ c.wax=img; c.waxColors=colors; buildForm(); render(); autosave(); });
       d.appendChild(b); }
     g.appendChild(d);
   });
@@ -754,12 +783,24 @@ function conceptPV(c,title,secret){
     <h4>① 使用したい原画</h4>
     <div style="width:46%">${pvImg(c.genga, secret?"シークレット":"使用したい原画")}</div>
     <h4>② 商品化イメージ</h4>
-    <div class="grid3">
-      <div>${pvImg(c.stamp,"スタンプヘッド")}</div>
-      <div>${pvImg(c.wax,"ワックスカラー")}</div>
-      <div>${pvImg(c.postcard,"ポストカード")}</div>
+    <div class="pv2">
+      <div class="pv2-main">
+        <div class="pv-cap" style="text-align:left;font-weight:700;color:var(--ink);margin:0 0 4px">ワックスカラー</div>
+        <div class="pv-waxbig">${c.wax?`<img class="pv-img" src="${c.wax}">`:`<div class="pv-box" style="width:100%;height:100%">ワックスカラー</div>`}</div>
+        ${waxChips(c.waxColors)}
+      </div>
+      <div class="pv2-side">
+        <div>${pvImg(c.stamp,"スタンプヘッド")}</div>
+        <div>${pvImg(c.postcard,"ポストカード")}</div>
+      </div>
     </div>
   </div>`;
+}
+function waxChips(colors){
+  if(!colors||!colors.length) return '';
+  return '<div class="wax-chips">'+colors.map(function(c){
+    return '<span class="wax-chip"><i style="background:'+esc(c.color||'#ccc')+'"></i>'+esc(c.name||'')+(c.ratio!=null?' '+Math.round(c.ratio)+'%':'')+'</span>';
+  }).join('')+'</div>';
 }
 function renderPlan(){
   const total=data.boxCount;
