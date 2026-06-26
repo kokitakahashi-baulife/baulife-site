@@ -37,6 +37,11 @@
   .result.show{display:block;}
   .result .badge{display:inline-block;color:#fff;border-radius:6px;padding:2px 10px;font-weight:700;font-size:13px;margin-right:6px;}
   .result .sub{color:var(--gray);font-size:13px;}
+  .result .grp{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);}
+  .result .kv{font-size:13px;color:var(--ink);margin:3px 0;line-height:1.6;}
+  .result .kv b{color:#7a6f5e;font-weight:700;margin-right:7px;font-size:12px;}
+  .result .life{font-size:13px;color:var(--gray);line-height:1.6;margin-top:5px;}
+  .result .msg{margin-top:11px;padding:11px 13px;background:#fff7ea;border:1px solid #f0dca8;border-radius:10px;color:#8a6d1f;font-weight:700;font-size:14px;line-height:1.65;}
 
   /* ポスター */
   .poster{background:var(--pbg);border:1px solid var(--gold);border-radius:14px;padding:18px 14px 14px;color:var(--ptext);}
@@ -147,6 +152,34 @@ const RANKS=[
    {l:"Ⅳ",mo:"0.83〜1.7兆",yr:"10〜20兆",lo:1e13,hi:2e13}]},
 ];
 
+// ランク別：役員報酬の目安・生活水準イメージ・鼓舞メッセージ（毎回ランダム表示）
+const EXTRA={
+ "Rookie":{pay:"年 300〜500万（まず自分の生活費を確保）",
+   life:"自分の食い扶持を自分の事業で賄えるライン。まずはここを安定させる。",
+   msgs:["全員ここから始まった。今日の1円が複利の起点だ。","まだ誰も見ていない。だからこそ自由に振り切れる。","生き残れば勝ち。まずは月商を1段上げよう。"]},
+ "Bronze":{pay:"年 600〜1,500万",
+   life:"脱・カツカツ。都内の家賃・外食・年1の海外旅行くらいは無理なく。",
+   msgs:["事業が『回り始めた』。ここからは伸びしろの世界。","カツカツを抜けた。次は仕組みで稼ぐフェーズへ。","あと一桁が見えてきた。淡々と積み上げろ。"]},
+ "Silver":{pay:"年 2,000〜5,000万",
+   life:"いい車・いい住まい、家族で年数回の旅行。可処分所得がしっかり残る。",
+   msgs:["もう『個人』じゃない。チームで殴れる規模だ。","億が現実になった。次の景色は『十億』。","ここまで来た自分を信じろ。停滞こそ最大の敵。"]},
+ "Gold":{pay:"年 5,000万〜1.5億",
+   life:"都心の良いマンション、外車、子の私立・留学も視野に入る余裕。",
+   msgs:["中堅の壁を越えた者だけが見る景色がある。","お金より時間が貴重になる。レバレッジを効かせろ。","あなたの決断が数十人の人生を動かしている。"]},
+ "Platinum":{pay:"年 1〜3億",
+   life:"一等地の戸建て/タワマン、別荘、ファーストクラス。資産運用が本格化。",
+   msgs:["大企業の入口。守りに入った瞬間に抜かれる。","数字はもう十分。次は『意味』をデカくしろ。","ここまで来たら、夢は具体的な計画に変わる。"]},
+ "Diamond":{pay:"年 3〜10億",
+   life:"ジェットのチャーター、複数拠点の生活、個人資産は数十億規模。",
+   msgs:["超大企業の領域。社会があなたの事業を必要としている。","もはや業界を作る側。基準そのものを引き上げろ。","スケールが正義。あなたの一手が市場を動かす。"]},
+ "Master":{pay:"年 10〜50億（上場企業役員水準）",
+   life:"上場企業オーナー級。財団・大型投資・社会的影響力のステージ。",
+   msgs:["世界が相手。日本一の、その先へ。","金額は記号でしかない。残すのは何だ？","ここまで来たら、勝負は『時代に何を遺すか』だ。"]},
+ "Apex Predator":{pay:"年 50億〜（世界トップCEO水準）",
+   life:"世界長者番付の領域。お金は手段、動かすのは社会そのもの。",
+   msgs:["ここはもう、歴史に名を刻む領域だ。","世界最大。あなたの一手が世界の標準になる。","頂点に立った。次に塗り替えるのは世界地図だ。"]},
+};
+
 function gem(d,size){return '<svg viewBox="0 0 100 116" width="'+size+'" height="'+Math.round(size*1.16)+'" aria-hidden="true"><polygon points="50,3 97,58 50,113 3,58" fill="'+d.f+'" stroke="'+d.s+'" stroke-width="4"/><polygon points="50,23 77,58 50,93 23,58" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/><text x="50" y="60" text-anchor="middle" dominant-baseline="central" font-size="25" font-weight="700" fill="'+d.t+'">'+d.g+'</text></svg>';}
 
 // グリッド生成
@@ -208,10 +241,20 @@ function judge(){
     const gapMonthly=gapAnnual/12;
     nextLine='<span class="sub">次の <strong>'+next.d.n+' '+next.v.l+'</strong> まであと　月商 +'+fmt(gapMonthly)+' ／ 年商 +'+fmt(gapAnnual)+'</span>';
   }
+  // 利益・役員報酬・生活水準・鼓舞メッセージ
+  const ex=EXTRA[cur.d.n];
+  const profit=annual*0.3;                       // 利益率30%前提の営業利益
+  const msg=ex.msgs[Math.floor(Math.random()*ex.msgs.length)];
   res.className="result show";
   res.innerHTML='<span class="badge" style="background:'+cur.d.f+'">'+cur.d.n+' '+cur.v.l+'</span>'+
     '月商 '+cur.v.mo+' ／ 年商 '+cur.v.yr+'<br>'+
-    '<span class="sub">入力: '+(mode==="month"?"月商 "+fmt(entered)+"（年商換算 "+fmt(annual)+"）":"年商 "+fmt(annual))+'</span><br>'+nextLine;
+    '<span class="sub">入力: '+(mode==="month"?"月商 "+fmt(entered)+"（年商換算 "+fmt(annual)+"）":"年商 "+fmt(annual))+'</span><br>'+nextLine+
+    '<div class="grp">'+
+      '<div class="kv"><b>営業利益(30%)</b>年 '+fmt(profit)+' ／ 月 '+fmt(profit/12)+'</div>'+
+      '<div class="kv"><b>役員報酬の目安</b>'+ex.pay+'</div>'+
+      '<div class="life"><b style="color:#7a6f5e;font-size:12px;margin-right:7px;">生活水準</b>'+ex.life+'</div>'+
+    '</div>'+
+    '<div class="msg">'+msg+'</div>';
 }
 document.getElementById("judge").addEventListener("click",judge);
 document.getElementById("amount").addEventListener("keydown",e=>{ if(e.key==="Enter")judge(); });
