@@ -1,8 +1,12 @@
 import { auth } from "@/auth";
 
-// 保存先：共有ドライブ「株式会社BAULIFE」内のフォルダ「HOMUコラボ企画書」
+// 保存先：共有ドライブ「株式会社BAULIFE」内の社内ポータルフォルダ（= FOLDER, 旧「HOMUコラボ企画書」）
 const FOLDER = process.env.DRIVE_FOLDER_ID ?? "";
 const DRIVE_ID = process.env.DRIVE_ID ?? "";
+
+// 社内ポータルのフォルダ構成
+const PORTAL_NAME = "社内ポータル";        // ルート（= FOLDER を改名）
+const COLLAB_FOLDER_NAME = "コラボ企画書"; // 企画書JSONの保存先サブフォルダ
 
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
@@ -33,8 +37,13 @@ function multipartBody(metadata: object, content: unknown): string {
 }
 
 export async function listProjects(token: string) {
+  // 新「コラボ企画書」サブフォルダと、旧直置き(FOLDER直下)の両方を読む（移行中も欠けない）
+  const collab = await findFolder(token, COLLAB_FOLDER_NAME, FOLDER);
+  const parentClause = collab
+    ? `('${FOLDER}' in parents or '${collab.id}' in parents)`
+    : `'${FOLDER}' in parents`;
   const params = new URLSearchParams({
-    q: `'${FOLDER}' in parents and trashed=false and mimeType='application/json'`,
+    q: `${parentClause} and trashed=false and mimeType='application/json'`,
     fields: "files(id,name,modifiedTime,lastModifyingUser/displayName,appProperties)",
     orderBy: "modifiedTime desc",
     pageSize: "200",
@@ -56,9 +65,10 @@ export async function createProject(
   content: unknown,
   meta: { creator?: string; theme?: string }
 ) {
+  const collabId = await ensureSubfolder(token, COLLAB_FOLDER_NAME);
   const metadata = {
     name: `${name}.json`,
-    parents: [FOLDER],
+    parents: [collabId],
     mimeType: "application/json",
     appProperties: { creator: clip(meta.creator), theme: clip(meta.theme) },
   };
@@ -163,6 +173,19 @@ async function findFolder(token: string, name: string, parent: string) {
   return (await res.json()).files?.[0] ?? null;
 }
 
+// FOLDER 直下のサブフォルダを取得（無ければ作成）
+async function ensureSubfolder(token: string, name: string): Promise<string> {
+  const f = await findFolder(token, name, FOLDER);
+  if (f) return f.id;
+  const res = await fetch(`${API}/files?supportsAllDrives=true&fields=id`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name, parents: [FOLDER], mimeType: "application/vnd.google-apps.folder" }),
+  });
+  if (!res.ok) throw new Error(`subfolder create ${res.status} ${await res.text()}`);
+  return (await res.json()).id;
+}
+
 async function getWaxFolder(token: string): Promise<string> {
   const f = await findFolder(token, WAX_FOLDER_NAME, FOLDER);
   if (f) return f.id;
@@ -232,7 +255,8 @@ export async function saveWax(token: string, products: unknown[], savedAt?: numb
 
 // ===== 売上ランク表：記録タイムライン（チーム共有・共有ドライブの単一ファイル） =====
 // wax と同じ共有ドライブ(FOLDER/DRIVE_ID)に1ファイルで保存し、チーム全員で読み書きする。
-const RANK_FOLDER_NAME = "売上ランク記録";
+const RANK_FOLDER_NAME = "売上ランク表";
+const RANK_FOLDER_OLD = "売上ランク記録"; // 旧名（移行前フォールバック）
 const RANK_FILE_NAME = "rank-log.json";
 
 // ログイン中ユーザーの表示名・メール（記録の投稿者として残す）
@@ -242,15 +266,11 @@ export async function getSessionUser(): Promise<{ email: string | null; name: st
 }
 
 async function getRankFolder(token: string): Promise<string> {
-  const f = await findFolder(token, RANK_FOLDER_NAME, FOLDER);
+  let f = await findFolder(token, RANK_FOLDER_NAME, FOLDER);
   if (f) return f.id;
-  const res = await fetch(`${API}/files?supportsAllDrives=true&fields=id`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ name: RANK_FOLDER_NAME, parents: [FOLDER], mimeType: "application/vnd.google-apps.folder" }),
-  });
-  if (!res.ok) throw new Error(`rank folder create ${res.status} ${await res.text()}`);
-  return (await res.json()).id;
+  f = await findFolder(token, RANK_FOLDER_OLD, FOLDER); // 旧名フォールバック（移行前）
+  if (f) return f.id;
+  return ensureSubfolder(token, RANK_FOLDER_NAME);
 }
 
 async function findRankFile(token: string, folderId: string) {
@@ -335,4 +355,98 @@ export async function deleteRankEntry(
   entries = entries.filter((e) => String(e.id) !== String(id));
   await writeRankFile(token, folderId, f, entries);
   return { entries };
+}
+
+// ===== ドライブ整理（社内ポータル構成へ移行・管理者用） =====
+// 冪等・移動のみ・削除なし。dryRun=true なら実行せず「何を動かすか」だけ返す。
+
+async function driveName(token: string, id: string): Promise<string> {
+  const res = await fetch(`${API}/files/${id}?fields=name&supportsAllDrives=true`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`name ${res.status} ${await res.text()}`);
+  return (await res.json()).name ?? "";
+}
+
+async function renameFile(token: string, id: string, name: string) {
+  const res = await fetch(`${API}/files/${id}?supportsAllDrives=true&fields=id,name`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error(`rename ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function moveFile(token: string, id: string, addParent: string, removeParent: string) {
+  const res = await fetch(
+    `${API}/files/${id}?addParents=${addParent}&removeParents=${removeParent}&supportsAllDrives=true&fields=id`,
+    { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!res.ok) throw new Error(`move ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+// FOLDER 直下に直置きされた JSON（＝旧来の企画書）一覧
+async function listLooseJson(token: string) {
+  const params = new URLSearchParams({
+    q: `'${FOLDER}' in parents and mimeType='application/json' and trashed=false`,
+    fields: "files(id,name)",
+    pageSize: "200",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    corpora: "drive",
+    driveId: DRIVE_ID,
+  });
+  const res = await fetch(`${API}/files?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`loose list ${res.status} ${await res.text()}`);
+  return (await res.json()).files ?? [];
+}
+
+export async function organizeDrive(token: string, dryRun: boolean) {
+  const report: any = { dryRun, root: {}, folders: {}, moved: [] as string[] };
+
+  // 1) ルートフォルダを「社内ポータル」に改名
+  const rootName = await driveName(token, FOLDER);
+  report.root = {
+    id: FOLDER,
+    from: rootName,
+    to: PORTAL_NAME,
+    action: rootName === PORTAL_NAME ? "already" : dryRun ? "will-rename" : "renamed",
+  };
+  if (rootName !== PORTAL_NAME && !dryRun) await renameFile(token, FOLDER, PORTAL_NAME);
+
+  // 2) 売上ランク表（旧「売上ランク記録」があれば改名）
+  const rankNew = await findFolder(token, RANK_FOLDER_NAME, FOLDER);
+  const rankOld = await findFolder(token, RANK_FOLDER_OLD, FOLDER);
+  if (rankNew) {
+    report.folders[RANK_FOLDER_NAME] = "exists";
+  } else if (rankOld) {
+    report.folders[RANK_FOLDER_NAME] = dryRun ? `will-rename from ${RANK_FOLDER_OLD}` : `renamed from ${RANK_FOLDER_OLD}`;
+    if (!dryRun) await renameFile(token, rankOld.id, RANK_FOLDER_NAME);
+  } else {
+    report.folders[RANK_FOLDER_NAME] = "none-yet";
+  }
+
+  // 3) コラボ企画書フォルダを用意
+  const collab = await findFolder(token, COLLAB_FOLDER_NAME, FOLDER);
+  let collabId: string | null = collab?.id ?? null;
+  report.folders[COLLAB_FOLDER_NAME] = collab ? "exists" : dryRun ? "will-create" : "created";
+  if (!collab && !dryRun) collabId = await ensureSubfolder(token, COLLAB_FOLDER_NAME);
+
+  // 4) WAXシミュレーターは既にサブフォルダ運用（確認のみ）
+  const wax = await findFolder(token, "WAXシミュレーター", FOLDER);
+  report.folders["WAXシミュレーター"] = wax ? "exists" : "none-yet";
+
+  // 5) 直置きの企画書JSONを「コラボ企画書」へ移動
+  const loose = await listLooseJson(token);
+  for (const file of loose) {
+    report.moved.push(file.name);
+    if (!dryRun) {
+      if (!collabId) collabId = await ensureSubfolder(token, COLLAB_FOLDER_NAME);
+      await moveFile(token, file.id, collabId, FOLDER);
+    }
+  }
+
+  return report;
 }

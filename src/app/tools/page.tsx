@@ -1,9 +1,16 @@
 import Link from "next/link";
+import { auth } from "@/auth";
+import OrganizeDrive from "./OrganizeDrive";
 
 export const metadata = {
   title: "社内ポータル — BAULIFE",
   robots: { index: false, follow: false },
 };
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "koki.takahashi@baulife.world")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 
 type Tool = {
   name: string;
@@ -36,7 +43,10 @@ const tools: Tool[] = [
   },
 ];
 
-export default function ToolsPortal() {
+export default async function ToolsPortal() {
+  const session: any = await auth();
+  const email = (session?.user?.email ?? "").toLowerCase();
+  const isAdmin = ADMIN_EMAILS.includes(email);
   return (
     <>
       <header className="px-6 py-4 border-b border-[#eee] bg-white/90 backdrop-blur-xl">
@@ -91,6 +101,8 @@ export default function ToolsPortal() {
         <p className="text-xs text-[#bbb] mt-10">
           ※ このページは社内限定です。ツールは順次追加します。
         </p>
+
+        {isAdmin && <OrganizeDrive />}
       </div>
 
       <footer className="py-8 px-6 text-center border-t border-[#eee] text-[13px] text-[#aaa]">
