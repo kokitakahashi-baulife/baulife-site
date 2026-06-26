@@ -508,12 +508,12 @@ function openRecipePicker(cb){
         const desc=(r.items||[]).map(it=>it.name+" "+Math.round(it.ratio)+"%").join(" / ");
         const nm=el("div","rp-name"); nm.innerHTML=esc(r.name)+"<small>"+esc(desc)+"</small>"; row.appendChild(nm);
         const imgs=el("div","rp-imgs");
-        [["お皿",r.thumb],["袋",r.thumbBag]].forEach(([lbl,src])=>{
-          if(!src) return;
-          const p=el("div","rp-pick"); p.innerHTML='<img src="'+src+'"><span>'+lbl+'</span>';
+        const src=r.thumbBag||r.thumb||"";  // 袋画像を使う（無い場合だけお皿で代用）
+        if(src){
+          const p=el("div","rp-pick"); p.innerHTML='<img src="'+src+'">'+(r.thumbBag?'':'<span>お皿のみ</span>');
           p.onclick=()=>{ document.body.removeChild(ov); cb(src); };
           imgs.appendChild(p);
-        });
+        } else { imgs.appendChild(el("div","hint","画像なし（シミュレーターで保存し直してください）")); }
         row.appendChild(imgs); list.appendChild(row);
       });
     }

@@ -1090,6 +1090,23 @@ function saveCurrentRecipe(name){
   const {thumb,thumbBag}=captureBothThumbs();
   products.push({recipe:true,id:Date.now(),name:name,items,thumb,thumbBag,_t:Date.now()}); saveProducts(); return true;
 }
+// 起動時：袋画像が無い（または画像欠損の）既存レシピに、お皿＋袋画像を生成して埋める
+function backfillRecipeThumbs(){
+  try{
+    const targets=products.filter(p=>p.recipe && !p.archived && (!p.thumbBag || !p.thumb));
+    if(!targets.length) return;
+    const origRecipe=recipe, origContainer=container; let changed=0;
+    targets.forEach(rec=>{
+      const picks=[]; (rec.items||[]).forEach(it=>{ const p=recItemProduct(it); if(p)picks.push({pid:p.id,ratio:it.ratio}); });
+      if(!picks.length) return; // 商品が見つからないレシピはスキップ
+      recipe=picks; normalizeRecipe();
+      const {thumb,thumbBag}=captureBothThumbs();
+      if(thumb) rec.thumb=thumb; if(thumbBag) rec.thumbBag=thumbBag; rec._t=Date.now(); changed++;
+    });
+    recipe=origRecipe; normalizeRecipe(); setContainer(origContainer);
+    if(changed) saveProducts();
+  }catch(e){}
+}
 function deleteRecipe(id){ const e=products.find(p=>p.recipe&&p.id===id); if(e){ e.archived=true; e._t=Date.now(); saveProducts(); } }
 function loadRecipeToSim(rec){
   let next=[], comps=0, trimmed=false;
@@ -1548,7 +1565,7 @@ document.getElementById('modeBag').onclick=()=>setContainer('bag');
 // 袋画像の設定・位置調整（localStorageに保存）
 setBagTexture('wax-bag.jpg'); // 袋画像は固定（提供画像をバンドル）
 showTab(HASHTAB[location.hash]||'sim');
-pullShared().finally(()=>{ if(packView&&packView.style.display!=='none')renderPack(); }); // 共有データ取得後に再描画
+pullShared().finally(()=>{ backfillRecipeThumbs(); if(packView&&packView.style.display!=='none')renderPack(); }); // 共有データ取得後、袋画像が無いレシピを補完して再描画
 
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
