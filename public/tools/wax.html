@@ -933,8 +933,7 @@ function productById(id){ return products.find(p=>p.id===id); }
 const RECIPEKEY='waxRecipeV1';
 function saveRecipe(){ try{ localStorage.setItem(RECIPEKEY, JSON.stringify(recipe)); }catch(e){} }
 function loadRecipe(){ try{ const a=JSON.parse(localStorage.getItem(RECIPEKEY)); return Array.isArray(a)? a:null; }catch(e){ return null; } }
-let recipe=(loadRecipe()||[]).filter(r=>r&&productById(r.pid));
-// 前回選択があれば復元。無ければ「何も選択なし」で開始（自動1選択はしない）
+let recipe=[]; // 開いたときは常に何も選択しない（前回選択の復元もしない）
 let total=55, seed=12345;
 function mkRng(s){ let x=s||1; return ()=>{ x=(x*1103515245+12345)&0x7fffffff; return x/0x7fffffff; }; }
 function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)); return {x:q.x,y:q.y,z:q.z,w:q.w}; }
