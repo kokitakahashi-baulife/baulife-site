@@ -89,12 +89,7 @@
   .pv-cap{font-size:9pt;color:var(--gray);text-align:center;margin-top:4px;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-  /* ② 商品化イメージ：ワックスを大きく＋色チップ */
-  .pv2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;align-items:start;}
-  .pv-waxbig{height:262px;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;
-    display:flex;align-items:center;justify-content:center;}
-  .pv-waxbig .pv-img{width:100%;height:100%;object-fit:contain;}
-  .pv2-side > div{margin-bottom:10px;}
+  /* ② 商品化イメージ：色チップ */
   .wax-chips{display:flex;flex-wrap:wrap;gap:5px 8px;margin-top:8px;}
   .wax-chip{display:inline-flex;align-items:center;gap:5px;font-size:9.5pt;color:var(--ink);
     background:#fff;border:1px solid var(--line);border-radius:20px;padding:2px 10px 2px 4px;}
@@ -731,9 +726,9 @@ function buildForm(){
 
 /* ---------- preview render ---------- */
 function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-function pvImg(v,cap){
-  const inner = v ? `<img class="pv-img" src="${v}">` : `<div class="pv-box">${cap}</div>`;
-  return `<div style="height:118px">${inner}</div><div class="pv-cap">${cap}</div>`;
+function pvImg(v,cap,h){ h=h||118;
+  const inner = v ? `<img class="pv-img" src="${v}">` : `<div class="pv-box" style="height:100%">${cap}</div>`;
+  return `<div style="height:${h}px">${inner}</div><div class="pv-cap">${cap}</div>`;
 }
 function ans(v){ return v? `<span class="a">${esc(v)}</span>` : `<span class="a empty">（未記入）</span>`; }
 
@@ -783,16 +778,10 @@ function conceptPV(c,title,secret){
     <h4>① 使用したい原画</h4>
     <div style="width:46%">${pvImg(c.genga, secret?"シークレット":"使用したい原画")}</div>
     <h4>② 商品化イメージ</h4>
-    <div class="pv2">
-      <div class="pv2-main">
-        <div class="pv-cap" style="text-align:left;font-weight:700;color:var(--ink);margin:0 0 4px">ワックスカラー</div>
-        <div class="pv-waxbig">${c.wax?`<img class="pv-img" src="${c.wax}">`:`<div class="pv-box" style="width:100%;height:100%">ワックスカラー</div>`}</div>
-        ${waxChips(c.waxColors)}
-      </div>
-      <div class="pv2-side">
-        <div>${pvImg(c.stamp,"スタンプヘッド")}</div>
-        <div>${pvImg(c.postcard,"ポストカード")}</div>
-      </div>
+    <div class="grid3">
+      <div>${pvImg(c.stamp,"スタンプヘッド",188)}</div>
+      <div>${pvImg(c.wax,"ワックスカラー",188)}${waxChips(c.waxColors)}</div>
+      <div>${pvImg(c.postcard,"ポストカード",188)}</div>
     </div>
   </div>`;
 }
