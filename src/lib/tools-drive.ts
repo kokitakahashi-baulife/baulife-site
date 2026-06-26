@@ -230,65 +230,48 @@ export async function saveWax(token: string, products: unknown[], savedAt?: numb
   return res.json();
 }
 
-// ===== 売上ランク表：記録タイムライン（ユーザー個人の My Drive に保存） =====
-// 共有ドライブではなく、ログイン中ユーザー自身の Google ドライブに保存する。
-// → 端末をまたいで同期され、かつ本人だけが閲覧できる。
+// ===== 売上ランク表：記録タイムライン（チーム共有・共有ドライブの単一ファイル） =====
+// wax と同じ共有ドライブ(FOLDER/DRIVE_ID)に1ファイルで保存し、チーム全員で読み書きする。
 const RANK_FOLDER_NAME = "売上ランク記録";
 const RANK_FILE_NAME = "rank-log.json";
 
-// My Drive 直下の保存フォルダを取得（無ければ作成）
+// ログイン中ユーザーの表示名・メール（記録の投稿者として残す）
+export async function getSessionUser(): Promise<{ email: string | null; name: string | null }> {
+  const session: any = await auth();
+  return { email: session?.user?.email ?? null, name: session?.user?.name ?? null };
+}
+
 async function getRankFolder(token: string): Promise<string> {
-  const params = new URLSearchParams({
-    q: `name='${RANK_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`,
-    fields: "files(id)",
-    pageSize: "1",
-  });
-  const res = await fetch(`${API}/files?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error(`rank folder list ${res.status} ${await res.text()}`);
-  const f = (await res.json()).files?.[0];
+  const f = await findFolder(token, RANK_FOLDER_NAME, FOLDER);
   if (f) return f.id;
-  const cr = await fetch(`${API}/files?fields=id`, {
+  const res = await fetch(`${API}/files?supportsAllDrives=true&fields=id`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: RANK_FOLDER_NAME,
-      mimeType: "application/vnd.google-apps.folder",
-    }),
+    body: JSON.stringify({ name: RANK_FOLDER_NAME, parents: [FOLDER], mimeType: "application/vnd.google-apps.folder" }),
   });
-  if (!cr.ok) throw new Error(`rank folder create ${cr.status} ${await cr.text()}`);
-  return (await cr.json()).id;
+  if (!res.ok) throw new Error(`rank folder create ${res.status} ${await res.text()}`);
+  return (await res.json()).id;
 }
 
 async function findRankFile(token: string, folderId: string) {
   const params = new URLSearchParams({
     q: `'${folderId}' in parents and name='${RANK_FILE_NAME}' and trashed=false`,
     fields: "files(id,modifiedTime)",
-    pageSize: "1",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    corpora: "drive",
+    driveId: DRIVE_ID,
   });
-  const res = await fetch(`${API}/files?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await fetch(`${API}/files?${params}`, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`rank list ${res.status} ${await res.text()}`);
   return (await res.json()).files?.[0] ?? null;
 }
 
-export async function loadRankLog(token: string): Promise<{ entries: unknown[] }> {
-  const folderId = await getRankFolder(token);
-  const f = await findRankFile(token, folderId);
-  if (!f) return { entries: [] };
-  const content: any = await readProject(token, f.id);
-  return { entries: Array.isArray(content?.entries) ? content.entries : [] };
-}
-
-export async function saveRankLog(token: string, entries: unknown[]) {
-  const folderId = await getRankFolder(token);
-  const f = await findRankFile(token, folderId);
+async function writeRankFile(token: string, folderId: string, file: any, entries: unknown[]) {
   const content = { entries, savedAt: Date.now() };
-  if (f) {
+  if (file) {
     const res = await fetch(
-      `${UPLOAD}/files/${f.id}?uploadType=multipart&fields=id,modifiedTime`,
+      `${UPLOAD}/files/${file.id}?uploadType=multipart&supportsAllDrives=true&fields=id,modifiedTime`,
       {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${BOUNDARY}` },
@@ -299,7 +282,7 @@ export async function saveRankLog(token: string, entries: unknown[]) {
     return res.json();
   }
   const res = await fetch(
-    `${UPLOAD}/files?uploadType=multipart&fields=id,modifiedTime`,
+    `${UPLOAD}/files?uploadType=multipart&supportsAllDrives=true&fields=id,modifiedTime`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${BOUNDARY}` },
@@ -308,4 +291,48 @@ export async function saveRankLog(token: string, entries: unknown[]) {
   );
   if (!res.ok) throw new Error(`rank create ${res.status} ${await res.text()}`);
   return res.json();
+}
+
+export async function loadRankLog(token: string): Promise<{ entries: any[] }> {
+  const folderId = await getRankFolder(token);
+  const f = await findRankFile(token, folderId);
+  if (!f) return { entries: [] };
+  const content: any = await readProject(token, f.id);
+  return { entries: Array.isArray(content?.entries) ? content.entries : [] };
+}
+
+// 1件追加（read-modify-write で他メンバーの記録を保持）
+export async function appendRankEntry(token: string, entry: any): Promise<{ entries: any[] }> {
+  const folderId = await getRankFolder(token);
+  const f = await findRankFile(token, folderId);
+  let entries: any[] = [];
+  if (f) {
+    const c: any = await readProject(token, f.id);
+    entries = Array.isArray(c?.entries) ? c.entries : [];
+  }
+  entries.push(entry);
+  await writeRankFile(token, folderId, f, entries);
+  return { entries };
+}
+
+// 1件削除（投稿者本人のみ。email 不一致は FORBIDDEN）
+export async function deleteRankEntry(
+  token: string,
+  id: string,
+  email: string | null
+): Promise<{ entries: any[] }> {
+  const folderId = await getRankFolder(token);
+  const f = await findRankFile(token, folderId);
+  if (!f) return { entries: [] };
+  const c: any = await readProject(token, f.id);
+  let entries: any[] = Array.isArray(c?.entries) ? c.entries : [];
+  const target = entries.find((e) => String(e.id) === String(id));
+  if (target && target.authorEmail && email && target.authorEmail !== email) {
+    const err: any = new Error("FORBIDDEN");
+    err.code = "FORBIDDEN";
+    throw err;
+  }
+  entries = entries.filter((e) => String(e.id) !== String(id));
+  await writeRankFile(token, folderId, f, entries);
+  return { entries };
 }

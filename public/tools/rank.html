@@ -59,6 +59,7 @@
   .tl-top{display:flex;align-items:center;gap:9px;margin-bottom:5px;}
   .tl-date{font-size:13px;font-weight:700;color:var(--ink);}
   .tl-badge{color:#fff;border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;}
+  .tl-by{font-size:11px;color:var(--gray);}
   .tl-del{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--gray);border-radius:7px;padding:3px 9px;font-size:11px;cursor:pointer;}
   .tl-del:hover{color:var(--red);border-color:var(--red);}
   .tl-amount{font-size:13px;color:var(--ink);}
@@ -119,7 +120,7 @@
 
   <div class="record">
     <h2>現在地を記録する</h2>
-    <p class="rec-help">上で今月の売上を判定したあと、日付とメモ（次のランクに上がるために起こす変化）を書いて残せます。<br>※記録はあなたのGoogleドライブ（「売上ランク記録」フォルダ）に保存され、どの端末からでも見られます。</p>
+    <p class="rec-help">上で今月の売上を判定したあと、日付とメモ（次のランクに上がるために起こす変化）を書いて残せます。<br>※記録は共有のGoogleドライブに保存され、<strong>チーム全員のタイムライン</strong>に表示されます（削除は投稿者本人のみ）。</p>
     <div class="rec-row">
       <span class="rec-lab">日付</span>
       <input type="date" id="recDate">
@@ -132,7 +133,7 @@
   </div>
 
   <div class="timeline-wrap">
-    <h2>記録タイムライン</h2>
+    <h2>記録タイムライン（チーム共有）</h2>
     <p class="tl-empty" id="tlEmpty">まだ記録がありません。売上を判定して、上のフォームから残しましょう。</p>
     <div id="timeline"></div>
   </div>
@@ -311,16 +312,16 @@ function judge(){
 document.getElementById("judge").addEventListener("click",judge);
 document.getElementById("amount").addEventListener("keydown",e=>{ if(e.key==="Enter")judge(); });
 
-// ===== 記録・タイムライン（Googleドライブ保存・端末間で同期） =====
-const LOGKEY="baulife_rank_log_v1";  // 旧localStorageからの自動移行用
+// ===== 記録・タイムライン（Googleドライブ・チーム共有） =====
 function pad(n){return n<10?"0"+n:""+n;}
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
-function fmtDate(s){return s?s.replace(/-/g,"/"):s;}
-function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function fmtDate(s){return s?String(s).replace(/-/g,"/"):s;}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
 let logCache=[];
 async function apiGet(){const r=await fetch("/api/tools/rank",{cache:"no-store"});if(r.status===401)throw new Error("ログインが必要です");if(!r.ok)throw new Error("load "+r.status);return (await r.json()).entries||[];}
-async function apiPut(entries){const r=await fetch("/api/tools/rank",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({entries})});if(!r.ok)throw new Error("save "+r.status);}
+async function apiPost(entry){const r=await fetch("/api/tools/rank",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)});if(!r.ok)throw new Error("save "+r.status);return (await r.json()).entries||[];}
+async function apiDelete(id){const r=await fetch("/api/tools/rank?id="+encodeURIComponent(id),{method:"DELETE"});if(r.status===403)throw new Error("自分の記録のみ削除できます");if(!r.ok)throw new Error("delete "+r.status);return (await r.json()).entries||[];}
 
 const recDate=document.getElementById("recDate");
 recDate.value=todayStr();
@@ -329,50 +330,43 @@ recSaveBtn.addEventListener("click",async ()=>{
   const note=document.getElementById("recNote");
   if(!last){ note.style.color="#b0432f"; note.textContent="先に今月の売上を入力して『判定する』を押してください。"; return; }
   const memo=document.getElementById("recMemo").value.trim();
-  const entry={id:Date.now(),date:recDate.value||todayStr(),rank:last.rank,tier:last.tier,color:last.color,amount:last.amount,next:last.next,memo:memo};
-  const prev=logCache.slice();
-  logCache.push(entry); renderTimeline();
+  const entry={date:recDate.value||todayStr(),rank:last.rank,tier:last.tier,color:last.color,amount:last.amount,next:last.next,memo:memo};
   recSaveBtn.disabled=true; note.style.color="#7a6f5e"; note.textContent="保存中…";
-  try{ await apiPut(logCache); document.getElementById("recMemo").value=""; note.textContent="Googleドライブに保存しました。"; }
-  catch(e){ logCache=prev; renderTimeline(); note.style.color="#b0432f"; note.textContent="保存に失敗しました（"+e.message+"）"; }
+  try{ logCache=await apiPost(entry); renderTimeline(); document.getElementById("recMemo").value=""; note.textContent="チームのタイムラインに保存しました。"; }
+  catch(e){ note.style.color="#b0432f"; note.textContent="保存に失敗しました（"+e.message+"）"; }
   finally{ recSaveBtn.disabled=false; }
 });
 
 async function deleteEntry(id){
-  const prev=logCache.slice();
-  logCache=logCache.filter(x=>x.id!==id); renderTimeline();
-  try{ await apiPut(logCache); }
-  catch(e){ logCache=prev; renderTimeline(); alert("削除に失敗しました（"+e.message+"）"); }
+  try{ logCache=await apiDelete(id); renderTimeline(); }
+  catch(e){ alert("削除に失敗しました（"+e.message+"）"); }
 }
 
 function renderTimeline(){
-  const a=logCache.slice().sort((x,y)=>{ if(x.date!==y.date) return x.date<y.date?1:-1; return y.id-x.id; });
+  const a=logCache.slice().sort((x,y)=>{ if(x.date!==y.date) return x.date<y.date?1:-1; return (y.createdAt||0)-(x.createdAt||0); });
   const tl=document.getElementById("timeline");
   const empty=document.getElementById("tlEmpty");
   if(!a.length){ tl.innerHTML=""; empty.style.display="block"; return; }
   empty.style.display="none";
   tl.innerHTML=a.map(e=>'<div class="tl-item" style="border-left-color:'+(e.color||"#ccc")+'">'+
     '<div class="tl-top"><span class="tl-date">'+fmtDate(e.date)+'</span>'+
-    '<span class="tl-badge" style="background:'+(e.color||"#888")+'">'+e.rank+' '+e.tier+'</span>'+
-    '<button class="tl-del" data-id="'+e.id+'">削除</button></div>'+
-    '<div class="tl-amount">'+e.amount+'</div>'+
-    (e.next?'<div class="tl-next">'+e.next+'</div>':'')+
+    '<span class="tl-badge" style="background:'+(e.color||"#888")+'">'+escapeHtml(e.rank)+' '+escapeHtml(e.tier)+'</span>'+
+    (e.author?'<span class="tl-by">by '+escapeHtml(e.author)+'</span>':'')+
+    '<button class="tl-del" data-id="'+escapeHtml(e.id)+'">削除</button></div>'+
+    '<div class="tl-amount">'+escapeHtml(e.amount)+'</div>'+
+    (e.next?'<div class="tl-next">'+escapeHtml(e.next)+'</div>':'')+
     (e.memo?'<div class="tl-memo">'+escapeHtml(e.memo).replace(/\n/g,"<br>")+'</div>':'<div class="tl-memo tl-nomemo">（メモなし）</div>')+
     '</div>').join("");
   tl.querySelectorAll(".tl-del").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("この記録を削除しますか？"))return;
-    deleteEntry(Number(b.dataset.id));
+    deleteEntry(b.dataset.id);
   }));
 }
 
 (async()=>{
   const empty=document.getElementById("tlEmpty");
-  try{
-    logCache=await apiGet();
-    // 旧localStorageの記録があり、クラウドが空なら自動でドライブへ移行
-    try{ const old=JSON.parse(localStorage.getItem(LOGKEY)||"[]"); if(!logCache.length && old.length){ logCache=old; await apiPut(logCache); localStorage.removeItem(LOGKEY); } }catch(_){}
-    renderTimeline();
-  }catch(e){ empty.style.display="block"; empty.textContent="記録の読み込みに失敗しました（"+e.message+"）。ページを再読み込みしてください。"; }
+  try{ logCache=await apiGet(); renderTimeline(); }
+  catch(e){ empty.style.display="block"; empty.textContent="記録の読み込みに失敗しました（"+e.message+"）。ページを再読み込みしてください。"; }
 })();
 </script>
 </body>
