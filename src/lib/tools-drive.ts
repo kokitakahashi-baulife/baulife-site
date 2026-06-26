@@ -196,15 +196,16 @@ export async function loadWax(token: string) {
   const content: any = await readProject(token, f.id);
   return {
     products: content?.products ?? null,
+    savedAt: content?.savedAt ?? 0,
     modifiedTime: f.modifiedTime ?? null,
     by: f.lastModifyingUser?.displayName ?? null,
   };
 }
 
-export async function saveWax(token: string, products: unknown[]) {
+export async function saveWax(token: string, products: unknown[], savedAt?: number) {
   const folderId = await getWaxFolder(token);
   const f = await findWaxFile(token, folderId);
-  const content = { products, savedAt: new Date().toISOString() };
+  const content = { products, savedAt: savedAt ?? Date.now() };
   if (f) {
     const res = await fetch(
       `${UPLOAD}/files/${f.id}?uploadType=multipart&supportsAllDrives=true&fields=id,modifiedTime,lastModifyingUser/displayName`,

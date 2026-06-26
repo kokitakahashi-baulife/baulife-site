@@ -770,26 +770,34 @@ migrate(products);
 let pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
 
 // ===== 共有保存（Google Drive／全員で同じデータ） =====
-let pushTimer=null, syncReady=false;
+let pushTimer=null, syncReady=false, dirty=false;
+let localSavedAt=+(localStorage.getItem(LSKEY+'_t')||0); // ローカル編集の最終時刻（新しい方を採用するため）
 function setSync(state,by){ const el=document.getElementById('syncStatus'); if(!el)return;
   const m={loading:'☁ 共有データ取得中…',shared:'☁ 共有中'+(by?'（最終: '+by+'）':''),saving:'☁ 保存中…',saved:'☁ 共有に保存済み',local:'⚠ ローカルのみ（共有未接続）'};
   el.textContent=m[state]||''; el.className='syncbadge '+state; }
-function saveProducts(){ try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){} schedulePush(); }
-function schedulePush(){ if(!syncReady)return; clearTimeout(pushTimer); setSync('saving'); pushTimer=setTimeout(pushShared,1200); }
+function saveProducts(){ localSavedAt=Date.now(); dirty=true; try{ localStorage.setItem(LSKEY,JSON.stringify(products)); localStorage.setItem(LSKEY+'_t',String(localSavedAt)); }catch(e){} schedulePush(); }
+function schedulePush(){ if(!syncReady)return; clearTimeout(pushTimer); setSync('saving'); pushTimer=setTimeout(pushShared,600); }
 async function pushShared(){ try{
-    const res=await fetch('/api/tools/wax',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({products})});
-    setSync(res.ok?'saved':'local'); }catch(e){ setSync('local'); } }
+    const res=await fetch('/api/tools/wax',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({products,savedAt:localSavedAt})});
+    if(res.ok){ dirty=false; setSync('saved'); } else setSync('local'); }catch(e){ setSync('local'); } }
+// リロード/タブ閉じ時、未送信の編集をDriveへ確実に送る
+addEventListener('pagehide',()=>{ if(syncReady && dirty){ try{ fetch('/api/tools/wax',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({products,savedAt:localSavedAt}),keepalive:true}); }catch(e){} } });
 function refreshView(){ recipe=recipe.filter(r=>productById(r.pid)); if(!recipe.length&&products.length)recipe=[{pid:products[0].id,ratio:100}]; if(recipe.length)normalizeRecipe();
   if(regView.style.display!=='none') renderRegistry(); else { renderCards(); renderRecipe(); rebuild(); } }
 async function pullShared(){ setSync('loading'); try{
     const res=await fetch('/api/tools/wax',{headers:{'Accept':'application/json'}});
     if(!res.ok){ setSync('local'); return; }
     const data=await res.json();
-    if(Array.isArray(data.products) && data.products.length){
-      products=migrate(data.products); pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1;
-      try{ localStorage.setItem(LSKEY,JSON.stringify(products)); }catch(e){}
+    const driveAt=+(data.savedAt||0);
+    if(Array.isArray(data.products) && data.products.length && driveAt>localSavedAt){
+      // Driveの方が新しい→共有データを採用
+      products=migrate(data.products); pidSeq=products.reduce((m,p)=>Math.max(m,p.id),0)+1; localSavedAt=driveAt;
+      try{ localStorage.setItem(LSKEY,JSON.stringify(products)); localStorage.setItem(LSKEY+'_t',String(driveAt)); }catch(e){}
       syncReady=true; refreshView(); setSync('shared',data.by);
-    } else { syncReady=true; await pushShared(); setSync('shared'); } // 共有未作成なら現データで初期化
+    } else {
+      // ローカルが新しい/同等、または共有未作成→ローカルを保持しDriveへ反映（編集が消えないように）
+      syncReady=true; if(!localSavedAt)localSavedAt=Date.now(); await pushShared(); setSync('shared',data.by);
+    }
   }catch(e){ setSync('local'); } }
 function productById(id){ return products.find(p=>p.id===id); }
 let recipe=[ {pid:1,ratio:40}, {pid:11,ratio:30}, {pid:12,ratio:30} ].filter(r=>productById(r.pid));
