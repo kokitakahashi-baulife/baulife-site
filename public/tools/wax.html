@@ -943,7 +943,7 @@ function quat(x,y,z){ const q=new THREE.Quaternion().setFromEuler(new THREE.Eule
 function gscaleOf(beads){ const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
   const REF=40, usable=Math.PI*Math.pow(PLATE_R-0.30,2)*0.72, unit=Math.PI*avgR*avgR; return Math.min(1, Math.sqrt((usable/unit)/REF)); }
 const BAG_IW=BAGW-1.6, BAG_IH=BAGH-2.6; // 袋の内寸（敷き詰め範囲）
-const BAG_BEAD_R=0.4, BAG_PACK=0.8; // 袋内の粒半径（固定見た目）と詰め密度
+const BAG_BEAD_R=0.31, BAG_PACK=0.82; // 袋内の粒半径（固定見た目）と詰め密度＝小さめ多めで密に
 // 袋サイズに合う粒数を見立てる（粒サイズは固定、隙間なく詰まって見える数）
 function bagCount(){ const cell=(2*BAG_BEAD_R)/BAG_PACK;
   const cols=Math.max(4,Math.round(BAG_IW/cell)), rows=Math.max(5,Math.round(BAG_IH/cell)); return cols*rows; }
@@ -954,18 +954,18 @@ function rebuildBag(beads,r){
   const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
   const cols=Math.max(1,Math.round(Math.sqrt(N*W/H))), rows=Math.ceil(N/cols);
   const cw=W/cols, ch=H/rows;
-  // 粒数は袋サイズから固定(bagCount)なのでセルも一定→粒サイズも一定。隙間なく詰まって見える
-  const gscale=Math.min(1, (Math.min(cw,ch)*0.62)/avgR);
-  const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)); // 天面をカメラ(+Z)へ
+  // 粒は少し重なるくらい大きめに置き、密に詰まった山に見せる
+  const gscale=Math.min(1, (Math.min(cw,ch)*0.78)/avgR);
   let i=0;
   for(let ry=0; ry<rows && i<N; ry++) for(let cxi=0; cxi<cols && i<N; cxi++){
-    const m=beads[i++]; const g=SHAPES[m.shape].geo, s=gscale*(0.9+r()*0.15);
-    const px=-hw+cw*(cxi+0.5)+(r()-0.5)*cw*0.55;
-    const py=hh-ch*(ry+0.5)-(r()-0.5)*ch*0.55;
+    const m=beads[i++]; const g=SHAPES[m.shape].geo, s=gscale*(0.82+r()*0.32);
+    const px=-hw+cw*(cxi+0.5)+(r()-0.5)*cw*0.5;
+    const py=hh-ch*(ry+0.5)-(r()-0.5)*ch*0.5;
     const me=new THREE.Mesh(g,getMat(m.finish,m.color,m.trans)); me.scale.setScalar(s);
-    const spin=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), r()*Math.PI*2);
-    me.quaternion.copy(spin.multiply(tilt)); me.position.set(px,py,(r()-0.5)*0.25); me.castShadow=true;
-    group.add(me);
+    // 天面をカメラへ向けつつ、少しだけランダムに傾けて自然な山に（色は見える程度）
+    const eu=new THREE.Euler(Math.PI/2+(r()-0.5)*0.5, (r()-0.5)*0.45, r()*Math.PI*2);
+    me.quaternion.setFromEuler(eu); me.position.set(px,py,(r()-0.5)*0.7); // 前後の重なりで立体感
+    me.castShadow=true; group.add(me);
   }
 }
 function rebuild(){
