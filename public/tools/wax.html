@@ -296,7 +296,7 @@ const BAG_TOTAL=80; // 袋モードの粒数（固定）
 let plateTotal=55;
 function hasBagImg(){ return !!bagPlane.material.map; }
 // 粒の山を袋画像の透明窓に自動フィット（手動調整なし）
-const BAG_WIN={x:0, y:-2.0, hw:3.4, hh:5.0}; // ジッパー口〜袋下部の空洞中央に配置（plane14基準）
+const BAG_WIN={x:0, y:-2.7, hw:3.4, hh:4.0}; // 中身は下寄り＝ジッパー口の下にヘッドスペースを空け底に溜める（plane14基準）
 function applyBagTransform(){
   if(!(container==='bag' && hasBagImg())){ group.position.set(0,0,0); group.scale.set(1,1,1); return; }
   group.position.set(0,0,0); group.scale.set(1,1,1);
