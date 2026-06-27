@@ -296,7 +296,7 @@ const BAG_TOTAL=80; // 袋モードの粒数（固定）
 let plateTotal=55;
 function hasBagImg(){ return !!bagPlane.material.map; }
 // 粒の山を袋画像の透明窓に自動フィット（手動調整なし）
-const BAG_WIN={x:0, y:-2.7, hw:3.4, hh:4.0}; // 中身は下寄り＝ジッパー口の下にヘッドスペースを空け底に溜める（plane14基準）
+const BAG_WIN={x:0, y:-1.2, hw:3.4, hh:4.0}; // 袋下部とジッパーの中間に配置（plane14基準）
 function applyBagTransform(){
   if(!(container==='bag' && hasBagImg())){ group.position.set(0,0,0); group.scale.set(1,1,1); return; }
   group.position.set(0,0,0); group.scale.set(1,1,1);
@@ -973,7 +973,7 @@ function rebuild(){
   const beads=resolveBeads();
   const r=mkRng(seed);
   for(let i=beads.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [beads[i],beads[j]]=[beads[j],beads[i]]; }
-  if(container==='bag'){ rebuildBag(beads,r); return; }
+  if(container==='bag'){ rebuildBag(beads,r); applyBagTransform(); return; } // 選択変更時も配置窓(BAG_WIN)を反映
   // Rapier物理（平らにロック＝重ねず、皿いっぱいに密に敷き詰める単層）
   const world=new RAPIER.World(new RAPIER.Vector3(0,-12,0));
   const gb=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0,-0.5,0));
