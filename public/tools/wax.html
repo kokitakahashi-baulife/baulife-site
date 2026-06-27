@@ -296,7 +296,7 @@ const BAG_TOTAL=80; // 袋モードの粒数（固定）
 let plateTotal=55;
 function hasBagImg(){ return !!bagPlane.material.map; }
 // 粒の山を袋画像の透明窓に自動フィット（手動調整なし）
-const BAG_WIN={x:0, y:-1.4, hw:3.4, hh:4.7}; // 袋本体の内側（トリミング後の袋画像・plane14基準）
+const BAG_WIN={x:0, y:-2.0, hw:3.4, hh:5.0}; // ジッパー口〜袋下部の空洞中央に配置（plane14基準）
 function applyBagTransform(){
   if(!(container==='bag' && hasBagImg())){ group.position.set(0,0,0); group.scale.set(1,1,1); return; }
   group.position.set(0,0,0); group.scale.set(1,1,1);
@@ -950,7 +950,7 @@ function bagCount(){ const cell=(2*BAG_BEAD_R)/BAG_PACK;
 function rebuildBag(beads,r){
   if(!beads.length) return; // 何も選択されていない＝空の袋
   // 袋は重力で底に溜めず、窓全体にジッターgrid で均等に敷き詰める（中身が詰まった袋）
-  const N=beads.length||1, W=BAG_IW, H=BAG_IH, hw=W/2, hh=H/2;
+  const N=beads.length||1, W=BAG_WIN.hw*2, H=BAG_WIN.hh*2, hw=W/2, hh=H/2; // 空洞(窓)の比率でグリッド＝上下左右を均等に埋める
   const avgR=beads.length? beads.reduce((a,m)=>a+SHAPES[m.shape].geo.userData.radius,0)/beads.length:1;
   const cols=Math.max(1,Math.round(Math.sqrt(N*W/H))), rows=Math.ceil(N/cols);
   const cw=W/cols, ch=H/rows;
@@ -962,9 +962,9 @@ function rebuildBag(beads,r){
     const px=-hw+cw*(cxi+0.5)+(r()-0.5)*cw*0.5;
     const py=hh-ch*(ry+0.5)-(r()-0.5)*ch*0.5;
     const me=new THREE.Mesh(g,getMat(m.finish,m.color,m.trans)); me.scale.setScalar(s);
-    // 天面をカメラへ向けつつ、少しだけランダムに傾けて自然な山に（色は見える程度）
-    const eu=new THREE.Euler(Math.PI/2+(r()-0.5)*0.5, (r()-0.5)*0.45, r()*Math.PI*2);
-    me.quaternion.setFromEuler(eu); me.position.set(px,py,(r()-0.5)*0.7); // 前後の重なりで立体感
+    // 天面をカメラへ向けつつ、ごく軽くランダムに傾けて自然な山に（色・形が見える程度）
+    const eu=new THREE.Euler(Math.PI/2+(r()-0.5)*0.32, (r()-0.5)*0.3, r()*Math.PI*2);
+    me.quaternion.setFromEuler(eu); me.position.set(px,py,(r()-0.5)*0.6); // 前後の重なりで立体感
     me.castShadow=true; group.add(me);
   }
 }
