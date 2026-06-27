@@ -299,12 +299,9 @@ function hasBagImg(){ return !!bagPlane.material.map; }
 const BAG_WIN={x:0, y:-1.2, hw:3.4, hh:4.0}; // 袋下部とジッパーの中間に配置（plane14基準）
 function applyBagTransform(){
   if(!(container==='bag' && hasBagImg())){ group.position.set(0,0,0); group.scale.set(1,1,1); return; }
-  group.position.set(0,0,0); group.scale.set(1,1,1);
-  const box=new THREE.Box3(); group.children.forEach(m=>box.expandByObject(m));
-  if(box.isEmpty())return;
-  const cx=(box.min.x+box.max.x)/2, cy=(box.min.y+box.max.y)/2, w=Math.max(0.01,box.max.x-box.min.x), h=Math.max(0.01,box.max.y-box.min.y);
-  const sc=Math.min(BAG_WIN.hw*2/w, BAG_WIN.hh*2/h)*0.98;
-  group.scale.set(sc,sc,sc*0.4); group.position.set(BAG_WIN.x-cx*sc, BAG_WIN.y-cy*sc, 0.1);
+  // 粒は rebuildBag で配置窓(BAG_WIN)サイズのグリッドに原点中心で並べてある。
+  // bboxフィットは形状・ランダム傾きで毎回ブレるので使わず、固定位置・固定スケールで置く（選択数で動かない）
+  group.position.set(BAG_WIN.x, BAG_WIN.y, 0.1); group.scale.set(1,1,0.4);
 }
 let bagReadyResolve; const bagReady=new Promise(r=>{bagReadyResolve=r;}); // 袋テクスチャ読込完了を待つ
 function setBagTexture(url){ bagImgURL=url; new THREE.TextureLoader().load(url, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; bagPlane.material.map=tex; bagPlane.material.needsUpdate=true;
