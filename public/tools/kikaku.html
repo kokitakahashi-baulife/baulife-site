@@ -788,7 +788,7 @@ function conceptPV(c,title,secret){
   </div>`;
 }
 // 型→形状（八角/星/花/絵柄入り）
-function typeShape(t){ t=t||''; if(t.indexOf('八角')===0)return'octa'; if(t.indexOf('星')===0)return'star'; if(t==='アジサイ')return'blossom'; if(t==='絵柄入り')return'emaki'; return'octa'; }
+function typeShape(t){ t=t||''; if(t.indexOf('八角')===0)return'octa'; if(t.indexOf('星')===0)return'star'; if(t==='アジサイ')return'blossom'; if(t==='絵柄入り')return'emaki'; return''; /*型不明=丸*/ }
 // 形状シルエットSVG（その色で塗る）
 function shapeSil(shape,color,size){ size=size||30; var f='fill="'+esc(color||'#ccc')+'"', inner='';
   if(shape==='octa') inner='<polygon points="8,2 16,2 22,8 22,16 16,22 8,22 2,16 2,8" '+f+'/>';
@@ -796,6 +796,7 @@ function shapeSil(shape,color,size){ size=size||30; var f='fill="'+esc(color||'#
   else if(shape==='blossom') inner='<g '+f+'><circle cx="12" cy="5.2" r="4.3"/><circle cx="18.6" cy="10" r="4.3"/><circle cx="16.1" cy="17.8" r="4.3"/><circle cx="7.9" cy="17.8" r="4.3"/><circle cx="5.4" cy="10" r="4.3"/><circle cx="12" cy="12" r="4.2"/></g>';
   else if(shape==='butterfly') inner='<g '+f+'><ellipse cx="6.8" cy="8" rx="5.6" ry="4.6"/><ellipse cx="17.2" cy="8" rx="5.6" ry="4.6"/><ellipse cx="7.8" cy="16.2" rx="4.6" ry="4"/><ellipse cx="16.2" cy="16.2" rx="4.6" ry="4"/><rect x="11.2" y="5.5" width="1.6" height="13.5" rx="0.8"/></g>';
   else if(shape==='fan') inner='<path d="M12 20.5 L5 9 A 8 8 0 0 1 19 9 Z" '+f+'/>';
+  else inner='<circle cx="12" cy="12" r="9.5" '+f+'/>'; // 型不明は丸（八角と誤認させない）
   return '<svg class="wsil" viewBox="0 0 24 24" width="'+size+'" height="'+size+'">'+inner+'</svg>';
 }
 function waxChips(colors){
