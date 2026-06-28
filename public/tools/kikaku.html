@@ -4,13 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HOMU コラボ企画書エディター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/tools/baulife-brand.css">
 <style>
   :root{
-    --ink:#3a332b; --gray:#8a7f70; --cream:#f7f3ec; --paper:#fffdf9;
-    --red:#b0432f; --line:#e3dccf; --tint:#f3e3dd; --secret:#efe9dd;
+    /* BAULIFEデザインシステムのトークンに再マッピング（アクセント 赤→ブランドピンク） */
+    --ink:var(--bl-ink); --gray:var(--bl-muted); --cream:var(--bl-bg); --paper:var(--bl-surface);
+    --red:var(--bl-brand); --line:var(--bl-line); --tint:var(--bl-brand-tint); --secret:var(--bl-surface-2);
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:"Hiragino Sans","Yu Gothic",sans-serif;color:var(--ink);background:var(--cream);}
+  body{margin:0;font-family:var(--bl-font-ja);color:var(--ink);background:var(--cream);}
+  .btn,.act{transition:background .15s,border-color .15s,color .15s,transform .12s;}
+  .btn:active,.act:active{transform:translateY(1px) scale(.99);}
   .toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;
     padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .toolbar h1{font-size:15px;margin:0 12px 0 0;color:var(--red);font-weight:700;}

@@ -72,11 +72,12 @@ export default async function ToolsPortal() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {tools.map((t) => (
+          {tools.map((t, i) => (
             <a
               key={t.href}
               href={t.href}
-              className="group block rounded-2xl border border-[#eee] bg-white p-5 transition-colors hover:border-[#e85d75]"
+              style={{ animationDelay: `${i * 70}ms` }}
+              className="bl-enter group block rounded-2xl border border-[#eee] bg-white p-5 transition-all duration-200 hover:border-[#e85d75] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(40,34,28,0.10)]"
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[15px] font-bold text-[#1a1a1a]">
@@ -107,7 +108,7 @@ export default async function ToolsPortal() {
         <h2 className="text-[18px] font-bold mb-3">ブランド・デザイン</h2>
         <a
           href="/tools/brand.html"
-          className="group block rounded-2xl border border-[#eee] bg-white p-5 transition-colors hover:border-[#e85d75]"
+          className="bl-enter group block rounded-2xl border border-[#eee] bg-white p-5 transition-all duration-200 hover:border-[#e85d75] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(40,34,28,0.10)]"
         >
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[15px] font-bold text-[#1a1a1a]">
