@@ -98,6 +98,33 @@ export default async function ToolsPortal() {
           ))}
         </div>
 
+        <p
+          className="text-xs tracking-[2px] text-[#e85d75] mt-12 mb-1"
+          style={{ fontFamily: "var(--font-en)" }}
+        >
+          DESIGN SYSTEM
+        </p>
+        <h2 className="text-[18px] font-bold mb-3">ブランド・デザイン</h2>
+        <a
+          href="/tools/brand.html"
+          className="group block rounded-2xl border border-[#eee] bg-white p-5 transition-colors hover:border-[#e85d75]"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[15px] font-bold text-[#1a1a1a]">
+              BAULIFE ブランドガイドライン
+            </span>
+            <span className="text-[10px] tracking-wide text-[#e85d75] border border-[#f3c5cf] rounded-full px-2 py-[1px]">
+              共通
+            </span>
+          </div>
+          <p className="text-[13px] text-[#666] leading-relaxed mb-3">
+            全ツール共通のデザインの土台（色・文字・余白・部品）をアトミックデザインでまとめたページ。新しいツールはこの指針に沿って実装します。
+          </p>
+          <span className="text-[13px] text-[#999] group-hover:text-[#e85d75] transition-colors">
+            開く →
+          </span>
+        </a>
+
         <p className="text-xs text-[#bbb] mt-10">
           ※ このページは社内限定です。ツールは順次追加します。
         </p>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAULIFE ブランドガイドライン — 社内ポータル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/tools/baulife-brand.css">
+<style>
+  html,body{margin:0;}
+  body{padding-bottom:80px;}
+  .sec{margin:46px 0;}
+  .sec-no{font-family:var(--bl-font-en);font-size:11px;letter-spacing:2px;color:var(--bl-muted);}
+  .sec h2{font-size:20px;margin:2px 0 4px;color:var(--bl-ink);}
+  .sec .lead{font-size:13px;color:var(--bl-ink-2);margin:0 0 18px;max-width:640px;line-height:1.8;}
+  .subh{font-size:13px;font-weight:700;color:var(--bl-ink);margin:22px 0 10px;
+    border-left:3px solid var(--bl-brand);padding-left:9px;}
+  /* color swatches */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+  .sw{border:1px solid var(--bl-line);border-radius:var(--bl-r-md);overflow:hidden;background:var(--bl-surface);}
+  .sw .chip{height:64px;}
+  .sw .meta{padding:8px 10px;}
+  .sw .nm{font-size:12px;font-weight:600;}
+  .sw .hex{font-family:var(--bl-font-en);font-size:11px;color:var(--bl-muted);text-transform:uppercase;}
+  .sw .tok{font-family:var(--bl-font-en);font-size:10px;color:var(--bl-ink-2);}
+  /* type rows */
+  .typerow{display:flex;align-items:baseline;gap:14px;border-bottom:1px dashed var(--bl-line);padding:10px 0;}
+  .typerow .tag{font-family:var(--bl-font-en);font-size:10px;color:var(--bl-muted);width:120px;flex:0 0 auto;}
+  /* spacing */
+  .spaces{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+  .spcol{text-align:center;}
+  .spbar{background:var(--bl-brand-tint);border:1px solid var(--bl-brand-line);width:28px;}
+  .spcol small{display:block;font-family:var(--bl-font-en);font-size:10px;color:var(--bl-muted);margin-top:4px;}
+  /* radius/shadow demo */
+  .demo-row{display:flex;gap:16px;flex-wrap:wrap;}
+  .demo-box{width:96px;height:64px;background:var(--bl-surface);border:1px solid var(--bl-line);
+    display:flex;align-items:center;justify-content:center;font-family:var(--bl-font-en);font-size:10px;color:var(--bl-muted);}
+  /* component demo panel */
+  .panel{background:var(--bl-surface);border:1px solid var(--bl-line);border-radius:var(--bl-r-md);
+    padding:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+  .panel.col{flex-direction:column;align-items:stretch;}
+  .note{font-size:12px;color:var(--bl-ink-2);margin:8px 0 0;line-height:1.8;}
+  code{font-family:var(--bl-font-en);font-size:12px;background:var(--bl-surface-2);
+    border:1px solid var(--bl-line);border-radius:6px;padding:1px 6px;color:var(--bl-ink-2);}
+  .atomtag{display:inline-block;font-family:var(--bl-font-en);font-size:10px;letter-spacing:1px;
+    color:var(--bl-muted);border:1px solid var(--bl-line);border-radius:var(--bl-r-pill);padding:1px 8px;margin-left:8px;vertical-align:middle;}
+</style>
+</head>
+<body class="bl-app">
+
+<!-- organism: tool header -->
+<div class="bl-toolbar">
+  <a class="bl-back" href="/tools">← 社内ポータル</a>
+  <h1 class="bl-title">ブランドガイドライン</h1>
+  <span class="bl-spacer"></span>
+  <span class="bl-muted">BAULIFE Design System</span>
+</div>
+
+<div class="bl-container" style="padding-top:34px">
+  <p class="bl-kicker">BAULIFE DESIGN SYSTEM</p>
+  <h1 class="bl-display">ブランドガイドライン</h1>
+  <p class="lead" style="margin-top:8px">
+    社内ポータルの全ツールが従う、デザインの共通言語です。<b>アトミックデザイン</b>の考え方で、
+    最小単位の「トークン（色・文字・余白）」から、「部品」「画面パターン」へと組み上げます。
+    実装は <code>/tools/baulife-brand.css</code> が一次情報源で、このページはそれをそのまま使って表示しています。
+  </p>
+
+  <!-- ===== 01 FOUNDATION (atoms) ===== -->
+  <section class="sec">
+    <div class="sec-no">01 — FOUNDATION</div>
+    <h2>トークン<span class="atomtag">ATOMS</span></h2>
+    <p class="lead">色・文字・余白・角丸・影。すべての画面はここから組み立てます。</p>
+
+    <div class="subh">カラー / ブランド</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:var(--bl-brand)"></div><div class="meta"><div class="nm">ブランドピンク</div><div class="hex">#e85d75</div><div class="tok">--bl-brand</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-brand-hover)"></div><div class="meta"><div class="nm">ホバー</div><div class="hex">#d6485f</div><div class="tok">--bl-brand-hover</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-brand-tint)"></div><div class="meta"><div class="nm">ティント</div><div class="hex">#fff0f3</div><div class="tok">--bl-brand-tint</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-brand-line)"></div><div class="meta"><div class="nm">細線</div><div class="hex">#f6c9d2</div><div class="tok">--bl-brand-line</div></div></div>
+    </div>
+
+    <div class="subh">カラー / 中立（暖色ベース）</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:var(--bl-bg)"></div><div class="meta"><div class="nm">背景</div><div class="hex">#faf9f7</div><div class="tok">--bl-bg</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-surface);border-bottom:1px solid var(--bl-line)"></div><div class="meta"><div class="nm">サーフェス</div><div class="hex">#ffffff</div><div class="tok">--bl-surface</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-surface-2)"></div><div class="meta"><div class="nm">沈めた面</div><div class="hex">#f6f4f0</div><div class="tok">--bl-surface-2</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-ink)"></div><div class="meta"><div class="nm">本文インク</div><div class="hex">#1a1a1a</div><div class="tok">--bl-ink</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-ink-2)"></div><div class="meta"><div class="nm">副次テキスト</div><div class="hex">#555555</div><div class="tok">--bl-ink-2</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-muted)"></div><div class="meta"><div class="nm">補足</div><div class="hex">#9a958d</div><div class="tok">--bl-muted</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-line)"></div><div class="meta"><div class="nm">区切り線</div><div class="hex">#ece8e1</div><div class="tok">--bl-line</div></div></div>
+    </div>
+
+    <div class="subh">カラー / 状態</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:var(--bl-ok)"></div><div class="meta"><div class="nm">成功 OK</div><div class="hex">#3f9d6b</div><div class="tok">--bl-ok</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-warn)"></div><div class="meta"><div class="nm">注意 Warn</div><div class="hex">#c98a2a</div><div class="tok">--bl-warn</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bl-danger)"></div><div class="meta"><div class="nm">危険 Danger</div><div class="hex">#c0492f</div><div class="tok">--bl-danger</div></div></div>
+    </div>
+
+    <div class="subh">タイポグラフィ</div>
+    <p class="note">和文 <code>Noto Sans JP</code> ／ 欧文・数字・ラベル <code>Inter</code>（<code>--bl-font-en</code>）。</p>
+    <div style="margin-top:8px">
+      <div class="typerow"><span class="tag">DISPLAY 28</span><span class="bl-display">封蝋を、もっと自由に。</span></div>
+      <div class="typerow"><span class="tag">H1 22 / bold</span><span class="bl-h1">見出し1</span></div>
+      <div class="typerow"><span class="tag">H2 16 / brand</span><span class="bl-h2">見出し2（ブランド色）</span></div>
+      <div class="typerow"><span class="tag">BODY 14</span><span class="bl-body">本文テキスト。標準サイズ。</span></div>
+      <div class="typerow"><span class="tag">SMALL 12</span><span class="bl-sm">副次テキスト・補助情報。</span></div>
+      <div class="typerow"><span class="tag">KICKER 10</span><span class="bl-kicker">SECTION LABEL</span></div>
+    </div>
+
+    <div class="subh">余白スケール（4の倍数）</div>
+    <div class="spaces">
+      <div class="spcol"><div class="spbar" style="height:4px"></div><small>4 · s1</small></div>
+      <div class="spcol"><div class="spbar" style="height:8px"></div><small>8 · s2</small></div>
+      <div class="spcol"><div class="spbar" style="height:12px"></div><small>12 · s3</small></div>
+      <div class="spcol"><div class="spbar" style="height:16px"></div><small>16 · s4</small></div>
+      <div class="spcol"><div class="spbar" style="height:24px"></div><small>24 · s5</small></div>
+      <div class="spcol"><div class="spbar" style="height:32px"></div><small>32 · s6</small></div>
+    </div>
+
+    <div class="subh">角丸 と 影</div>
+    <div class="demo-row">
+      <div class="demo-box" style="border-radius:var(--bl-r-sm)">r-sm 8</div>
+      <div class="demo-box" style="border-radius:var(--bl-r-md)">r-md 12</div>
+      <div class="demo-box" style="border-radius:var(--bl-r-lg)">r-lg 16</div>
+      <div class="demo-box" style="border-radius:var(--bl-r-pill);width:64px">pill</div>
+      <div class="demo-box" style="border-radius:var(--bl-r-md);border:0;box-shadow:var(--bl-shadow-sm)">shadow-sm</div>
+      <div class="demo-box" style="border-radius:var(--bl-r-md);border:0;box-shadow:var(--bl-shadow-md)">shadow-md</div>
+    </div>
+  </section>
+
+  <!-- ===== 02 COMPONENTS (molecules) ===== -->
+  <section class="sec">
+    <div class="sec-no">02 — COMPONENTS</div>
+    <h2>部品<span class="atomtag">MOLECULES</span></h2>
+    <p class="lead">トークンを組み合わせた再利用部品。ツールはこれらを使って画面を作ります。</p>
+
+    <div class="subh">ボタン <code>.bl-btn</code></div>
+    <div class="panel">
+      <button class="bl-btn bl-btn--primary">主ボタン</button>
+      <button class="bl-btn bl-btn--ghost">副ボタン</button>
+      <button class="bl-btn bl-btn--danger">削除</button>
+      <button class="bl-btn bl-btn--primary bl-btn--sm">小</button>
+      <button class="bl-btn bl-btn--primary" disabled>無効</button>
+    </div>
+
+    <div class="subh">入力 <code>.bl-input</code> / <code>.bl-label</code></div>
+    <div class="panel col">
+      <div><label class="bl-label">商品名</label><input class="bl-input" placeholder="入力してください"></div>
+      <div><label class="bl-label">メモ</label><textarea class="bl-textarea" placeholder="複数行テキスト"></textarea></div>
+    </div>
+
+    <div class="subh">タグ / バッジ <code>.bl-tag</code></div>
+    <div class="panel">
+      <span class="bl-tag">HOMU</span>
+      <span class="bl-tag">新着</span>
+      <span class="bl-tag bl-tag--neutral">社内</span>
+    </div>
+
+    <div class="subh">セグメント <code>.bl-seg</code></div>
+    <div class="panel">
+      <div class="bl-seg"><button class="is-on">お皿</button><button>袋（zip）</button></div>
+    </div>
+
+    <div class="subh">カード <code>.bl-card</code></div>
+    <div class="bl-grid bl-grid-2">
+      <div class="bl-card"><h3 class="bl-h2" style="font-size:15px;margin-bottom:6px">カードタイトル</h3><p class="bl-sm" style="margin:0">サーフェス色＋細枠＋淡い影。情報のまとまりに使います。</p></div>
+      <a class="bl-card bl-card--link" href="#"><h3 class="bl-h2" style="font-size:15px;margin-bottom:6px">リンクカード</h3><p class="bl-sm" style="margin:0">ホバーでブランド色の枠になります。</p></a>
+    </div>
+  </section>
+
+  <!-- ===== 03 PATTERNS (organisms) ===== -->
+  <section class="sec">
+    <div class="sec-no">03 — PATTERNS</div>
+    <h2>画面パターン<span class="atomtag">ORGANISMS</span></h2>
+    <p class="lead">部品を組み合わせた、画面共通の構造。全ツールで揃えます。</p>
+
+    <div class="subh">ツールヘッダー <code>.bl-toolbar</code></div>
+    <div style="border:1px solid var(--bl-line);border-radius:var(--bl-r-md);overflow:hidden">
+      <div class="bl-toolbar" style="position:static">
+        <a class="bl-back" href="#">← 社内ポータル</a>
+        <h1 class="bl-title">ツール名</h1>
+        <span class="bl-spacer"></span>
+        <span class="bl-tag bl-tag--neutral">共有中</span>
+      </div>
+      <div style="padding:16px;background:var(--bl-bg)"><span class="bl-muted">← 各ツールの先頭はこの形に統一</span></div>
+    </div>
+
+    <div class="subh">カードグリッド <code>.bl-grid</code></div>
+    <div class="bl-grid bl-grid-3">
+      <div class="bl-card" style="padding:16px"><div class="bl-kicker" style="margin-bottom:4px">TOOL</div><b style="font-size:14px">ツールA</b></div>
+      <div class="bl-card" style="padding:16px"><div class="bl-kicker" style="margin-bottom:4px">TOOL</div><b style="font-size:14px">ツールB</b></div>
+      <div class="bl-card" style="padding:16px"><div class="bl-kicker" style="margin-bottom:4px">TOOL</div><b style="font-size:14px">ツールC</b></div>
+    </div>
+  </section>
+
+  <!-- ===== 04 USAGE ===== -->
+  <section class="sec">
+    <div class="sec-no">04 — USAGE</div>
+    <h2>使い方</h2>
+    <div class="bl-card">
+      <p class="note" style="margin-top:0">新しいツール／既存ツールの <code>&lt;head&gt;</code> に次を追加し、<code>bl-</code> のトークン・クラスを使う：</p>
+      <pre style="margin:8px 0 0;overflow:auto"><code>&lt;link rel="stylesheet" href="/tools/baulife-brand.css"&gt;</code></pre>
+      <p class="note">原則：アクセント色はブランドピンク <code>--bl-brand</code> のみ。背景は <code>--bl-bg</code>、面は <code>--bl-surface</code>。
+      色は直値で書かず必ずトークンを参照する。新しい部品が必要になったら、まずこのガイドラインに追加してから各ツールで使う。</p>
+    </div>
+  </section>
+</div>
+
+<footer style="text-align:center;padding:28px;border-top:1px solid var(--bl-line);color:var(--bl-muted);font-size:12px">
+  &copy; 2026 BAULIFE Inc. — Design System
+</footer>
+</body>
+</html>

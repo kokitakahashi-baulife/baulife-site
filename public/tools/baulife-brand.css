@@ -1,0 +1,121 @@
+/* ============================================================
+   BAULIFE Design System  —  社内ツール共通スタイル（一次情報源）
+   使い方: 各ツールの <head> で
+     <link rel="stylesheet" href="/tools/baulife-brand.css">
+   を読み込み、bl- 接頭辞のトークン／クラスを使う。
+   ガイドライン: /tools/brand.html
+   ============================================================ */
+
+:root{
+  /* --- Brand (唯一のアクセント = ピンク) --- */
+  --bl-brand:#e85d75;
+  --bl-brand-hover:#d6485f;
+  --bl-brand-tint:#fff0f3;     /* 薄い背景・選択中 */
+  --bl-brand-line:#f6c9d2;     /* ピンクの細線・枠 */
+
+  /* --- Neutrals (暖色ベース) --- */
+  --bl-bg:#faf9f7;             /* ページ背景 */
+  --bl-surface:#ffffff;        /* カード・面 */
+  --bl-surface-2:#f6f4f0;      /* 一段沈めた面 */
+  --bl-ink:#1a1a1a;            /* 本文 */
+  --bl-ink-2:#555555;          /* 副次テキスト */
+  --bl-muted:#9a958d;          /* 補足・プレースホルダ */
+  --bl-line:#ece8e1;           /* 区切り線・枠 */
+  --bl-line-strong:#ddd7cc;    /* 強めの枠 */
+
+  /* --- Semantic (状態色) --- */
+  --bl-ok:#3f9d6b;
+  --bl-warn:#c98a2a;
+  --bl-danger:#c0492f;
+  --bl-danger-tint:#f6e6e2;
+
+  /* --- Typography --- */
+  --bl-font-ja:'Noto Sans JP','Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',sans-serif;
+  --bl-font-en:'Inter',var(--bl-font-ja);
+  --bl-fs-display:28px; --bl-fs-h1:22px; --bl-fs-h2:16px;
+  --bl-fs-body:14px; --bl-fs-sm:12px; --bl-fs-xs:10px;
+
+  /* --- Radius --- */
+  --bl-r-sm:8px; --bl-r-md:12px; --bl-r-lg:16px; --bl-r-pill:999px;
+
+  /* --- Space (4の倍数) --- */
+  --bl-s1:4px; --bl-s2:8px; --bl-s3:12px; --bl-s4:16px; --bl-s5:24px; --bl-s6:32px;
+
+  /* --- Elevation --- */
+  --bl-shadow-sm:0 1px 3px rgba(40,34,28,.07);
+  --bl-shadow-md:0 4px 16px rgba(40,34,28,.10);
+  --bl-shadow-pop:0 10px 44px rgba(40,34,28,.22);
+}
+
+/* ---------- Base ---------- */
+.bl-app{background:var(--bl-bg);color:var(--bl-ink);font-family:var(--bl-font-ja);
+  font-size:var(--bl-fs-body);line-height:1.7;-webkit-font-smoothing:antialiased;}
+.bl-app *{box-sizing:border-box;}
+
+/* ---------- Typography ---------- */
+.bl-kicker{font-family:var(--bl-font-en);font-size:var(--bl-fs-xs);letter-spacing:2px;
+  text-transform:uppercase;color:var(--bl-brand);font-weight:600;}
+.bl-display{font-size:var(--bl-fs-display);font-weight:700;line-height:1.25;margin:0;}
+.bl-h1{font-size:var(--bl-fs-h1);font-weight:700;line-height:1.35;margin:0;color:var(--bl-ink);}
+.bl-h2{font-size:var(--bl-fs-h2);font-weight:700;line-height:1.4;margin:0;color:var(--bl-brand);}
+.bl-body{font-size:var(--bl-fs-body);color:var(--bl-ink);}
+.bl-sm{font-size:var(--bl-fs-sm);color:var(--bl-ink-2);}
+.bl-muted{font-size:var(--bl-fs-sm);color:var(--bl-muted);}
+.bl-en{font-family:var(--bl-font-en);}
+
+/* ---------- Button ---------- */
+.bl-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font-family:inherit;font-size:var(--bl-fs-sm);font-weight:600;line-height:1;
+  padding:9px 16px;border-radius:var(--bl-r-sm);border:1px solid transparent;
+  cursor:pointer;transition:background .15s,border-color .15s,color .15s,opacity .15s;}
+.bl-btn--primary{background:var(--bl-brand);color:#fff;}
+.bl-btn--primary:hover{background:var(--bl-brand-hover);}
+.bl-btn--ghost{background:var(--bl-surface);color:var(--bl-ink);border-color:var(--bl-line-strong);}
+.bl-btn--ghost:hover{border-color:var(--bl-brand);color:var(--bl-brand);}
+.bl-btn--danger{background:var(--bl-danger-tint);color:var(--bl-danger);}
+.bl-btn--danger:hover{background:#efd9d3;}
+.bl-btn--sm{padding:6px 11px;font-size:var(--bl-fs-xs);}
+.bl-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ---------- Input / Field ---------- */
+.bl-input,.bl-textarea,.bl-select{width:100%;font-family:inherit;font-size:var(--bl-fs-body);
+  color:var(--bl-ink);background:var(--bl-surface);border:1px solid var(--bl-line-strong);
+  border-radius:var(--bl-r-sm);padding:8px 11px;outline:none;transition:border-color .15s,box-shadow .15s;}
+.bl-input:focus,.bl-textarea:focus,.bl-select:focus{border-color:var(--bl-brand);box-shadow:0 0 0 3px var(--bl-brand-tint);}
+.bl-input::placeholder{color:var(--bl-muted);}
+.bl-textarea{resize:vertical;min-height:64px;line-height:1.6;}
+.bl-label{display:block;font-size:var(--bl-fs-sm);color:var(--bl-ink-2);margin:0 0 4px;font-weight:600;}
+
+/* ---------- Tag / Badge ---------- */
+.bl-tag{display:inline-flex;align-items:center;gap:4px;font-size:var(--bl-fs-xs);font-weight:600;
+  letter-spacing:.3px;color:var(--bl-brand);background:var(--bl-brand-tint);
+  border:1px solid var(--bl-brand-line);border-radius:var(--bl-r-pill);padding:2px 9px;}
+.bl-tag--neutral{color:var(--bl-ink-2);background:var(--bl-surface-2);border-color:var(--bl-line);}
+
+/* ---------- Card ---------- */
+.bl-card{background:var(--bl-surface);border:1px solid var(--bl-line);border-radius:var(--bl-r-lg);
+  padding:var(--bl-s5);box-shadow:var(--bl-shadow-sm);}
+.bl-card--link{display:block;text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s;}
+.bl-card--link:hover{border-color:var(--bl-brand);box-shadow:var(--bl-shadow-md);}
+
+/* ---------- Segmented control ---------- */
+.bl-seg{display:inline-flex;border:1px solid var(--bl-line-strong);border-radius:var(--bl-r-sm);overflow:hidden;background:var(--bl-surface);}
+.bl-seg button{border:0;background:transparent;font-family:inherit;font-size:var(--bl-fs-sm);
+  padding:7px 16px;cursor:pointer;color:var(--bl-ink-2);}
+.bl-seg button.is-on{background:var(--bl-brand);color:#fff;}
+
+/* ---------- Tool header (organism) ---------- */
+.bl-toolbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:10px 18px;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--bl-line);}
+.bl-toolbar .bl-back{font-size:var(--bl-fs-sm);color:var(--bl-ink-2);text-decoration:none;}
+.bl-toolbar .bl-back:hover{color:var(--bl-brand);}
+.bl-toolbar .bl-title{font-size:var(--bl-fs-h2);font-weight:700;color:var(--bl-brand);margin:0;}
+.bl-toolbar .bl-spacer{flex:1;}
+
+/* ---------- Layout helpers ---------- */
+.bl-container{max-width:920px;margin:0 auto;padding:0 var(--bl-s5);}
+.bl-grid{display:grid;gap:var(--bl-s4);}
+.bl-grid-2{grid-template-columns:repeat(2,1fr);}
+.bl-grid-3{grid-template-columns:repeat(3,1fr);}
+@media(max-width:680px){.bl-grid-2,.bl-grid-3{grid-template-columns:1fr;}}
