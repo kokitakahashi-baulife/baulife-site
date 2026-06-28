@@ -45,6 +45,14 @@
   --bl-shadow-sm:0 1px 3px rgba(40,34,28,.07);
   --bl-shadow-md:0 4px 16px rgba(40,34,28,.10);
   --bl-shadow-pop:0 10px 44px rgba(40,34,28,.22);
+
+  /* --- Motion (動きの個性: なめらか・やわらか・少し華やか) --- */
+  --bl-dur-instant:80ms; --bl-dur-fast:150ms; --bl-dur-base:240ms; --bl-dur-slow:400ms; --bl-dur-slower:640ms;
+  --bl-ease-standard:cubic-bezier(.2,.7,.2,1); /* すっと入って静かに止まる(基本) */
+  --bl-ease-out:cubic-bezier(0,0,.2,1);
+  --bl-ease-in:cubic-bezier(.4,0,1,1);
+  --bl-ease-emph:cubic-bezier(.2,.9,.1,1);     /* 登場の少し華やかな曲線 */
+  --bl-stagger:70ms;                            /* 連続要素の遅延 */
 }
 
 /* ---------- Base ---------- */
@@ -119,3 +127,65 @@
 .bl-grid-2{grid-template-columns:repeat(2,1fr);}
 .bl-grid-3{grid-template-columns:repeat(3,1fr);}
 @media(max-width:680px){.bl-grid-2,.bl-grid-3{grid-template-columns:1fr;}}
+
+/* ============================================================
+   MOTION  —  キーフレーム & ユーティリティ
+   ============================================================ */
+@keyframes bl-fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes bl-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes bl-pop{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+@keyframes bl-spin{to{transform:rotate(360deg)}}
+@keyframes bl-wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+@keyframes bl-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.85}}
+@keyframes bl-ping{0%{transform:scale(1);opacity:.6}80%,100%{transform:scale(2.2);opacity:0}}
+@keyframes bl-shimmer{from{background-position:-160% 0}to{background-position:160% 0}}
+@keyframes bl-dot{0%,80%,100%{transform:scale(.5);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+/* 登場（scroll reveal）: .bl-reveal を付け、画面に入ったら .is-in を付与 */
+.bl-reveal{opacity:0;transform:translateY(16px);
+  transition:opacity var(--bl-dur-slow) var(--bl-ease-emph),transform var(--bl-dur-slow) var(--bl-ease-emph);}
+.bl-reveal.is-in{opacity:1;transform:none;}
+/* 子要素を順番に（--i をインラインで指定）*/
+.bl-stagger > *{transition-delay:calc(var(--i,0) * var(--bl-stagger));}
+
+/* ホバーで浮く */
+.bl-hover-lift{transition:transform var(--bl-dur-base) var(--bl-ease-standard),box-shadow var(--bl-dur-base) var(--bl-ease-standard);}
+.bl-hover-lift:hover{transform:translateY(-3px);box-shadow:var(--bl-shadow-md);}
+
+/* ボタンの押下＆光沢 */
+.bl-btn{position:relative;overflow:hidden;}
+.bl-btn:active{transform:translateY(1px) scale(.985);}
+.bl-btn--shine::after{content:"";position:absolute;top:0;left:-130%;width:60%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-18deg);}
+.bl-btn--shine:hover::after{animation:bl-sheen var(--bl-dur-slower) var(--bl-ease-out);}
+@keyframes bl-sheen{to{left:130%}}
+
+/* アイコン（ホバーで反応） */
+.bl-ic{display:inline-flex;transition:transform var(--bl-dur-base) var(--bl-ease-emph),color var(--bl-dur-fast);}
+.bl-ic-pop:hover .bl-ic,.bl-ic-pop.bl-ic:hover{animation:bl-pop var(--bl-dur-base) var(--bl-ease-emph);}
+.bl-ic-spin:hover .bl-ic,.bl-ic-spin.bl-ic:hover{animation:bl-spin var(--bl-dur-slower) linear;}
+.bl-ic-wiggle:hover .bl-ic,.bl-ic-wiggle.bl-ic:hover{animation:bl-wiggle var(--bl-dur-slow) var(--bl-ease-standard);}
+.bl-ic-shift:hover .bl-ic,.bl-ic-shift.bl-ic:hover{transform:translateX(3px);}
+
+/* 常時アニメ */
+.bl-spin{animation:bl-spin 800ms linear infinite;}
+.bl-pulse{animation:bl-pulse 1.6s var(--bl-ease-standard) infinite;}
+.bl-ping{position:relative;}
+.bl-ping::before{content:"";position:absolute;inset:0;border-radius:inherit;background:currentColor;animation:bl-ping 1.4s var(--bl-ease-out) infinite;}
+
+/* ローディング: ドット */
+.bl-dots{display:inline-flex;gap:5px;}
+.bl-dots i{width:7px;height:7px;border-radius:50%;background:var(--bl-brand);display:block;animation:bl-dot 1.2s ease-in-out infinite;}
+.bl-dots i:nth-child(2){animation-delay:.16s;}
+.bl-dots i:nth-child(3){animation-delay:.32s;}
+
+/* ローディング: スケルトン */
+.bl-skeleton{background:linear-gradient(100deg,var(--bl-surface-2) 30%,#efeae2 50%,var(--bl-surface-2) 70%);
+  background-size:200% 100%;animation:bl-shimmer 1.3s linear infinite;border-radius:var(--bl-r-sm);}
+
+/* 動きを減らす設定を尊重 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important;}
+  .bl-reveal{opacity:1!important;transform:none!important;}
+}

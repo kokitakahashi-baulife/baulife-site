@@ -195,9 +195,75 @@
     </div>
   </section>
 
-  <!-- ===== 04 USAGE ===== -->
+  <!-- ===== 04 MOTION ===== -->
   <section class="sec">
-    <div class="sec-no">04 — USAGE</div>
+    <div class="sec-no">04 — MOTION</div>
+    <h2>モーション<span class="atomtag">FOUNDATION + COMPONENTS</span></h2>
+    <p class="lead">動きの個性は「なめらか・やわらか・少し華やか」。<b>意味のある時だけ</b>、<b>速く控えめに</b>、<b>一貫して</b>。
+      <code>prefers-reduced-motion</code> をオンにした人には自動で無効化されます。</p>
+
+    <div class="subh">モーショントークン</div>
+    <div class="bl-grid bl-grid-2">
+      <div class="panel col">
+        <div class="bl-muted" style="font-size:11px">デュレーション</div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;font-family:var(--bl-font-en);font-size:11px;color:var(--bl-ink-2)">
+          <span>instant 80</span><div class="bl-skeleton" style="height:8px;width:18%"></div>
+          <span>fast 150</span><div class="bl-skeleton" style="height:8px;width:34%"></div>
+          <span>base 240</span><div class="bl-skeleton" style="height:8px;width:52%"></div>
+          <span>slow 400</span><div class="bl-skeleton" style="height:8px;width:74%"></div>
+          <span>slower 640</span><div class="bl-skeleton" style="height:8px;width:100%"></div>
+        </div>
+      </div>
+      <div class="panel col">
+        <div class="bl-muted" style="font-size:11px">イージング</div>
+        <div style="font-family:var(--bl-font-en);font-size:11px;color:var(--bl-ink-2);line-height:2">
+          standard <span class="bl-muted">cubic-bezier(.2,.7,.2,1) — 基本</span><br>
+          emph <span class="bl-muted">(.2,.9,.1,1) — 登場の華やかさ</span><br>
+          out / in <span class="bl-muted">— 退場・加速</span><br>
+          stagger <span class="bl-muted">70ms — 連続要素の遅延</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="subh">ボタンの動き <code>:active</code> / <code>.bl-btn--shine</code></div>
+    <div class="panel">
+      <button class="bl-btn bl-btn--primary bl-btn--shine">ホバーで光沢</button>
+      <button class="bl-btn bl-btn--ghost">押すと沈む</button>
+      <button class="bl-btn bl-btn--primary bl-ic-shift">送る&nbsp;<span class="bl-ic">→</span></button>
+    </div>
+    <p class="note">ホバー／押下のマイクロアニメは「押せる感」を伝えるため。全ボタン共通。</p>
+
+    <div class="subh">アイコンの動き（ホバー）</div>
+    <div class="panel" style="gap:22px">
+      <span class="bl-ic-pop bl-ic" title="pop">⭐</span>
+      <span class="bl-ic-spin bl-ic" title="spin">🔄</span>
+      <span class="bl-ic-wiggle bl-ic" title="wiggle">🔔</span>
+      <span class="bl-ic-pop bl-ic" title="pop" style="color:var(--bl-brand);font-size:20px">❤</span>
+    </div>
+    <p class="note">アイコンにホバーで pop / spin / wiggle。<code>.bl-ic-pop</code> などを付けるだけ。</p>
+
+    <div class="subh">登場アニメ（scroll reveal ＋ stagger）</div>
+    <div style="margin-bottom:10px"><button class="bl-btn bl-btn--ghost bl-btn--sm" id="replay">▶ もう一度再生</button></div>
+    <div class="bl-grid bl-grid-3 bl-stagger" id="revealDemo">
+      <div class="bl-card bl-reveal" style="--i:0;padding:16px"><div class="bl-kicker">STEP 1</div><b>すっと</b></div>
+      <div class="bl-card bl-reveal" style="--i:1;padding:16px"><div class="bl-kicker">STEP 2</div><b>順番に</b></div>
+      <div class="bl-card bl-reveal" style="--i:2;padding:16px"><div class="bl-kicker">STEP 3</div><b>現れる</b></div>
+    </div>
+    <p class="note">スクロールで画面に入ると、フェード＋小さな上スライドで登場。子要素は <code>--i</code> で少しずつ遅延。</p>
+
+    <div class="subh">ローディング & アテンション</div>
+    <div class="panel" style="gap:26px">
+      <span style="display:inline-flex;align-items:center;gap:8px"><span class="bl-spin" style="width:18px;height:18px;border:2px solid var(--bl-line);border-top-color:var(--bl-brand);border-radius:50%;display:inline-block"></span><span class="bl-sm">処理中</span></span>
+      <span class="bl-dots"><i></i><i></i><i></i></span>
+      <span class="bl-skeleton" style="width:120px;height:14px"></span>
+      <span class="bl-tag" style="position:relative"><span class="bl-ping" style="width:7px;height:7px;border-radius:50%;color:var(--bl-brand);display:inline-block"></span>&nbsp;新着</span>
+    </div>
+    <p class="note">スピナー／ドット／スケルトン＝待ち時間。ping＝注目を引く軽い合図。</p>
+  </section>
+
+  <!-- ===== 05 USAGE ===== -->
+  <section class="sec">
+    <div class="sec-no">05 — USAGE</div>
     <h2>使い方</h2>
     <div class="bl-card">
       <p class="note" style="margin-top:0">新しいツール／既存ツールの <code>&lt;head&gt;</code> に次を追加し、<code>bl-</code> のトークン・クラスを使う：</p>
@@ -211,5 +277,18 @@
 <footer style="text-align:center;padding:28px;border-top:1px solid var(--bl-line);color:var(--bl-muted);font-size:12px">
   &copy; 2026 BAULIFE Inc. — Design System
 </footer>
+
+<script>
+  // scroll reveal: 画面に入ったら .is-in を付与（全 .bl-reveal 共通の仕組み）
+  (function(){
+    var els=[].slice.call(document.querySelectorAll('.bl-reveal'));
+    if(!('IntersectionObserver' in window)){ els.forEach(function(e){e.classList.add('is-in');}); return; }
+    var io=new IntersectionObserver(function(es){ es.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('is-in'); io.unobserve(en.target); } }); },{threshold:.18});
+    els.forEach(function(e){ io.observe(e); });
+    // デモの再生ボタン
+    var btn=document.getElementById('replay');
+    if(btn) btn.onclick=function(){ document.querySelectorAll('#revealDemo .bl-reveal').forEach(function(e){ e.classList.remove('is-in'); void e.offsetWidth; e.classList.add('is-in'); }); };
+  })();
+</script>
 </body>
 </html>
