@@ -42,13 +42,21 @@
   .note{background:#f3efe7;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.7;margin-bottom:10px;}
   .note b{color:var(--red);}
   .hint{font-size:11px;color:var(--gray);margin:2px 0 0;}
+  .own{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap;}
+  .own.homu{background:#f6d9df;color:var(--red);}
+  .own.hear{background:#e3efdd;color:#4a7a3a;}
+  .own.both{background:#e9e2f3;color:#6a4a9a;}
   .imgslot{margin-top:6px;border:1.5px dashed var(--line);border-radius:8px;background:#fff;
     min-height:64px;display:flex;align-items:center;justify-content:center;text-align:center;
     cursor:pointer;font-size:12px;color:var(--gray);position:relative;overflow:hidden;padding:6px;}
   .imgslot.drag{border-color:var(--red);background:var(--tint);}
   .imgslot img{max-width:100%;max-height:110px;border-radius:4px;}
+  .imgslot.k-portrait{aspect-ratio:100/148;max-width:150px;min-height:0;padding:0;margin-left:auto;margin-right:auto;}
+  .imgslot.k-square{aspect-ratio:1/1;max-width:150px;min-height:0;padding:0;}
+  .imgslot.k-portrait img,.imgslot.k-square img{max-height:none;width:100%;height:100%;object-fit:contain;border-radius:0;}
+  .imgslot .pdfchip{font-size:12px;color:var(--red);font-weight:700;}
   .imgslot .rm{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.9);border:1px solid var(--line);
-    border-radius:5px;font-size:11px;padding:1px 6px;cursor:pointer;color:var(--red);}
+    border-radius:5px;font-size:11px;padding:1px 6px;cursor:pointer;color:var(--red);z-index:2;}
   .item-form{border-left:3px solid var(--red);padding-left:10px;margin:14px 0;}
   .item-form.secret{border-left-color:#b98a3c;}
   .item-form .ihead{font-size:12.5px;font-weight:700;color:var(--red);margin:2px 0 4px;}
@@ -58,7 +66,6 @@
   .imgcollapse{margin-top:6px;}
   .imgcollapse>summary{font-size:11px;color:var(--gray);cursor:pointer;list-style:none;}
   .imgcollapse>summary::-webkit-details-marker{display:none;}
-  /* レシピ選択モーダル */
   .rp-overlay{position:fixed;inset:0;background:rgba(40,34,28,.5);z-index:100;display:flex;
     align-items:center;justify-content:center;padding:24px;}
   .rp-modal{background:var(--paper);border-radius:14px;max-width:760px;width:100%;max-height:86vh;
@@ -86,6 +93,7 @@
   .sheet h2.tt{font-size:23pt;font-weight:700;margin:2px 0 4px;}
   .sheet .sub{font-size:10pt;color:var(--gray);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px;}
   .sheet h3{font-size:13.5pt;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:4px;margin:20px 0 10px;}
+  .sheet h3 .own{font-size:8.5pt;}
   .sheet h4{font-size:11pt;margin:10px 0 5px;}
   .sheet p{margin:0 0 8px;}
   .sheet .muted{color:var(--gray);font-size:9.5pt;}
@@ -93,8 +101,12 @@
   .sheet li{margin:0 0 4px;}
   .sheet .qa{margin:0 0 9px;}
   .sheet .qa .q{font-weight:700;}
+  .sheet .qa .q .own{font-size:8pt;}
   .sheet .qa .a{white-space:pre-wrap;}
   .sheet .qa .a.empty{color:#bdb3a4;font-style:italic;}
+  .sheet .advice{background:#f7f2ea;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0 12px;}
+  .sheet .advice ul{margin:0;}
+  .sheet .boxdef{background:var(--tint);border-radius:8px;padding:9px 12px;font-size:10pt;margin:6px 0 10px;}
   .sheet table.spec{width:100%;border-collapse:collapse;font-size:9.5pt;margin:6px 0 12px;}
   .sheet table.spec th,.sheet table.spec td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top;}
   .sheet table.spec th{background:var(--red);color:#fff;font-weight:600;font-size:9pt;white-space:nowrap;}
@@ -104,15 +116,19 @@
   .sheet table.role th{background:#f0ebe2;width:26%;font-weight:600;}
   .pv-img{width:100%;height:100%;object-fit:contain;cursor:zoom-in;}
   .pv-box{border:1px dashed var(--line);border-radius:6px;background:var(--cream);color:#bdb3a4;
-    display:flex;align-items:center;justify-content:center;font-size:9pt;text-align:center;padding:6px;min-height:80px;}
+    display:flex;align-items:center;justify-content:center;font-size:9pt;text-align:center;padding:6px;width:100%;height:100%;}
   .pv-cap{font-size:9pt;color:var(--gray);text-align:center;margin-top:4px;}
+  .media{margin:6px 0 10px;}
+  .media.portrait{width:46mm;} .media.portrait .mbox{aspect-ratio:100/148;}
+  .media.square{width:40mm;} .media.square .mbox{aspect-ratio:1/1;}
+  .media.wide{width:60mm;} .media.wide .mbox{height:100px;}
+  .media .mbox{width:100%;border-radius:6px;overflow:hidden;}
+  .media.pdf .mbox{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);background:var(--cream);color:var(--red);font-size:9pt;font-weight:700;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
   .wax-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 12px;margin-top:10px;}
   .wax-chip{display:inline-flex;flex-direction:column;align-items:center;gap:1px;font-size:9.5pt;color:var(--ink);}
   .wax-chip b{font-weight:700;font-size:9.5pt;}
   .wax-chip .wsil{display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
-  .wax-chip .wsil-grp{display:inline-flex;align-items:center;}
-  .wax-chip .wsil-grp .wsil{margin:0 -2px;}
   @media print{ .pv-img{cursor:default;} }
   .lb-overlay{position:fixed;inset:0;background:rgba(20,16,12,.82);z-index:200;display:flex;
     align-items:center;justify-content:center;padding:30px;cursor:zoom-out;}
@@ -129,7 +145,7 @@
   .price-card .pr{font-size:15pt;color:var(--red);margin-top:4px;}
   .price-card .dsc{font-size:9pt;color:var(--gray);}
 
-  /* ---------- list (案件一覧) ---------- */
+  /* ---------- list ---------- */
   #listScreen{max-width:1040px;margin:0 auto;padding:40px 24px 80px;}
   .portal-back{display:inline-block;font-size:13px;color:var(--gray);text-decoration:none;margin:0 0 18px;}
   .portal-back:hover{color:var(--red);}
@@ -236,12 +252,13 @@ const CIRCLED=["①","②","③","④","⑤","⑥"];
 const DIMS=["","2D","3D"];
 const SHAPES=["","丸型","四角型","シルエット型"];
 const SIZES=["","15mm","25mm","30mm","40mm"];
-// プレイブックのお題ヒント（役割の型）— 担当者の思考の足場。強制ではない。
-const ROLE_HINTS=[
-  "世界観の顔（指名買い・認知拡大の主役。独自外形で一目でIPと分かる）",
-  "3D彫りの立体（凹凸・奥行きで所有満足。上級者需要）",
-  "セパレート／色分け映え（細かなモチーフ多数＝色分け動画で拡散）",
-  "入門・量産（初心者が成功できる単体。裾野を広げる）",
+const ROLE_OPTIONS=["","世界観の顔","3D彫りの立体","セパレート／色分け映え","入門・量産","その他"];
+// HOMU → クリエイターへ渡す「売れるデザインの勝ち筋」（設計シートに常時掲載）
+const DESIGN_ADVICE=[
+  "スタンプヘッドの外形は、円や四角より“その作品だけの独自シルエット”が強い（一目でその作品と分かり、拡散・指名買いにつながります）。",
+  "細かなモチーフを散りばめると、色を塗り分けて押す動画が映えて拡散されやすいです。色分けできる構図だと◎。",
+  "立体（3D彫り）に向くのは、モチーフの重なりが少なく高低差を出せる構図。平面（2D）は線画や複数キャラの並びが得意です。",
+  "全部を同じ雰囲気にせず“役割”で差をつけると、全種そろえたくなります（世界観の顔／立体で魅せる／色分けで映える／初心者向けの入門）。",
 ];
 
 function blankItem(){return {
@@ -254,15 +271,15 @@ function defaultData(){
   return {
     fileName:"", creator:"", ip:"", staff:"",
     contractDate:"", licenseRate:"10",
-    theme:"",
+    theme:"", themeImg:"",
     itemCount:3,
     secretEnabled:false, secretRate:"",
     sales:{blind:true, complete:true, single:false, assort:false},
     blindPrice:"", completePrice:"",
     presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
     postcardIncluded:true,
-    postcardNote:"各コンセプトに対になるポストカード（背景台紙）を用意。クリエイター様のロゴにHOMUのロゴを重ねて印刷します。",
-    overall:{core:"", motif:"", fans:""},
+    postcardNote:"各コンセプトボックスに、対になるポストカード（背景台紙）を1枚ずつ入れます。",
+    overall:{core:"", fans:"", ng:""},
     schedule:SCHED.map(s=>({label:s.label, interval:s.interval})),
     items:[blankItem(),blankItem(),blankItem(),blankItem(),blankItem(),blankItem()],
     secret:blankItem()
@@ -411,13 +428,12 @@ function goList(){
   document.getElementById("listScreen").style.display="block";
   fetchProjects();
 }
-// 旧データ/欠損に強くする
 function normalize(){
   if(!Array.isArray(data.items)) data.items=[];
   while(data.items.length<6) data.items.push(blankItem());
   data.items=data.items.map(it=>Object.assign(blankItem(),it||{}));
   data.secret=Object.assign(blankItem(),data.secret||{});
-  data.overall=Object.assign({core:"",motif:"",fans:""},data.overall||{});
+  data.overall=Object.assign({core:"",fans:"",ng:""},data.overall||{});
   data.sales=Object.assign({blind:true,complete:true,single:false,assort:false},data.sales||{});
   if(!Array.isArray(data.schedule)||!data.schedule.length) data.schedule=SCHED.map(s=>({label:s.label,interval:s.interval}));
   data.itemCount=Math.min(6,Math.max(1,parseInt(data.itemCount,10)||1));
@@ -496,7 +512,7 @@ function exportPDF(){
   window.print();
 }
 
-/* ========== レシピピッカー（WAXシミュレーターの保存レシピ） ========== */
+/* ========== レシピピッカー ========== */
 let _recipesCache=null;
 async function loadWaxRecipes(){
   if(_recipesCache) return _recipesCache;
@@ -553,26 +569,31 @@ document.addEventListener("click",function(e){
   document.body.appendChild(ov);
 });
 
-/* ========== 画像 ========== */
-function pickImage(cb){
-  const i=document.createElement("input"); i.type="file"; i.accept="image/*";
-  i.onchange=()=>{ const f=i.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>cb(r.result); r.readAsDataURL(f); };
+/* ========== メディア（画像/PDF）アップロード ========== */
+function isPdf(v){ return typeof v==="string" && v.indexOf("data:application/pdf")===0; }
+function pickFile(cb, accept){
+  const i=document.createElement("input"); i.type="file"; i.accept=accept||"image/*";
+  i.onchange=()=>{ const f=i.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>cb(r.result,f.name); r.readAsDataURL(f); };
   i.click();
 }
-function imgSlot(label, getVal, setVal){
-  const wrap=document.createElement("div"); wrap.className="imgslot";
+// kind: "free"(既定) / "portrait"(ポストカード等・縦) / "square"(スタンプ等)
+function imgSlot(label, getVal, setVal, kind, allowPdf){
+  const wrap=document.createElement("div"); wrap.className="imgslot"+(kind==="portrait"?" k-portrait":kind==="square"?" k-square":"");
+  const accept = allowPdf ? "image/*,application/pdf" : "image/*";
   function paint(){
     const v=getVal(); wrap.innerHTML="";
-    if(v){ const im=document.createElement("img"); im.src=v; wrap.appendChild(im);
+    if(v){
+      if(isPdf(v)){ wrap.appendChild(el("div","pdfchip","📄 PDF 添付済み")); }
+      else { const im=document.createElement("img"); im.src=v; wrap.appendChild(im); }
       const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除";
       rm.onclick=ev=>{ev.stopPropagation(); setVal(""); paint(); render(); autosave();}; wrap.appendChild(rm);
     } else { wrap.textContent=label+"（クリック / D&D）"; }
   }
-  wrap.onclick=()=>pickImage(d=>{setVal(d);paint();render();autosave();});
+  wrap.onclick=()=>pickFile((d)=>{setVal(d);paint();render();autosave();}, accept);
   wrap.addEventListener("dragover",e=>{e.preventDefault();wrap.classList.add("drag");});
   wrap.addEventListener("dragleave",()=>wrap.classList.remove("drag"));
   wrap.addEventListener("drop",e=>{e.preventDefault();wrap.classList.remove("drag");
-    const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith("image")){const r=new FileReader();
+    const f=e.dataTransfer.files[0]; if(f&&(f.type.startsWith("image")||(allowPdf&&f.type==="application/pdf"))){const r=new FileReader();
       r.onload=()=>{setVal(r.result);paint();render();autosave();};r.readAsDataURL(f);}});
   paint(); return wrap;
 }
@@ -596,6 +617,7 @@ function chkField(label,key,obj){
   c.onchange=()=>{ obj[key]=c.checked; render(); autosave(); };
   w.append(c, document.createTextNode(label)); return w;
 }
+function ownTag(kind){ const t=kind==="homu"?"HOMU記入":kind==="hear"?"クリエイターにヒアリング":"HOMU×クリエイターで合意"; return '<span class="own '+kind+'">'+t+'</span>'; }
 function computeComplete(){
   const n=parseInt(String(data.blindPrice||"").replace(/[^0-9]/g,""),10);
   const cnt=parseInt(data.itemCount,10)||0;
@@ -605,29 +627,26 @@ function computeComplete(){
 function itemForm(it,title,secret){
   const box=el("div","item-form"+(secret?" secret":"")); box.appendChild(el("div","ihead",title));
   box.appendChild(field(secret?"シークレットの名称（社内用）":"お題タイトル（商品名の候補）","ttl",it));
-  const rf=field("役割","role",it,false,"例：世界観の顔／3D彫り／セパレート映え／入門");
-  box.appendChild(rf);
+  box.appendChild(selectField("役割（プルダウン）","role",it,ROLE_OPTIONS));
   const r1=el("div","row");
   r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES), selectField("サイズ","size",it,SIZES));
   box.appendChild(r1);
   box.appendChild(chkField("セパレート（分離）構造にする","separate",it));
-  box.appendChild(field("モチーフ・構図の方向","motif",it,true,"例：麦の穂と小鳥を、輪郭ごと封蝋に閉じ込める独自シルエット。色分けできるよう小モチーフを散らす。"));
+  box.appendChild(field("モチーフ・構図の方向（ひとこと）","motif",it,false,"例：麦の穂と小鳥を独自シルエットで"));
   const r2=el("div","row");
   r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,"例：2800"), field("製造数量見込(社内)","qty",it,false,"例：200"));
   box.appendChild(r2);
-  box.appendChild(field("クリエイターへのお題（自由度も明記）","brief",it,true,"コンセプトだけ提示し、詳細は自由に。変更・アレンジ歓迎。NGがあれば記載。"));
-  // ワックス色
+  box.appendChild(field("クリエイターへのお題（自由度も明記・任意）","brief",it,true,"コンセプトだけ提示し詳細は自由に。変更・アレンジ歓迎。NGがあれば記載。"));
   box.appendChild(el("label","fl","コラボワックス色"));
   box.appendChild(field("色の指定（テキスト）","waxText",it,false,"例：くすみブルー系"));
   const rb=el("button","recipe-btn","🗂 WAXシミュレーターのレシピから選ぶ"); rb.type="button";
   rb.onclick=()=>openRecipePicker((img,colors,nm)=>{ it.wax=img; it.waxColors=colors; if(nm&&!it.waxText) it.waxText=nm; render(); autosave(); });
   box.appendChild(rb);
-  // 後工程の画像（任意・折りたたみ）
-  const det=el("details","imgcollapse"); det.innerHTML="<summary>▸ 画像を添付（原画・試作など・任意）</summary>";
+  const det=el("details","imgcollapse"); det.innerHTML="<summary>▸ 画像を添付（原画・試作・ポストカード・任意）</summary>";
   const ig=el("div","row"); ig.style.marginTop="6px";
-  [["genga","原画/ラフ"],["stamp","スタンプ試作"],["postcard","ポストカード"]].forEach(([k,nm])=>{
-    const d=el("div"); d.appendChild(el("div","hint",nm)); d.appendChild(imgSlot(nm,()=>it[k],v=>it[k]=v)); ig.appendChild(d);
-  });
+  const g1=el("div"); g1.appendChild(el("div","hint","原画/ラフ")); g1.appendChild(imgSlot("原画",()=>it.genga,v=>it.genga=v,"free",true)); ig.appendChild(g1);
+  const g2=el("div"); g2.appendChild(el("div","hint","スタンプ試作")); g2.appendChild(imgSlot("試作",()=>it.stamp,v=>it.stamp=v,"square",false)); ig.appendChild(g2);
+  const g3=el("div"); g3.appendChild(el("div","hint","ポストカード（縦）")); g3.appendChild(imgSlot("ポストカード",()=>it.postcard,v=>it.postcard=v,"portrait",true)); ig.appendChild(g3);
   det.appendChild(ig); box.appendChild(det);
   return box;
 }
@@ -635,14 +654,12 @@ function itemForm(it,title,secret){
 function buildForm(){
   const F=document.getElementById("form"); F.innerHTML="";
 
-  // 案件情報（共通）
   let fs=el("fieldset"); fs.appendChild(el("legend",null,"案件情報（全資料で共通）"));
   fs.appendChild(field("クリエイター名","creator",data));
   fs.appendChild(field("IP / キャラ名","ip",data));
   fs.appendChild(field("担当","staff",data));
   F.appendChild(fs);
 
-  // 提案資料（定型）の変数
   fs=el("fieldset"); fs.appendChild(el("legend",null,"① 提案資料（毎回ほぼ定型）"));
   fs.appendChild(el("div","note","この資料は<b>安心してもらい合意を取る</b>ためのもの。中身はほぼ定型で、差し込むのは下の条件と上の案件情報だけ。"));
   const cdW=el("div"); cdW.appendChild(el("label","fl","契約締結予定日（スケジュールの基準日）"));
@@ -652,12 +669,12 @@ function buildForm(){
   fs.appendChild(field("ライセンス料（売上の何%・税抜）","licenseRate",data,false,"例：10"));
   F.appendChild(fs);
 
-  // 販売方法（共通）
   fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料／製造仕様 共通）"));
-  const icW=el("div"); icW.appendChild(el("label","fl","コンセプト（スタンプヘッド）点数：通常"));
+  fs.appendChild(el("div","note","<b>コンセプトボックス</b>＝スタンプヘッド・コラボワックス・ポストカードが<b>1点ずつ</b>入った1セット。これを<b>複数種類</b>つくります。"));
+  const icW=el("div"); icW.appendChild(el("label","fl","コンセプトボックスの種類数（通常）"));
   const icInp=el("input"); icInp.type="number"; icInp.min="1"; icInp.max="6"; icInp.value=data.itemCount;
   icInp.oninput=function(){ data.itemCount=Math.min(6,Math.max(1,parseInt(icInp.value,10)||1)); computeComplete(); buildForm(); render(); autosave(); };
-  icW.appendChild(icInp); icW.appendChild(el("div","hint","下の「設計シート」の点数と連動します（1〜6）。")); fs.appendChild(icW);
+  icW.appendChild(icInp); icW.appendChild(el("div","hint","下の「設計シート」の種類数と連動します（1〜6）。")); fs.appendChild(icW);
   const secW=el("label","chk"); const secC=el("input"); secC.type="checkbox"; secC.checked=!!data.secretEnabled;
   secC.onchange=function(){ data.secretEnabled=secC.checked; buildForm(); render(); autosave(); };
   secW.append(secC, document.createTextNode("シークレットあり")); fs.appendChild(secW);
@@ -677,47 +694,50 @@ function buildForm(){
   function refreshComplete(){ computeComplete(); compInp.value=data.completePrice||""; }
   blindInp.oninput=function(){ data.blindPrice=blindInp.value; refreshComplete(); render(); autosave(); };
   refreshComplete(); blindDiv.appendChild(blindInp);
-  compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 点数"));
+  compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 種類数"));
   const priceRow=el("div","row"); priceRow.append(blindDiv,compDiv); fs.appendChild(priceRow);
   fs.appendChild(field("プレゼント企画メモ","presentNote",data));
   F.appendChild(fs);
 
-  // 設計シート：全体
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：全体コンセプト"));
-  fs.appendChild(el("div","note","<b>担当者が考えて埋めるページ。</b>埋めれば、そのままクリエイターへの<b>書き下ろし依頼</b>になります。テーマ（1つ）だけHOMUが提示し、あとは自由に描いてもらう前提。"));
-  fs.appendChild(field("全体コンセプト（テーマ・HOMUが提示する1つ）","theme",data,true,"例：「くしゃかわ便り」— なかまたちが、それぞれのやり方で誰かへの想いを届ける。通年で使える定番として設計。"));
-  fs.appendChild(field("作品の核・大切にしたい魅力","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。"));
-  fs.appendChild(field("封蝋で活かしたいモチーフ・表現","motif",data.overall,true,"シルエットで映える／単色でも伝わる など。"));
-  fs.appendChild(field("ファンが反応・期待していること","fans",data.overall,true,"SNSの反応から、何に惹かれ何を求めているか。"));
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：全体コンセプト（HOMU×クリエイターで合意）"));
+  fs.appendChild(el("div","note","<b>担当者が考えて埋めるページ。</b>埋めれば、そのままクリエイターへの<b>書き下ろし依頼</b>になります。"));
+  fs.appendChild(field("全体コンセプト（テーマ）の説明文","theme",data,true,"例：「くしゃかわ便り」— なかまたちが、それぞれのやり方で誰かへの想いを届ける。通年で使える定番として設計。各コンセプトボックスはこのテーマの下でつくります。"));
+  fs.appendChild(el("label","fl","テーマ／ポストカードのキーイラスト（縦・パッケージにも使用｜画像 or PDF）"));
+  fs.appendChild(imgSlot("キーイラスト",()=>data.themeImg,v=>data.themeImg=v,"portrait",true));
+  fs.appendChild(el("div","hint","このイラストがパッケージにも使われ、各コンセプトボックスを考える際のテーマの基準になります。"));
   F.appendChild(fs);
 
-  // 設計シート：商品構成（お題）
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：商品構成と書き下ろしのお題"));
-  fs.appendChild(el("div","note","勝ち筋の型（<b>役割で差をつける</b>）：<br>"+ROLE_HINTS.map(h=>"・"+h).join("<br>")+"<br>＋独自外形（円・四角は弱い）／セパレート＆色分け動画で拡散／初日に売上が集中するのでドロップ設計。"));
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：作品について"));
+  fs.appendChild(el("div","note","「作品の核」はHOMUが観察して記入。<b>ファンが求めること・NG／ご要望は、クリエイターさんにヒアリング</b>して埋めます（今のHOMUだけでは掴みにくいため）。"));
+  fs.appendChild(field("作品の核・大切にしたい魅力（HOMU記入）","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。"));
+  fs.appendChild(field("ファンが反応・期待していること（ヒアリング）","fans",data.overall,true,"クリエイターさんに聞いて記入。SNSの反応など。"));
+  fs.appendChild(field("NG・ご要望（ヒアリング）","ng",data.overall,true,"やりたくない改変・大事にしたい点・希望など。"));
+  F.appendChild(fs);
+
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：コンセプトボックスの構成とお題"));
+  fs.appendChild(el("div","note","<b>役割で差をつける</b>のが勝ち筋（プルダウンで選択）：世界観の顔／3D彫りの立体／セパレート・色分け映え／入門・量産。<br>※ 売れるデザインのコツ（勝ち筋）は、設計シートPDFに自動でクリエイター向けアドバイスとして載ります。"));
   for(let i=0;i<data.itemCount;i++){
-    const block=itemForm(data.items[i],"スタンプヘッド "+CIRCLED[i]);
+    const block=itemForm(data.items[i],"コンセプトボックス "+CIRCLED[i]);
     if(data.itemCount>1){
-      const rm=el("button","btn"); rm.type="button"; rm.textContent="この項目を削除"; rm.style.cssText="font-size:11px;margin-top:6px;";
+      const rm=el("button","btn"); rm.type="button"; rm.textContent="この種類を削除"; rm.style.cssText="font-size:11px;margin-top:6px;";
       (function(idx){ rm.onclick=function(){ data.items.splice(idx,1); data.items.push(blankItem()); data.itemCount--; computeComplete(); buildForm(); render(); autosave(); }; })(i);
       block.appendChild(rm);
     }
     fs.appendChild(block);
   }
   if(data.itemCount<6){
-    const add=el("button","btn primary"); add.type="button"; add.textContent="＋ スタンプヘッドを追加"; add.style.cssText="margin-top:10px;";
+    const add=el("button","btn primary"); add.type="button"; add.textContent="＋ コンセプトボックスを追加"; add.style.cssText="margin-top:10px;";
     add.onclick=function(){ if(data.itemCount<6){ data.itemCount++; computeComplete(); buildForm(); render(); autosave(); } };
     fs.appendChild(add);
   }
   if(data.secretEnabled) fs.appendChild(itemForm(data.secret,"シークレット枠",true));
   F.appendChild(fs);
 
-  // ポストカード
   fs=el("fieldset"); fs.appendChild(el("legend",null,"ポストカード（付随）"));
-  fs.appendChild(chkField("各コンセプトにポストカードを付ける","postcardIncluded",data));
+  fs.appendChild(chkField("各コンセプトボックスにポストカードを付ける","postcardIncluded",data));
   fs.appendChild(field("ポストカードのメモ","postcardNote",data,true));
   F.appendChild(fs);
 
-  // スケジュール
   fs=el("fieldset"); fs.appendChild(el("legend",null,"スケジュール（提案資料に記載・自動計算）"));
   const dateSpans=[];
   function refreshSchedule(){ let cum=0; data.schedule.forEach(function(s,i){ cum+=parseInt(s.interval,10)||0; if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,cum) || "（基準日を入力）"; }); }
@@ -747,6 +767,12 @@ function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replac
 function ans(v){ return v? `<span class="a">${esc(v)}</span>` : `<span class="a empty">（未記入）</span>`; }
 function ipx(){ return data.ip?("（IP："+esc(data.ip)+"）"):""; }
 function secLabel(){ return data.secretEnabled?("＋シークレット"+secretCount()+"種"):""; }
+function pvMedia(v,cap,kind){
+  const cls = kind==="portrait"?"portrait":kind==="square"?"square":"wide";
+  if(isPdf(v)) return `<div class="media ${cls} pdf"><div class="mbox">📄 PDF</div><div class="pv-cap">${cap}</div></div>`;
+  const inner = v ? `<img class="pv-img" src="${v}">` : `<div class="pv-box">${cap}</div>`;
+  return `<div class="media ${cls}"><div class="mbox">${inner}</div><div class="pv-cap">${cap}</div></div>`;
+}
 
 function renderSalesDef(){
   const total=data.itemCount, sc=secretCount();
@@ -789,7 +815,8 @@ function renderA(){
     </ul>
 
     <h3>3. 作る商品 ＝「コンセプトボックス」</h3>
-    <p>HOMUのコラボ商品は「コンセプトボックス」が単位です。1つのボックスに、<b>スタンプヘッド／コラボワックス／ポストカード（背景台紙）</b>がセットで入ります。今回は <b>${total}種${secLabel()}</b> を前提に進めます。</p>
+    <div class="boxdef">1つの<b>コンセプトボックス</b>には、<b>スタンプヘッド・コラボワックス・ポストカードが1点ずつ</b>入ります。この「1セット＝1コンセプトボックス」を1単位として、複数種類つくります。</div>
+    <p>今回は、この<b>コンセプトボックスを ${total}種${secLabel()}</b> つくることを前提に進めます（テーマは共通で、中身のデザインが種類ごとに変わります）。</p>
 
     <h3>4. 進め方</h3>
     <ol>
@@ -812,7 +839,6 @@ function renderA(){
       <tr><th>著作権</th><td>イラストの著作権は ${creator}様に帰属します。HOMUは本コラボ商品の製造・販売の範囲でのみ使用します。</td></tr>
       <tr><th>利用範囲</th><td>本単発コラボ商品およびその販売に必要な範囲（商品撮影・販促物・HOMUのSNS等）に限定します。</td></tr>
       <tr><th>クレジット</th><td>商品ページ・販促物に「Illustration by ${creator}」等を明記します（表記はご希望に合わせます）。</td></tr>
-      <tr><th>契約形態</th><td>大がかりな契約ではなく、合意内容をまとめた簡易な覚書（コラボ確認書）を取り交わす形を想定しています。</td></tr>
     </table>
 
     <h3>7. スケジュール（目安）</h3>
@@ -831,40 +857,47 @@ function renderA(){
 /* ---- ② 設計シート（書き下ろし依頼） ---- */
 function itemBriefPV(it,title,secret){
   const specs=[];
+  if(it.role) specs.push("<b>役割</b> "+esc(it.role));
   if(it.dim) specs.push("<b>形態</b> "+esc(it.dim));
   if(it.shape) specs.push("<b>形状</b> "+esc(it.shape));
   if(it.separate) specs.push("<b>セパレート</b>");
   if(it.illust) specs.push("<b>必要イラスト</b> "+esc(it.illust));
   return `<div class="pcard${secret?" secret":""}">
     <div class="ph">${title}${secret?"（レア枠）":"："+(esc(it.ttl)||"（お題タイトル未記入）")}</div>
-    ${it.role?('<div class="meta"><span><b>役割：</b>'+esc(it.role)+'</span></div>'):""}
     ${specs.length?('<div class="meta">'+specs.map(s=>"<span>"+s+"</span>").join("")+'</div>'):""}
     <div class="qa"><div class="q">モチーフ・構図の方向</div>${ans(it.motif)}</div>
-    <div class="qa"><div class="q">お題（自由に描いていただいてOK）</div>${ans(it.brief)}</div>
-    ${it.genga?('<div style="width:40%">'+`<div style="height:118px"><img class="pv-img" src="${it.genga}"></div><div class="pv-cap">原画/ラフ</div>`+'</div>'):""}
+    ${it.brief?('<div class="qa"><div class="q">お題（自由に描いていただいてOK）</div>'+ans(it.brief)+'</div>'):""}
+    ${it.genga?pvMedia(it.genga,"原画/ラフ","wide"):""}
   </div>`;
 }
 function renderB(){
   const total=data.itemCount;
-  let items=""; for(let i=0;i<total;i++) items+=itemBriefPV(data.items[i],"スタンプヘッド "+CIRCLED[i],false);
+  const advice='<div class="advice"><ul>'+DESIGN_ADVICE.map(a=>"<li>"+esc(a)+"</li>").join("")+'</ul></div>';
+  let items=""; for(let i=0;i<total;i++) items+=itemBriefPV(data.items[i],"コンセプトボックス "+CIRCLED[i],false);
   if(data.secretEnabled) items+=itemBriefPV(data.secret,"シークレット",true);
   document.getElementById("pv-b").innerHTML=`
     <div class="kicker">HOMU × ${esc(data.creator)||"CREATOR"} COLLABORATION</div>
     <h2 class="tt">コラボ設計シート</h2>
     <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx()} × HOMU ／ 書き下ろしのお題と商品構成</div>
 
-    <div class="pcard"><div class="ph">全体コンセプト（テーマ）</div><p style="margin:0">${ans(data.theme)}</p></div>
+    <h3>1. 全体コンセプト（テーマ）${ownTag("both")}</h3>
+    <p>${ans(data.theme)}</p>
+    ${data.themeImg?pvMedia(data.themeImg,"テーマ／ポストカードのキーイラスト（パッケージにも使用）","portrait"):""}
 
-    <h3>1. 今回のコラボで大切にしたいこと</h3>
-    <div class="qa"><div class="q">作品の核・大切にしたい魅力</div>${ans(data.overall.core)}</div>
-    <div class="qa"><div class="q">封蝋で活かしたいモチーフ・表現</div>${ans(data.overall.motif)}</div>
-    <div class="qa"><div class="q">ファンの皆さんが求めていること</div>${ans(data.overall.fans)}</div>
+    <h3>2. デザインのポイント（HOMUより）<span class="own homu">HOMU → クリエイターへ</span></h3>
+    <p>HOMUは「シーリングスタンプとして売れる・映えるデザイン」の知見があります。書き下ろしの参考にしてください。</p>
+    ${advice}
 
-    <h3>2. 商品構成と書き下ろしのお題</h3>
-    <p>今回は下記の <b>${total}種${secLabel()}</b> を制作します。各お題は「方向性」です。詳細は ${esc(data.creator)||"クリエイター"}様の自由に描いていただいてOKです（変更・アレンジ歓迎）。</p>
+    <h3>3. 作品について</h3>
+    <div class="qa"><div class="q">作品の核・大切にしたい魅力 ${ownTag("homu")}</div>${ans(data.overall.core)}</div>
+    <div class="qa"><div class="q">ファンが反応・期待していること ${ownTag("hear")}</div>${ans(data.overall.fans)}</div>
+    <div class="qa"><div class="q">NG・ご要望 ${ownTag("hear")}</div>${ans(data.overall.ng)}</div>
+
+    <h3>4. コンセプトボックスの構成とお題 ${ownTag("both")}</h3>
+    <div class="boxdef">1コンセプトボックス＝スタンプヘッド・ワックス・ポストカードが1点ずつの1セット。下記の <b>${total}種${secLabel()}</b> をつくります。各お題は「方向性」です。詳細は ${esc(data.creator)||"クリエイター"}様の自由に描いていただいてOKです（変更・アレンジ歓迎）。</div>
     ${items}
 
-    ${data.postcardIncluded?('<h3>3. ポストカード</h3><p class="muted">'+esc(data.postcardNote)+'</p>'):""}
+    ${data.postcardIncluded?('<h3>5. ポストカード</h3><p class="muted">'+esc(data.postcardNote)+'</p>'):""}
 
     <p class="muted" style="border-top:1px solid var(--line);padding-top:8px;margin-top:14px">※ 本シートは相談のたたき台です。一緒に埋めながら確定します。</p>
   `;
@@ -886,7 +919,7 @@ function specRow(it,label){
 }
 function renderC(){
   const total=data.itemCount;
-  let rows=""; for(let i=0;i<total;i++) rows+=specRow(data.items[i],"スタンプ"+CIRCLED[i]);
+  let rows=""; for(let i=0;i<total;i++) rows+=specRow(data.items[i],"BOX"+CIRCLED[i]);
   if(data.secretEnabled) rows+=specRow(data.secret,"シークレット");
   document.getElementById("pv-c").innerHTML=`
     <div class="kicker">INTERNAL — 製造仕様</div>
@@ -894,6 +927,7 @@ function renderC(){
     <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx()} × HOMU ／ 社内・工場発注用</div>
 
     <h3>1. 販売方法・価格</h3>
+    <div class="boxdef">コンセプトボックス（ヘッド＋ワックス＋ポストカード）を <b>${total}種${secLabel()}</b>。</div>
     ${renderSalesDef()}
 
     <h3>2. スタンプヘッド仕様</h3>
