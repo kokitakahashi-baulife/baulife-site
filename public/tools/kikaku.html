@@ -275,7 +275,7 @@ function defaultData(){
   return {
     fileName:"", creator:"", ip:"",
     contractDate:"",
-    theme:"", themeKeywords:"", themeImg:"", boxImg:DEFAULT_BOX_IMG,
+    theme:"", themeName:"", themeSub:"", conceptNotes:"", themeKeywords:"", themeImg:"", boxImg:DEFAULT_BOX_IMG,
     itemCount:4,
     secretEnabled:true,
     sales:{complete:true, single:true},
@@ -663,33 +663,75 @@ function applyAiJson(text){
   alert("AIのたたき台を反映しました。内容を確認・調整してください。");
 }
 function buildThemePrompt(){
-  const ip=(data.ip||data.creator)||"（IP・作品名を記入）";
-  let when="（例：2025年10月／秋）";
-  if(data.contractDate){ const d=new Date(data.contractDate+"T00:00:00"); if(!isNaN(d.getTime())) when=d.getFullYear()+"年"+(d.getMonth()+1)+"月"; }
-  const kw=(data.themeKeywords||"").trim()||"（例：月・ススキ・夜長）";
+  const ip=(data.ip||data.creator)||"〈ここにIP名〉";
+  const hint=(data.themeKeywords||"").trim()||"なし（あれば最優先で反映）";
   return [
-    "以下の条件で、コラボ・シーリングスタンプの「全体コンセプト（テーマ）説明文」を1つ書いてください。",
+    "あなたは「売れるシーリングスタンプ（封蝋）」を熟知したコラボ企画者 兼 コピーライターです。",
+    "指定されたIPを調べ、そのIPでしか成立しないコラボ・コンセプト一式を作ってください。",
+    "（本件はシーリングスタンプのコラボ商品。文章はSNS告知やポストカードに使います。）",
     "",
-    "# 入力（必要ならここを書き換えてください）",
+    "# 入力",
     "IP・作品名："+ip,
-    "時期・エディション："+when,
-    "テーマのキーワード："+kw,
+    "任意の指定："+hint,
     "",
-    "# まず調べる（web検索できる場合）",
-    "・このIPの世界観・作風、ファンが特に好きにしている点を調べ、テーマに反映する。",
+    "# 手順",
+    "1. リサーチ（web検索できる場合は必ず実施）：",
+    "   - このIPの世界観・作風、ファンが特に好きにしている点、",
+    "     このIPだからこそ集めたくなる/贈りたくなる固有の理由。",
+    "   - 現在の時期・季節・トレンドも把握する（＝今ほしくなる風味づけのヒント。主役ではない）。",
+    "2. 差別化ポイントの特定：",
+    "   このIPが“他の作品・他のキャラ”と決定的に違う点を1つ言い切る（distinctive_hook）。",
+    "   テーマ・コピー・イラスト方向は、すべてこの一点に寄せる。時期はあくまで軽い風味。",
+    "3. 出力：下記JSONを1つだけ出力。",
     "",
-    "# 出力の型（必ず守る）",
-    "・3文・約130〜160字。やわらかく丁寧な温度（クリエイターも読みます）。",
-    "・1文目：テーマ名を「」で出し、「何を届けるか」を“封をして想いを届ける”シーリングスタンプの行為に結びつけて一言で。",
-    "・2文目：そのIPらしさ（作風・ファンが好きな点）を、封蝋スタンプにどう活かすかで表現。",
-    "・3文目：通年で使える定番／手紙・ギフト・ラッピングで使える／集めたくなる、など商品としての狙い。",
+    "# 良いテーマの条件",
+    "- そのIPでしか成立しないこと。他のIPに置き換えて成立するテーマは【失格】。",
+    "- 一目でそのIPだと分かる象徴性を持つこと。",
+    "- 色を塗り分けられる/細部のある要素を含み、グッズとして映える余地があること。",
     "",
-    "# 例（この長さ・温度に合わせる）",
-    "「くしゃかわ便り」。なかまたちが、それぞれのやり方で誰かへ想いを届ける——封をして気持ちを送るシーリングスタンプの行為を、くしゃかわのやさしい世界で包みます。素朴であたたかな線と小さなモチーフを活かし、手紙やギフト、ラッピングに一年中寄り添う定番シリーズとして設計します。",
+    "# 品質ルール（必ず守る）",
+    "- 事実に基づく。情報が乏しい項目は「（推測）」と明記し、確度の低い断定はしない。",
+    "- 【差し替え不能テスト】書いたら自問：「これは他のIP・他のキャラにそのまま使い回せないか？」",
+    "  使い回せるなら、そのIPでしか成立しない具体（固有のキャラ性・作風・独自の空気感 等）に書き直す。",
+    "- subcopy と description は SNS告知・ポストカードに使う【公開用の文章】。",
+    "  詩的だが具体的で、どの商品にも言える汎用の決まり文句（クリシェ）を避ける。",
+    "- description は約180〜220字。「集めたくなる」「商品の狙い」など内部向けの言葉は書かない。",
+    "- name は10〜16字、subcopy は15字前後。あいさつや説明は書かず、JSONだけを出力。",
     "",
-    "# 出力ルール",
-    "・あいさつや説明は書かず、テーマ説明文の本文だけを出力。"
+    "# 出力するJSON",
+    "{",
+    '  "distinctive_hook": "このIPが他の作品と決定的に違う独自の魅力（1文）",',
+    '  "research": {',
+    '    "worldview_keywords": ["世界観を表すキーワード3〜6個"],',
+    '    "fan_love": "ファンが特に好きにしている点（固有性を出す・1〜2文）",',
+    '    "collection_gift_angle": "このIPだからこそ集めたくなる/贈りたくなる固有の理由（1〜2文）"',
+    '  },',
+    '  "theme": {',
+    '    "name": "テーマ名（一言・10〜16字）",',
+    '    "subcopy": "サブコピー（1行・15字前後・公開用）",',
+    '    "description": "公開用の説明文（約180〜220字・詩的かつ具体・クリシェ回避）"',
+    '  },',
+    '  "illustration_hint": "書き下ろしイラストの方向性のヒント：このIPの世界観を魅力的にグッズ化するために、どんなシーンを描いてもらうと良いか。色味・背景の雰囲気まで含め、distinctive_hook が伝わる内容にする。"',
+    "}"
   ].join("\n");
+}
+function applyThemeJson(text){
+  let o;
+  try{ o=JSON.parse((text||"").trim()); }catch(e){ alert("JSONの読み取りに失敗しました。AIの出力から { ... } のJSONだけを貼り付けてください。"); return; }
+  if(!o||typeof o!=="object"||Array.isArray(o)){ alert("JSONオブジェクト（{ ... }）を貼り付けてください。"); return; }
+  const t=o.theme||{}, r=o.research||{};
+  if(t.name) data.themeName=String(t.name);
+  if(t.subcopy) data.themeSub=String(t.subcopy);
+  if(t.description) data.theme=String(t.description);
+  const notes=[];
+  if(o.distinctive_hook) notes.push("■ 差別化ポイント\n"+o.distinctive_hook);
+  if(Array.isArray(r.worldview_keywords)&&r.worldview_keywords.length) notes.push("■ 世界観キーワード\n"+r.worldview_keywords.join("、"));
+  if(r.fan_love) notes.push("■ ファンが好きな点\n"+r.fan_love);
+  if(r.collection_gift_angle) notes.push("■ 集めたくなる/ギフトの切り口\n"+r.collection_gift_angle);
+  if(o.illustration_hint) notes.push("■ 書き下ろしの方向性\n"+o.illustration_hint);
+  if(notes.length) data.conceptNotes=notes.join("\n\n");
+  buildForm(); render(); autosave();
+  alert("テーマを反映しました。内容を確認・調整してください。");
 }
 
 function itemForm(it,title,secret){
@@ -762,13 +804,20 @@ function buildForm(){
 
   fs=fset("b","② 設計シート：全体コンセプト（HOMU×クリエイターで合意）");
   fs.appendChild(el("div","note","<b>担当者が考えて埋めるページ。</b>埋めれば、そのままクリエイターへの<b>書き下ろし依頼</b>になります。"));
-  fs.appendChild(field("全体コンセプト（テーマ）の説明文","theme",data,true,"例：「くしゃかわ便り」— なかまたちが、それぞれのやり方で誰かへの想いを届ける。通年で使える定番として設計。各コンセプトボックスはこのテーマの下でつくります。"));
-  fs.appendChild(field("テーマのキーワード（AI生成用・任意）","themeKeywords",data,false,"例：月・ススキ・夜長・お月見"));
+  fs.appendChild(field("任意の指定・ヒント（正式名称/URL/この季節で 等・任意）","themeKeywords",data,false,"空ならAIにお任せ。例：正式表記 まいにちパン子 / クリスマスで"));
   const tpWrap=el("div"); tpWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
-  tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 テーマ説明文をAIで作る</b><br>ボタンでプロンプトをコピー → web対応のClaude/ChatGPTに貼って実行（IP・時期・キーワードは貼った先で微調整OK）→ 出た文章を上の説明文欄に貼り付け。"));
-  const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="プロンプトをコピー"; tpBtn.style.cssText="margin-top:4px;display:block;";
-  tpBtn.onclick=function(){ const p=buildThemePrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ tpBtn.textContent="✓ コピーしました"; setTimeout(function(){tpBtn.textContent="プロンプトをコピー";},1500); }, function(){ window.prompt("コピーして Claude に貼ってください", p); }); } else { window.prompt("コピーして Claude に貼ってください", p); } };
-  tpWrap.appendChild(tpBtn); fs.appendChild(tpWrap);
+  tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 IP名からテーマを作る</b><br>① プロンプトをコピー → web対応のClaudeに貼って実行 → ② 出てきたJSONを下欄に貼って反映。IP名（案件情報）が自動で入ります。"));
+  const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="① プロンプトをコピー"; tpBtn.style.cssText="margin:4px 0;display:block;";
+  const tjTa=el("textarea"); tjTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; tjTa.style.minHeight="56px";
+  tpBtn.onclick=function(){ const p=buildThemePrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ tpBtn.textContent="✓ コピーしました"; setTimeout(function(){tpBtn.textContent="① プロンプトをコピー";},1500); }, function(){ window.prompt("コピーして Claude に貼ってください", p); }); } else { window.prompt("コピーして Claude に貼ってください", p); } };
+  tpWrap.appendChild(tpBtn); tpWrap.appendChild(tjTa);
+  const tjBtn=el("button","btn"); tjBtn.type="button"; tjBtn.textContent="② 貼り付けを反映"; tjBtn.style.marginTop="6px";
+  tjBtn.onclick=function(){ applyThemeJson(tjTa.value); };
+  tpWrap.appendChild(tjBtn); fs.appendChild(tpWrap);
+  fs.appendChild(field("テーマ名（一言）","themeName",data,false,"例：ちょっぴりきみょうな、なかまたち"));
+  fs.appendChild(field("サブコピー（1行）","themeSub",data,false,"例：くしゃっと、いとおしい。"));
+  fs.appendChild(field("説明文（公開用・SNS/ポストカード裏）","theme",data,true,"約180〜220字。上のAIボタンで自動生成できます。"));
+  fs.appendChild(field("コンセプトの根拠・書き下ろしの方向（内部メモ）","conceptNotes",data,true,"AI反映で自動入力（差別化点・リサーチ・書き下ろし方向）。社内用。"));
   fs.appendChild(el("label","fl","テーマ／ポストカードのキーイラスト（縦・パッケージにも使用｜画像 or PDF）"));
   fs.appendChild(imgSlot("キーイラスト",()=>data.themeImg,v=>data.themeImg=v,"portrait",true));
   fs.appendChild(el("div","hint","このイラストがパッケージにも使われ、各コンセプトボックスを考える際のテーマの基準になります。"));
@@ -957,6 +1006,7 @@ function renderB(){
     <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx()} × HOMU ／ 書き下ろしのお題と商品構成</div>
 
     <h3>1. 全体コンセプト（テーマ）${ownTag("both")}</h3>
+    ${data.themeName?('<div class="hero" style="font-size:16pt">「'+esc(data.themeName)+'」'+(data.themeSub?'<br><span class="heros">'+esc(data.themeSub)+'</span>':'')+'</div>'):''}
     <p>${ans(data.theme)}</p>
     ${pvMedia(data.themeImg,"テーマ／ポストカードのキーイラスト（パッケージにも使用）","portrait")}
 
