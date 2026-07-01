@@ -505,10 +505,18 @@ function initApp(){
 }
 
 /* ========== ドキュメント切替 & 印刷 ========== */
+let activeDoc="a";
+function filterFormByTab(){
+  document.querySelectorAll("#form fieldset").forEach(function(fe){
+    const t=fe.dataset.tab;
+    fe.style.display=(!t||t==="common"||t===activeDoc)?"":"none";
+  });
+}
 document.getElementById("seg").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b)return;
   [...document.querySelectorAll("#seg button")].forEach(x=>x.classList.toggle("active",x===b));
   ["a","b"].forEach(k=>{ document.getElementById("doc-"+k).style.display = b.dataset.doc===k?"block":"none"; });
+  activeDoc=b.dataset.doc; filterFormByTab();
 });
 function exportPDF(){
   const active=document.querySelector("#seg button.active").dataset.doc;
@@ -605,6 +613,7 @@ function imgSlot(label, getVal, setVal, kind, allowPdf){
 
 /* ========== フォーム部品 ========== */
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;}
+function fset(tab,legend){const fs=el("fieldset"); fs.dataset.tab=tab; fs.appendChild(el("legend",null,legend)); return fs;}
 function field(label,key,obj,ta,ph){
   const l=el("label","fl",label); const inp=ta?el("textarea"):el("input");
   if(!ta)inp.type="text"; inp.value=obj[key]||""; if(ph) inp.placeholder=ph;
@@ -683,12 +692,12 @@ function itemForm(it,title,secret){
 function buildForm(){
   const F=document.getElementById("form"); F.innerHTML="";
 
-  let fs=el("fieldset"); fs.appendChild(el("legend",null,"案件情報（全資料で共通）"));
+  let fs=fset("common","案件情報（全資料で共通）");
   fs.appendChild(field("クリエイター名","creator",data));
   fs.appendChild(field("IP / キャラ名","ip",data));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"① 提案資料（毎回ほぼ定型）"));
+  fs=fset("a","① 提案資料（毎回ほぼ定型）");
   fs.appendChild(el("div","note","この資料は<b>安心してもらい合意を取る</b>ためのもの。中身はほぼ定型で、差し込むのは下の条件と上の案件情報だけ。"));
   const cdW=el("div"); cdW.appendChild(el("label","fl","契約締結予定日（スケジュールの基準日）"));
   const cdInp=el("input"); cdInp.type="date"; cdInp.value=data.contractDate||"";
@@ -697,7 +706,7 @@ function buildForm(){
   fs.appendChild(el("div","hint","ライセンス料は固定 "+LICENSE_RATE+"%（税抜）で資料に記載されます。"));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料に記載）"));
+  fs=fset("a","販売方法・価格（提案資料に記載）");
   fs.appendChild(el("div","note","<b>コンセプトボックス</b>＝スタンプヘッド・コラボワックス・ポストカードが<b>1点ずつ</b>入った1セット。これを<b>複数種類</b>つくります。"));
   const icW=el("div"); icW.appendChild(el("label","fl","通常のコンセプトボックス 種類数"));
   const icInp=el("input"); icInp.type="number"; icInp.min="1"; icInp.max="6"; icInp.value=data.itemCount;
@@ -722,7 +731,7 @@ function buildForm(){
   });
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：全体コンセプト（HOMU×クリエイターで合意）"));
+  fs=fset("b","② 設計シート：全体コンセプト（HOMU×クリエイターで合意）");
   fs.appendChild(el("div","note","<b>担当者が考えて埋めるページ。</b>埋めれば、そのままクリエイターへの<b>書き下ろし依頼</b>になります。"));
   fs.appendChild(field("全体コンセプト（テーマ）の説明文","theme",data,true,"例：「くしゃかわ便り」— なかまたちが、それぞれのやり方で誰かへの想いを届ける。通年で使える定番として設計。各コンセプトボックスはこのテーマの下でつくります。"));
   fs.appendChild(el("label","fl","テーマ／ポストカードのキーイラスト（縦・パッケージにも使用｜画像 or PDF）"));
@@ -730,14 +739,14 @@ function buildForm(){
   fs.appendChild(el("div","hint","このイラストがパッケージにも使われ、各コンセプトボックスを考える際のテーマの基準になります。"));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：作品について"));
+  fs=fset("b","② 設計シート：作品について");
   fs.appendChild(el("div","note","「作品の核」はHOMUが観察して記入。<b>ファンが求めること・NG／ご要望は、クリエイターさんにヒアリング</b>して埋めます（今のHOMUだけでは掴みにくいため）。"));
   fs.appendChild(field("作品の核・大切にしたい魅力（HOMU記入）","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。"));
   fs.appendChild(field("ファンが反応・期待していること（ヒアリング）","fans",data.overall,true,"クリエイターさんに聞いて記入。SNSの反応など。"));
   fs.appendChild(field("NG・ご要望（ヒアリング）","ng",data.overall,true,"やりたくない改変・大事にしたい点・希望など。"));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：コンセプトボックスの構成とお題"));
+  fs=fset("b","② 設計シート：コンセプトボックスの構成とお題");
   fs.appendChild(el("div","note","<b>役割で差をつける</b>のが勝ち筋（プルダウンで選択）：世界観の顔／3D彫りの立体／セパレート・色分け映え／入門・量産。<br>※ 売れるデザインのコツ（勝ち筋）は、設計シートPDFに自動でクリエイター向けアドバイスとして載ります。"));
   const aiBox=el("div"); aiBox.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--tint);";
   aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 AIでたたき台を作る（任意）</b><br>「プロンプトをコピー」→ ChatGPT等に貼って実行 → 出てきたJSONを下欄に貼って「反映」。IP・テーマを先に入れておくと精度が上がります。"));
@@ -765,12 +774,12 @@ function buildForm(){
   if(data.secretEnabled) fs.appendChild(itemForm(data.secret,"シークレット枠",true));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"ポストカード（付随）"));
+  fs=fset("b","ポストカード（付随）");
   fs.appendChild(chkField("各コンセプトボックスにポストカードを付ける","postcardIncluded",data));
   fs.appendChild(field("ポストカードのメモ","postcardNote",data,true));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"スケジュール（提案資料に記載・自動計算）"));
+  fs=fset("a","スケジュール（提案資料に記載・自動計算）");
   const dateSpans=[];
   function refreshSchedule(){ let cum=0; data.schedule.forEach(function(s,i){ cum+=parseInt(s.interval,10)||0; if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,cum) || "（基準日を入力）"; }); }
   const toggle=el("button","btn"); toggle.type="button"; toggle.style.cssText="margin:2px 0 4px;font-size:12px;";
@@ -792,6 +801,8 @@ function buildForm(){
   });
   refreshSchedule(); syncToggle(); fs.appendChild(editWrap);
   F.appendChild(fs);
+
+  filterFormByTab();
 }
 
 /* ========== プレビュー描画 ========== */
