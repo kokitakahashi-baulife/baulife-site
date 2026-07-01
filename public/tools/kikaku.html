@@ -263,6 +263,7 @@ const DESIGN_ADVICE=[
 ];
 const LICENSE_RATE="10"; // ライセンス料は固定10%（税抜）
 const PRESENT_NOTE="一部のスタンプヘッド等を、フォロワーへのプレゼント企画で配布します。";
+const DEFAULT_BOX_IMG="/tools/concept-box-default.webp"; // コンセプトボックスの既定イメージ（提案資料）
 
 function blankItem(){return {
   ttl:"", role:"", dim:"", shape:"シルエット型", motif:"",
@@ -274,7 +275,7 @@ function defaultData(){
   return {
     fileName:"", creator:"", ip:"",
     contractDate:"",
-    theme:"", themeImg:"", boxImg:"",
+    theme:"", themeImg:"", boxImg:DEFAULT_BOX_IMG,
     itemCount:4,
     secretEnabled:true,
     sales:{complete:true, single:true},
@@ -440,6 +441,7 @@ function normalize(){
   data.prices=Object.assign({complete:"",single:""},data.prices||{});
   if(!Array.isArray(data.schedule)||!data.schedule.length) data.schedule=SCHED.map(s=>({label:s.label,interval:s.interval}));
   data.itemCount=Math.min(6,Math.max(1,parseInt(data.itemCount,10)||1));
+  if(!data.boxImg) data.boxImg=DEFAULT_BOX_IMG;
 }
 async function openProject(id, modifiedTime){
   setStatus(""); hideConflict(); hideSaveError(); saveFailCount=0;
@@ -693,9 +695,6 @@ function buildForm(){
   cdInp.oninput=function(){ data.contractDate=cdInp.value; render(); autosave(); };
   cdW.appendChild(cdInp); fs.appendChild(cdW);
   fs.appendChild(el("div","hint","ライセンス料は固定 "+LICENSE_RATE+"%（税抜）で資料に記載されます。"));
-  fs.appendChild(el("label","fl","コンセプトボックスのイメージ画像（提案資料に掲載）"));
-  fs.appendChild(imgSlot("コンセプトボックスのイメージ",()=>data.boxImg,v=>data.boxImg=v,"free",false));
-  fs.appendChild(el("div","hint","商品セットの写真やイメージ。未入力なら「画像が入ります」の枠が資料に表示されます。"));
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料に記載）"));
