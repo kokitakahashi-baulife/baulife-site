@@ -107,6 +107,9 @@
   .sheet .advice{background:#f7f2ea;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0 12px;}
   .sheet .advice ul{margin:0;}
   .sheet .boxdef{background:var(--tint);border-radius:8px;padding:9px 12px;font-size:10pt;margin:6px 0 10px;}
+  .sheet .hero{background:var(--tint);border:1.5px solid var(--red);border-radius:10px;padding:12px 16px;margin:6px 0 12px;font-size:14pt;font-weight:700;color:var(--ink);line-height:1.5;}
+  .sheet .hero b{color:var(--red);font-size:17pt;}
+  .sheet .hero .heros{font-size:10.5pt;font-weight:500;color:var(--gray);}
   .sheet table.spec{width:100%;border-collapse:collapse;font-size:9.5pt;margin:6px 0 12px;}
   .sheet table.spec th,.sheet table.spec td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top;}
   .sheet table.spec th{background:var(--red);color:#fff;font-weight:600;font-size:9pt;white-space:nowrap;}
@@ -250,7 +253,6 @@ const SCHED = [
 const CIRCLED=["①","②","③","④","⑤","⑥"];
 const DIMS=["","2D","3D"];
 const SHAPES=["","丸型","四角型","シルエット型"];
-const SIZES=["","15mm","25mm","30mm","40mm"];
 const ROLE_OPTIONS=["","世界観の顔","3D彫りの立体","セパレート／色分け映え","入門・量産","その他"];
 // HOMU → クリエイターへ渡す「売れるデザインの勝ち筋」（設計シートに常時掲載）
 const DESIGN_ADVICE=[
@@ -263,7 +265,7 @@ const LICENSE_RATE="10"; // ライセンス料は固定10%（税抜）
 const PRESENT_NOTE="一部のスタンプヘッド等を、フォロワーへのプレゼント企画で配布します。";
 
 function blankItem(){return {
-  ttl:"", role:"", dim:"", shape:"", size:"", motif:"", separate:false,
+  ttl:"", role:"", dim:"", shape:"シルエット型", motif:"",
   illust:"", brief:"", price:"", qty:"",
   waxText:"", wax:"", waxColors:null,
   genga:"", stamp:"", postcard:""
@@ -273,10 +275,10 @@ function defaultData(){
     fileName:"", creator:"", ip:"",
     contractDate:"",
     theme:"", themeImg:"", boxImg:"",
-    itemCount:3,
-    secretEnabled:false, secretRate:"",
-    sales:{blind:true, complete:true, single:false},
-    prices:{blind:"", complete:"", single:""},
+    itemCount:4,
+    secretEnabled:true,
+    sales:{complete:true, single:true},
+    prices:{complete:"", single:""},
     postcardIncluded:true,
     postcardNote:"各コンセプトボックスに、対になるポストカード（背景台紙）を1枚ずつ入れます。",
     overall:{core:"", fans:"", ng:""},
@@ -434,10 +436,8 @@ function normalize(){
   data.items=data.items.map(it=>Object.assign(blankItem(),it||{}));
   data.secret=Object.assign(blankItem(),data.secret||{});
   data.overall=Object.assign({core:"",fans:"",ng:""},data.overall||{});
-  data.sales=Object.assign({blind:true,complete:true,single:false},data.sales||{});
-  data.prices=Object.assign({blind:"",complete:"",single:""},data.prices||{});
-  if(data.blindPrice&&!data.prices.blind) data.prices.blind=data.blindPrice;       // 旧データ移行
-  if(data.completePrice&&!data.prices.complete) data.prices.complete=data.completePrice;
+  data.sales=Object.assign({complete:true,single:true},data.sales||{});
+  data.prices=Object.assign({complete:"",single:""},data.prices||{});
   if(!Array.isArray(data.schedule)||!data.schedule.length) data.schedule=SCHED.map(s=>({label:s.label,interval:s.interval}));
   data.itemCount=Math.min(6,Math.max(1,parseInt(data.itemCount,10)||1));
 }
@@ -622,14 +622,43 @@ function chkField(label,key,obj){
 }
 function ownTag(kind){ const t=kind==="homu"?"HOMU記入":kind==="hear"?"クリエイターにヒアリング":"HOMU×クリエイターで合意"; return '<span class="own '+kind+'">'+t+'</span>'; }
 
+function buildAiPrompt(){
+  const total=data.itemCount+secretCount();
+  const roles=ROLE_OPTIONS.filter(Boolean).join("／");
+  return [
+    "あなたはシーリングスタンプのコラボ企画のプロです。以下の条件で、コンセプトボックス"+total+"種のたたき台を考えてください。",
+    "IP・作品名："+((data.ip||data.creator)||"（未記入）"),
+    "テーマ："+(data.theme||"（未記入）"),
+    "コンセプトボックス＝スタンプヘッド1点＋ワックス＋ポストカード。各種、クリエイターに書き下ろしイラストを1点ずつ依頼します。",
+    "",
+    "【売れるデザインの勝ち筋（必ず踏まえる）】"
+  ].concat(DESIGN_ADVICE.map(function(a,i){return (i+1)+". "+a;})).concat([
+    "",
+    "【出力ルール】",
+    "・役割は互いに差をつける（"+roles+" のいずれか）。",
+    "・形状はシルエット型・独自外形を中心に。",
+    "・あいさつや説明は書かず、次のJSON配列だけを出力（"+total+"要素）。",
+    '[{"ttl":"商品名の候補","role":"役割","dim":"2D または 3D","shape":"丸型/四角型/シルエット型","motif":"モチーフ・構図の方向(ひとこと)","brief":"クリエイターへのお題(自由度も明記)"}]'
+  ]).join("\n");
+}
+function applyAiJson(text){
+  let arr;
+  try{ arr=JSON.parse((text||"").trim()); }catch(e){ alert("JSONの読み取りに失敗しました。AIの出力から [ ... ] のJSON配列だけを貼り付けてください。"); return; }
+  if(!Array.isArray(arr)){ alert("JSON配列（[ ... ]）を貼り付けてください。"); return; }
+  function fill(it,o){ if(!o||typeof o!=="object")return; ["ttl","role","dim","shape","motif","brief"].forEach(function(k){ if(o[k]!=null&&o[k]!=="") it[k]=String(o[k]); }); }
+  for(let i=0;i<data.itemCount && i<arr.length;i++) fill(data.items[i],arr[i]);
+  if(data.secretEnabled && arr.length>data.itemCount) fill(data.secret,arr[data.itemCount]);
+  buildForm(); render(); autosave();
+  alert("AIのたたき台を反映しました。内容を確認・調整してください。");
+}
+
 function itemForm(it,title,secret){
   const box=el("div","item-form"+(secret?" secret":"")); box.appendChild(el("div","ihead",title));
   box.appendChild(field(secret?"シークレットの名称（社内用）":"お題タイトル（商品名の候補）","ttl",it));
   box.appendChild(selectField("役割（プルダウン）","role",it,ROLE_OPTIONS));
   const r1=el("div","row");
-  r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES), selectField("サイズ","size",it,SIZES));
+  r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES));
   box.appendChild(r1);
-  box.appendChild(chkField("セパレート（分離）構造にする","separate",it));
   box.appendChild(field("モチーフ・構図の方向（ひとこと）","motif",it,false,"例：麦の穂と小鳥を独自シルエットで"));
   const r2=el("div","row");
   r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,"例：2800"), field("製造数量見込(社内)","qty",it,false,"例：200"));
@@ -671,21 +700,16 @@ function buildForm(){
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料に記載）"));
   fs.appendChild(el("div","note","<b>コンセプトボックス</b>＝スタンプヘッド・コラボワックス・ポストカードが<b>1点ずつ</b>入った1セット。これを<b>複数種類</b>つくります。"));
-  const icW=el("div"); icW.appendChild(el("label","fl","コンセプトボックスの種類数（通常）"));
+  const icW=el("div"); icW.appendChild(el("label","fl","通常のコンセプトボックス 種類数"));
   const icInp=el("input"); icInp.type="number"; icInp.min="1"; icInp.max="6"; icInp.value=data.itemCount;
   icInp.oninput=function(){ data.itemCount=Math.min(6,Math.max(1,parseInt(icInp.value,10)||1)); buildForm(); render(); autosave(); };
-  icW.appendChild(icInp); icW.appendChild(el("div","hint","下の「設計シート」の種類数と連動します（1〜6）。")); fs.appendChild(icW);
+  icW.appendChild(icInp); fs.appendChild(icW);
   const secW=el("label","chk"); const secC=el("input"); secC.type="checkbox"; secC.checked=!!data.secretEnabled;
   secC.onchange=function(){ data.secretEnabled=secC.checked; buildForm(); render(); autosave(); };
-  secW.append(secC, document.createTextNode("シークレットあり（ブラインドの中のレア枠）")); fs.appendChild(secW);
-  if(data.secretEnabled){
-    const rateW=el("div"); rateW.appendChild(el("label","fl","シークレット当選確率（1/n の n）"));
-    const rateI=el("input"); rateI.type="number"; rateI.min="1"; rateI.placeholder="例）10"; rateI.value=data.secretRate||"";
-    rateI.oninput=function(){ data.secretRate=rateI.value; render(); autosave(); };
-    rateW.appendChild(rateI); fs.appendChild(rateW);
-  }
+  secW.append(secC, document.createTextNode("シークレット枠あり（＋1種）")); fs.appendChild(secW);
+  fs.appendChild(el("div","note","合計 <b>"+(data.itemCount+secretCount())+"種</b>"+(secretCount()?"（通常"+data.itemCount+"種 ＋ シークレット"+secretCount()+"種）":"")+"　＝　クリエイターへの書き下ろし依頼 "+(data.itemCount+secretCount())+"種。"));
   fs.appendChild(el("div","hint","販売する形にチェックを入れ、それぞれの単価を入力してください。"));
-  [["blind","ブラインドボックス","1箱の単価（円）"],["complete","コンプリートセット","全種セットの単価（円）"],["single","単品販売","1点の単価（円）"]].forEach(function(p){
+  [["complete","コンプリートセット","全種セットの単価（円）"],["single","単品販売","1種の単価（円）"]].forEach(function(p){
     const chk=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=!!data.sales[p[0]];
     c.onchange=function(){ data.sales[p[0]]=c.checked; buildForm(); render(); autosave(); };
     chk.append(c, document.createTextNode(p[1])); fs.appendChild(chk);
@@ -715,6 +739,15 @@ function buildForm(){
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：コンセプトボックスの構成とお題"));
   fs.appendChild(el("div","note","<b>役割で差をつける</b>のが勝ち筋（プルダウンで選択）：世界観の顔／3D彫りの立体／セパレート・色分け映え／入門・量産。<br>※ 売れるデザインのコツ（勝ち筋）は、設計シートPDFに自動でクリエイター向けアドバイスとして載ります。"));
+  const aiBox=el("div"); aiBox.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--tint);";
+  aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 AIでたたき台を作る（任意）</b><br>「プロンプトをコピー」→ ChatGPT等に貼って実行 → 出てきたJSONを下欄に貼って「反映」。IP・テーマを先に入れておくと精度が上がります。"));
+  const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="プロンプトをコピー"; cpBtn.style.cssText="margin:6px 0;display:block;";
+  const aiTa=el("textarea"); aiTa.placeholder="AIが出力したJSON（[ ... ]）をここに貼り付け"; aiTa.style.minHeight="56px";
+  cpBtn.onclick=function(){ const p=buildAiPrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ cpBtn.textContent="✓ コピーしました"; setTimeout(function(){cpBtn.textContent="プロンプトをコピー";},1500); }, function(){ aiTa.value=p; }); } else { aiTa.value=p; } };
+  aiBox.appendChild(cpBtn); aiBox.appendChild(aiTa);
+  const apBtn=el("button","btn"); apBtn.type="button"; apBtn.textContent="貼り付けを反映"; apBtn.style.marginTop="6px";
+  apBtn.onclick=function(){ applyAiJson(aiTa.value); };
+  aiBox.appendChild(apBtn); fs.appendChild(aiBox);
   for(let i=0;i<data.itemCount;i++){
     const block=itemForm(data.items[i],"コンセプトボックス "+CIRCLED[i]);
     if(data.itemCount>1){
@@ -775,12 +808,9 @@ function pvMedia(v,cap,kind){
 
 function renderSalesDef(){
   const total=data.itemCount, sc=secretCount();
-  let blindDesc="全"+(total+sc)+"種"+(sc?"（通常"+total+"種＋シークレット"+sc+"種）":"")+"・1箱共通価格";
-  if(sc && data.secretRate) blindDesc+="／シークレット当選確率 1/"+esc(data.secretRate);
   const modes=[];
-  if(data.sales.blind)    modes.push({nm:"ブラインドボックス", dsc:blindDesc, pr:data.prices.blind});
-  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+total+"種・"+total+"点セット（被りなし）", pr:data.prices.complete});
-  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"1点から購入できる", pr:data.prices.single});
+  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+(total+sc)+"種セット（被りなし）", pr:data.prices.complete});
+  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"1種から購入できる", pr:data.prices.single});
   const cards=modes.length
     ? '<div class="price-cards">'+modes.map(function(m){ return '<div class="price-card"><div class="nm">'+esc(m.nm)+'</div><div class="dsc">'+m.dsc+'</div>'+(m.pr?'<div class="pr">¥'+esc(m.pr)+'</div>':'')+'</div>'; }).join('')+'</div>'
     : '<p class="muted">（販売方法を選択してください）</p>';
@@ -794,7 +824,7 @@ function scheduleHtml(){
 /* ---- ① 提案資料（定型） ---- */
 function renderA(){
   const creator=esc(data.creator)||"〈クリエイター名〉";
-  const total=data.itemCount, rate=LICENSE_RATE;
+  const total=data.itemCount, sc=secretCount(), rate=LICENSE_RATE;
   document.getElementById("pv-a").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
     <h2 class="tt">HOMU × ${creator} 様</h2>
@@ -812,8 +842,8 @@ function renderA(){
     </ul>
 
     <h3>3. 作る商品 ＝「コンセプトボックス」</h3>
-    <div class="boxdef">1つの<b>コンセプトボックス</b>には、<b>スタンプヘッド・コラボワックス・ポストカードが1点ずつ</b>入ります。この「1セット＝1コンセプトボックス」を1単位として、複数種類つくります。</div>
-    <p>今回は、この<b>コンセプトボックスを ${total}種${secLabel()}</b> つくることを前提に進めます（テーマは共通で、中身のデザインが種類ごとに変わります）。</p>
+    <div class="hero">商品：コンセプトボックス <b>全${total+sc}種</b>${sc?"（通常"+total+"種 ＋ シークレット"+sc+"種）":""}<br><span class="heros">＝ ${creator}様に書き下ろしいただくイラスト ${total+sc}種</span></div>
+    <div class="boxdef">1つの<b>コンセプトボックス</b>には、<b>スタンプヘッド・コラボワックス・ポストカードが1点ずつ</b>入ります。テーマは共通で、中身のデザインが種類ごとに変わります。</div>
     ${pvMedia(data.boxImg,"コンセプトボックスのイメージ","box")}
 
     <h3>4. 販売方法</h3>
@@ -861,7 +891,6 @@ function itemBriefPV(it,title,secret){
   if(it.role) specs.push("<b>役割</b> "+esc(it.role));
   if(it.dim) specs.push("<b>形態</b> "+esc(it.dim));
   if(it.shape) specs.push("<b>形状</b> "+esc(it.shape));
-  if(it.separate) specs.push("<b>セパレート</b>");
   if(it.illust) specs.push("<b>必要イラスト</b> "+esc(it.illust));
   return `<div class="pcard${secret?" secret":""}">
     <div class="ph">${title}${secret?"（レア枠）":"："+(esc(it.ttl)||"（お題タイトル未記入）")}</div>
@@ -883,7 +912,7 @@ function renderB(){
 
     <h3>1. 全体コンセプト（テーマ）${ownTag("both")}</h3>
     <p>${ans(data.theme)}</p>
-    ${data.themeImg?pvMedia(data.themeImg,"テーマ／ポストカードのキーイラスト（パッケージにも使用）","portrait"):""}
+    ${pvMedia(data.themeImg,"テーマ／ポストカードのキーイラスト（パッケージにも使用）","portrait")}
 
     <h3>2. デザインのポイント（HOMUより）<span class="own homu">HOMU → クリエイターへ</span></h3>
     <p>HOMUは「シーリングスタンプとして売れる・映えるデザイン」の知見があります。書き下ろしの参考にしてください。</p>
