@@ -260,6 +260,8 @@ const DESIGN_ADVICE=[
   "立体（3D彫り）に向くのは、モチーフの重なりが少なく高低差を出せる構図。平面（2D）は線画や複数キャラの並びが得意です。",
   "全部を同じ雰囲気にせず“役割”で差をつけると、全種そろえたくなります（世界観の顔／立体で魅せる／色分けで映える／初心者向けの入門）。",
 ];
+const LICENSE_RATE="10"; // ライセンス料は固定10%（税抜）
+const PRESENT_NOTE="一部のスタンプヘッド等を、フォロワーへのプレゼント企画で配布します。";
 
 function blankItem(){return {
   ttl:"", role:"", dim:"", shape:"", size:"", motif:"", separate:false,
@@ -269,14 +271,13 @@ function blankItem(){return {
 };}
 function defaultData(){
   return {
-    fileName:"", creator:"", ip:"", staff:"",
-    contractDate:"", licenseRate:"10",
+    fileName:"", creator:"", ip:"",
+    contractDate:"",
     theme:"", themeImg:"",
     itemCount:3,
     secretEnabled:false, secretRate:"",
-    sales:{blind:true, complete:true, single:false, assort:false},
-    blindPrice:"", completePrice:"",
-    presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
+    sales:{blind:true, complete:true, single:false},
+    prices:{blind:"", complete:"", single:""},
     postcardIncluded:true,
     postcardNote:"各コンセプトボックスに、対になるポストカード（背景台紙）を1枚ずつ入れます。",
     overall:{core:"", fans:"", ng:""},
@@ -434,7 +435,10 @@ function normalize(){
   data.items=data.items.map(it=>Object.assign(blankItem(),it||{}));
   data.secret=Object.assign(blankItem(),data.secret||{});
   data.overall=Object.assign({core:"",fans:"",ng:""},data.overall||{});
-  data.sales=Object.assign({blind:true,complete:true,single:false,assort:false},data.sales||{});
+  data.sales=Object.assign({blind:true,complete:true,single:false},data.sales||{});
+  data.prices=Object.assign({blind:"",complete:"",single:""},data.prices||{});
+  if(data.blindPrice&&!data.prices.blind) data.prices.blind=data.blindPrice;       // 旧データ移行
+  if(data.completePrice&&!data.prices.complete) data.prices.complete=data.completePrice;
   if(!Array.isArray(data.schedule)||!data.schedule.length) data.schedule=SCHED.map(s=>({label:s.label,interval:s.interval}));
   data.itemCount=Math.min(6,Math.max(1,parseInt(data.itemCount,10)||1));
 }
@@ -618,11 +622,6 @@ function chkField(label,key,obj){
   w.append(c, document.createTextNode(label)); return w;
 }
 function ownTag(kind){ const t=kind==="homu"?"HOMU記入":kind==="hear"?"クリエイターにヒアリング":"HOMU×クリエイターで合意"; return '<span class="own '+kind+'">'+t+'</span>'; }
-function computeComplete(){
-  const n=parseInt(String(data.blindPrice||"").replace(/[^0-9]/g,""),10);
-  const cnt=parseInt(data.itemCount,10)||0;
-  data.completePrice=(n&&cnt)?String(n*cnt):"";
-}
 
 function itemForm(it,title,secret){
   const box=el("div","item-form"+(secret?" secret":"")); box.appendChild(el("div","ihead",title));
@@ -657,7 +656,6 @@ function buildForm(){
   let fs=el("fieldset"); fs.appendChild(el("legend",null,"案件情報（全資料で共通）"));
   fs.appendChild(field("クリエイター名","creator",data));
   fs.appendChild(field("IP / キャラ名","ip",data));
-  fs.appendChild(field("担当","staff",data));
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"① 提案資料（毎回ほぼ定型）"));
@@ -666,37 +664,36 @@ function buildForm(){
   const cdInp=el("input"); cdInp.type="date"; cdInp.value=data.contractDate||"";
   cdInp.oninput=function(){ data.contractDate=cdInp.value; render(); autosave(); };
   cdW.appendChild(cdInp); fs.appendChild(cdW);
-  fs.appendChild(field("ライセンス料（売上の何%・税抜）","licenseRate",data,false,"例：10"));
+  fs.appendChild(el("div","hint","ライセンス料は固定 "+LICENSE_RATE+"%（税抜）で資料に記載されます。"));
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料／製造仕様 共通）"));
   fs.appendChild(el("div","note","<b>コンセプトボックス</b>＝スタンプヘッド・コラボワックス・ポストカードが<b>1点ずつ</b>入った1セット。これを<b>複数種類</b>つくります。"));
   const icW=el("div"); icW.appendChild(el("label","fl","コンセプトボックスの種類数（通常）"));
   const icInp=el("input"); icInp.type="number"; icInp.min="1"; icInp.max="6"; icInp.value=data.itemCount;
-  icInp.oninput=function(){ data.itemCount=Math.min(6,Math.max(1,parseInt(icInp.value,10)||1)); computeComplete(); buildForm(); render(); autosave(); };
+  icInp.oninput=function(){ data.itemCount=Math.min(6,Math.max(1,parseInt(icInp.value,10)||1)); buildForm(); render(); autosave(); };
   icW.appendChild(icInp); icW.appendChild(el("div","hint","下の「設計シート」の種類数と連動します（1〜6）。")); fs.appendChild(icW);
   const secW=el("label","chk"); const secC=el("input"); secC.type="checkbox"; secC.checked=!!data.secretEnabled;
   secC.onchange=function(){ data.secretEnabled=secC.checked; buildForm(); render(); autosave(); };
-  secW.append(secC, document.createTextNode("シークレットあり")); fs.appendChild(secW);
+  secW.append(secC, document.createTextNode("シークレットあり（ブラインドの中のレア枠）")); fs.appendChild(secW);
   if(data.secretEnabled){
     const rateW=el("div"); rateW.appendChild(el("label","fl","シークレット当選確率（1/n の n）"));
     const rateI=el("input"); rateI.type="number"; rateI.min="1"; rateI.placeholder="例）10"; rateI.value=data.secretRate||"";
     rateI.oninput=function(){ data.secretRate=rateI.value; render(); autosave(); };
     rateW.appendChild(rateI); fs.appendChild(rateW);
   }
-  [["blind","ブラインドボックス"],["complete","コンプリートセット（全種・被りなし）"],["single","単品販売"],["assort","アソートボックス販売"]].forEach(function(p){
-    fs.appendChild(chkField(p[1],p[0],data.sales));
+  fs.appendChild(el("div","hint","販売する形にチェックを入れ、それぞれの単価を入力してください。"));
+  [["blind","ブラインドボックス","1箱の単価（円）"],["complete","コンプリートセット","全種セットの単価（円）"],["single","単品販売","1点の単価（円）"]].forEach(function(p){
+    const chk=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=!!data.sales[p[0]];
+    c.onchange=function(){ data.sales[p[0]]=c.checked; buildForm(); render(); autosave(); };
+    chk.append(c, document.createTextNode(p[1])); fs.appendChild(chk);
+    if(data.sales[p[0]]){
+      const pw=el("div"); pw.style.margin="0 0 8px 24px";
+      const pi=el("input"); pi.type="text"; pi.value=data.prices[p[0]]||""; pi.placeholder=p[2];
+      pi.oninput=function(){ data.prices[p[0]]=pi.value; render(); autosave(); };
+      pw.appendChild(pi); fs.appendChild(pw);
+    }
   });
-  const blindDiv=el("div"); blindDiv.appendChild(el("label","fl","ブラインドBOX 単価"));
-  const blindInp=el("input"); blindInp.type="text"; blindInp.value=data.blindPrice||"";
-  const compDiv=el("div"); compDiv.appendChild(el("label","fl","コンプリートセット 単価（自動）"));
-  const compInp=el("input"); compInp.type="text"; compInp.readOnly=true; compInp.style.background="#f1ede4"; compInp.style.color="var(--gray)";
-  function refreshComplete(){ computeComplete(); compInp.value=data.completePrice||""; }
-  blindInp.oninput=function(){ data.blindPrice=blindInp.value; refreshComplete(); render(); autosave(); };
-  refreshComplete(); blindDiv.appendChild(blindInp);
-  compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 種類数"));
-  const priceRow=el("div","row"); priceRow.append(blindDiv,compDiv); fs.appendChild(priceRow);
-  fs.appendChild(field("プレゼント企画メモ","presentNote",data));
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：全体コンセプト（HOMU×クリエイターで合意）"));
@@ -720,14 +717,14 @@ function buildForm(){
     const block=itemForm(data.items[i],"コンセプトボックス "+CIRCLED[i]);
     if(data.itemCount>1){
       const rm=el("button","btn"); rm.type="button"; rm.textContent="この種類を削除"; rm.style.cssText="font-size:11px;margin-top:6px;";
-      (function(idx){ rm.onclick=function(){ data.items.splice(idx,1); data.items.push(blankItem()); data.itemCount--; computeComplete(); buildForm(); render(); autosave(); }; })(i);
+      (function(idx){ rm.onclick=function(){ data.items.splice(idx,1); data.items.push(blankItem()); data.itemCount--; buildForm(); render(); autosave(); }; })(i);
       block.appendChild(rm);
     }
     fs.appendChild(block);
   }
   if(data.itemCount<6){
     const add=el("button","btn primary"); add.type="button"; add.textContent="＋ コンセプトボックスを追加"; add.style.cssText="margin-top:10px;";
-    add.onclick=function(){ if(data.itemCount<6){ data.itemCount++; computeComplete(); buildForm(); render(); autosave(); } };
+    add.onclick=function(){ if(data.itemCount<6){ data.itemCount++; buildForm(); render(); autosave(); } };
     fs.appendChild(add);
   }
   if(data.secretEnabled) fs.appendChild(itemForm(data.secret,"シークレット枠",true));
@@ -779,14 +776,13 @@ function renderSalesDef(){
   let blindDesc="全"+(total+sc)+"種"+(sc?"（通常"+total+"種＋シークレット"+sc+"種）":"")+"・1箱共通価格";
   if(sc && data.secretRate) blindDesc+="／シークレット当選確率 1/"+esc(data.secretRate);
   const modes=[];
-  if(data.sales.blind)    modes.push({nm:"ブラインドボックス", dsc:blindDesc, pr:data.blindPrice});
-  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+total+"種・"+total+"点セット（被りなし）", pr:data.completePrice});
-  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"1点から購入できる", pr:""});
-  if(data.sales.assort)   modes.push({nm:"アソートボックス販売", dsc:"複数をまとめた詰め合わせ", pr:""});
+  if(data.sales.blind)    modes.push({nm:"ブラインドボックス", dsc:blindDesc, pr:data.prices.blind});
+  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+total+"種・"+total+"点セット（被りなし）", pr:data.prices.complete});
+  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"1点から購入できる", pr:data.prices.single});
   const cards=modes.length
     ? '<div class="price-cards">'+modes.map(function(m){ return '<div class="price-card"><div class="nm">'+esc(m.nm)+'</div><div class="dsc">'+m.dsc+'</div>'+(m.pr?'<div class="pr">¥'+esc(m.pr)+'</div>':'')+'</div>'; }).join('')+'</div>'
     : '<p class="muted">（販売方法を選択してください）</p>';
-  return cards+'<p class="muted">※ '+esc(data.presentNote)+'</p>';
+  return cards+'<p class="muted">※ '+esc(PRESENT_NOTE)+'</p>';
 }
 function scheduleHtml(){
   let cum=0;
@@ -796,12 +792,11 @@ function scheduleHtml(){
 /* ---- ① 提案資料（定型） ---- */
 function renderA(){
   const creator=esc(data.creator)||"〈クリエイター名〉";
-  const staff=esc(data.staff)||"____";
-  const total=data.itemCount, rate=esc(data.licenseRate)||"__";
+  const total=data.itemCount, rate=LICENSE_RATE;
   document.getElementById("pv-a").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
     <h2 class="tt">HOMU × ${creator} 様</h2>
-    <div class="sub">シーリングスタンプ コラボレーション ご提案資料 ／ 担当：${staff}</div>
+    <div class="sub">シーリングスタンプ コラボレーション ご提案資料</div>
 
     <h3>1. はじめに</h3>
     <p>このたびは、HOMUからのご提案にお目通しいただき、ありがとうございます。本資料は、${creator}様にできるだけご負担をおかけしない形で、シーリングスタンプのコラボ商品をご一緒できないかというご提案です。シーリングスタンプが初めてでも、イメージづくりからHOMUがしっかりお手伝いします。</p>
