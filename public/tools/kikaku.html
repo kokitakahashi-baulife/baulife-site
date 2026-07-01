@@ -809,7 +809,7 @@ function buildForm(){
   tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 IP名からテーマを作る</b><br>① プロンプトをコピー → web対応のClaudeに貼って実行 → ② 出てきたJSONを下欄に貼って反映。IP名（案件情報）が自動で入ります。"));
   const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="① プロンプトをコピー"; tpBtn.style.cssText="margin:4px 0;display:block;";
   const tjTa=el("textarea"); tjTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; tjTa.style.minHeight="56px";
-  tpBtn.onclick=function(){ const p=buildThemePrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ tpBtn.textContent="✓ コピーしました"; setTimeout(function(){tpBtn.textContent="① プロンプトをコピー";},1500); }, function(){ window.prompt("コピーして Claude に貼ってください", p); }); } else { window.prompt("コピーして Claude に貼ってください", p); } };
+  tpBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に上の「案件情報」で IP／キャラ名（またはクリエイター名）を入力してください。\n入力した名前がプロンプトに自動で差し込まれます。"); return; } const p=buildThemePrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ tpBtn.textContent="✓ "+((data.ip||data.creator).trim())+" でコピー"; setTimeout(function(){tpBtn.textContent="① プロンプトをコピー";},1800); }, function(){ window.prompt("コピーして Claude に貼ってください", p); }); } else { window.prompt("コピーして Claude に貼ってください", p); } };
   tpWrap.appendChild(tpBtn); tpWrap.appendChild(tjTa);
   const tjBtn=el("button","btn"); tjBtn.type="button"; tjBtn.textContent="② 貼り付けを反映"; tjBtn.style.marginTop="6px";
   tjBtn.onclick=function(){ applyThemeJson(tjTa.value); };
