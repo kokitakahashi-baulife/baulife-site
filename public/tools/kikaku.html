@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HOMU コラボ企画書エディター</title>
+<title>HOMU コラボ資料ジェネレーター</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/tools/baulife-brand.css">
 <style>
   :root{
-    /* BAULIFEデザインシステムのトークンに再マッピング（アクセント 赤→ブランドピンク） */
     --ink:var(--bl-ink); --gray:var(--bl-muted); --cream:var(--bl-bg); --paper:var(--bl-surface);
     --red:var(--bl-brand); --line:var(--bl-line); --tint:var(--bl-brand-tint); --secret:var(--bl-surface-2);
   }
@@ -22,37 +21,43 @@
   .toolbar h1{font-size:15px;margin:0 12px 0 0;color:var(--red);font-weight:700;}
   .toolbar .spacer{flex:1;}
   .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
-  .seg button{border:0;background:transparent;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--gray);}
+  .seg button{border:0;background:transparent;padding:7px 12px;font-size:12.5px;cursor:pointer;color:var(--gray);white-space:nowrap;}
   .seg button.active{background:var(--red);color:#fff;}
   .btn{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:7px 13px;
     font-size:13px;cursor:pointer;color:var(--ink);}
   .btn:hover{background:var(--cream);}
   .btn.primary{background:var(--red);color:#fff;border-color:var(--red);}
   .app{display:flex;height:calc(100vh - 53px);}
-  .pane-form{width:42%;min-width:360px;overflow-y:auto;padding:18px 20px 80px;border-right:1px solid var(--line);}
+  .pane-form{width:44%;min-width:380px;overflow-y:auto;padding:18px 20px 80px;border-right:1px solid var(--line);}
   .pane-preview{flex:1;overflow-y:auto;background:#ece6db;padding:24px;display:flex;justify-content:center;}
   fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 16px;padding:12px 14px;background:var(--paper);}
   legend{font-size:13px;font-weight:700;color:var(--red);padding:0 6px;}
   label.fl{display:block;font-size:12px;color:var(--gray);margin:10px 0 3px;}
-  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:7px;
+  input[type=text],input[type=number],input[type=date],textarea,select{width:100%;border:1px solid var(--line);border-radius:7px;
     padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
   textarea{resize:vertical;min-height:52px;}
   .row{display:flex;gap:10px;}
   .row>div{flex:1;}
   .chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:6px 0;}
+  .note{background:#f3efe7;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.7;margin-bottom:10px;}
+  .note b{color:var(--red);}
+  .hint{font-size:11px;color:var(--gray);margin:2px 0 0;}
   .imgslot{margin-top:6px;border:1.5px dashed var(--line);border-radius:8px;background:#fff;
-    min-height:74px;display:flex;align-items:center;justify-content:center;text-align:center;
+    min-height:64px;display:flex;align-items:center;justify-content:center;text-align:center;
     cursor:pointer;font-size:12px;color:var(--gray);position:relative;overflow:hidden;padding:6px;}
   .imgslot.drag{border-color:var(--red);background:var(--tint);}
-  .imgslot img{max-width:100%;max-height:120px;border-radius:4px;}
+  .imgslot img{max-width:100%;max-height:110px;border-radius:4px;}
   .imgslot .rm{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.9);border:1px solid var(--line);
     border-radius:5px;font-size:11px;padding:1px 6px;cursor:pointer;color:var(--red);}
-  .concept-form{border-left:3px solid var(--red);padding-left:10px;margin:14px 0;}
-  .concept-form.secret{border-left-color:#b98a3c;}
-  .hint{font-size:11px;color:var(--gray);margin:2px 0 0;}
+  .item-form{border-left:3px solid var(--red);padding-left:10px;margin:14px 0;}
+  .item-form.secret{border-left-color:#b98a3c;}
+  .item-form .ihead{font-size:12.5px;font-weight:700;color:var(--red);margin:2px 0 4px;}
   .recipe-btn{margin-top:6px;width:100%;border:1px solid var(--line);background:var(--paper);border-radius:7px;
     padding:6px;font-size:12px;cursor:pointer;color:var(--red);}
   .recipe-btn:hover{background:var(--tint);}
+  .imgcollapse{margin-top:6px;}
+  .imgcollapse>summary{font-size:11px;color:var(--gray);cursor:pointer;list-style:none;}
+  .imgcollapse>summary::-webkit-details-marker{display:none;}
   /* レシピ選択モーダル */
   .rp-overlay{position:fixed;inset:0;background:rgba(40,34,28,.5);z-index:100;display:flex;
     align-items:center;justify-content:center;padding:24px;}
@@ -78,39 +83,45 @@
   .sheet{width:210mm;min-height:297mm;background:#fff;padding:16mm 15mm;box-shadow:0 2px 14px rgba(0,0,0,.15);
     color:var(--ink);font-size:11pt;line-height:1.7;}
   .sheet .kicker{font-size:9pt;letter-spacing:2px;color:var(--red);}
-  .sheet h2.tt{font-size:24pt;font-weight:700;margin:2px 0 4px;}
+  .sheet h2.tt{font-size:23pt;font-weight:700;margin:2px 0 4px;}
   .sheet .sub{font-size:10pt;color:var(--gray);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px;}
-  .sheet h3{font-size:14pt;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:4px;margin:20px 0 10px;}
-  .sheet h4{font-size:11.5pt;margin:12px 0 6px;}
+  .sheet h3{font-size:13.5pt;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:4px;margin:20px 0 10px;}
+  .sheet h4{font-size:11pt;margin:10px 0 5px;}
   .sheet p{margin:0 0 8px;}
   .sheet .muted{color:var(--gray);font-size:9.5pt;}
-  .sheet ul{margin:4px 0 10px;padding-left:1.2em;}
+  .sheet ul,.sheet ol{margin:4px 0 10px;padding-left:1.3em;}
+  .sheet li{margin:0 0 4px;}
   .sheet .qa{margin:0 0 9px;}
   .sheet .qa .q{font-weight:700;}
   .sheet .qa .a{white-space:pre-wrap;}
   .sheet .qa .a.empty{color:#bdb3a4;font-style:italic;}
-  .pv-img{width:100%;height:100%;object-fit:contain;}
+  .sheet table.spec{width:100%;border-collapse:collapse;font-size:9.5pt;margin:6px 0 12px;}
+  .sheet table.spec th,.sheet table.spec td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top;}
+  .sheet table.spec th{background:var(--red);color:#fff;font-weight:600;font-size:9pt;white-space:nowrap;}
+  .sheet table.spec td.c{text-align:center;white-space:nowrap;}
+  .sheet table.role{width:100%;border-collapse:collapse;font-size:10pt;margin:6px 0 12px;}
+  .sheet table.role th,.sheet table.role td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;}
+  .sheet table.role th{background:#f0ebe2;width:26%;font-weight:600;}
+  .pv-img{width:100%;height:100%;object-fit:contain;cursor:zoom-in;}
   .pv-box{border:1px dashed var(--line);border-radius:6px;background:var(--cream);color:#bdb3a4;
-    display:flex;align-items:center;justify-content:center;font-size:9pt;text-align:center;padding:6px;min-height:90px;}
+    display:flex;align-items:center;justify-content:center;font-size:9pt;text-align:center;padding:6px;min-height:80px;}
   .pv-cap{font-size:9pt;color:var(--gray);text-align:center;margin-top:4px;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-  /* ② 商品化イメージ：形シルエット＋% */
   .wax-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 12px;margin-top:10px;}
   .wax-chip{display:inline-flex;flex-direction:column;align-items:center;gap:1px;font-size:9.5pt;color:var(--ink);}
   .wax-chip b{font-weight:700;font-size:9.5pt;}
   .wax-chip .wsil{display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
   .wax-chip .wsil-grp{display:inline-flex;align-items:center;}
   .wax-chip .wsil-grp .wsil{margin:0 -2px;}
-  /* 画像クリックで拡大（ライトボックス） */
-  .pv-img{cursor:zoom-in;}
+  @media print{ .pv-img{cursor:default;} }
   .lb-overlay{position:fixed;inset:0;background:rgba(20,16,12,.82);z-index:200;display:flex;
     align-items:center;justify-content:center;padding:30px;cursor:zoom-out;}
   .lb-overlay img{max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);background:#fff;}
-  @media print{ .pv-img{cursor:default;} }
   .pcard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0;background:#fdfbf7;break-inside:avoid;}
   .pcard.secret{background:var(--secret);}
   .pcard .ph{font-size:12pt;font-weight:700;color:var(--red);margin-bottom:8px;}
+  .pcard .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:9.5pt;color:var(--gray);margin-bottom:6px;}
+  .pcard .meta b{color:var(--ink);}
   .sched{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:5px 0;font-size:10.5pt;}
   .price-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0;}
   .price-card{border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
@@ -138,7 +149,7 @@
     border-style:dashed;font-size:15px;background:transparent;}
   .save-status{font-size:12px;color:var(--gray);margin-left:6px;white-space:nowrap;}
   .fname-input{border:1px solid var(--line);border-radius:7px;padding:5px 9px;font-size:13px;
-    font-family:inherit;color:var(--ink);background:#fff;width:220px;max-width:34vw;}
+    font-family:inherit;color:var(--ink);background:#fff;width:200px;max-width:30vw;}
   #conflictBar{display:none;align-items:center;gap:10px;padding:8px 16px;background:#fbe3dd;
     border-bottom:1px solid var(--line);font-size:13px;color:var(--red);flex-wrap:wrap;}
   #conflictBar .msg{flex:1;min-width:200px;}
@@ -163,8 +174,8 @@
 <div id="listScreen">
   <div class="list-head">
     <a class="portal-back" href="/tools">← 社内ポータル</a>
-    <h1>HOMU コラボ企画書エディター</h1>
-    <p>共有ドライブ「株式会社BAULIFE ／ HOMUコラボ企画書」に自動保存されます。カードを選んで開くか、新規作成してください。</p>
+    <h1>HOMU コラボ資料ジェネレーター</h1>
+    <p>1件を埋めれば「提案資料（定型）／設計シート（書き下ろし依頼）／製造仕様（社内）」を一括で出力できます。共有ドライブに自動保存されます。</p>
   </div>
   <div id="listGrid" class="list-grid"></div>
 </div>
@@ -173,15 +184,16 @@
   <div class="toolbar">
     <button class="btn" onclick="backToList()">← 一覧</button>
     <div class="seg" id="seg">
-      <button data-doc="offer" class="active">オファー資料</button>
-      <button data-doc="plan">企画書</button>
+      <button data-doc="a" class="active">提案資料</button>
+      <button data-doc="b">設計シート</button>
+      <button data-doc="c">製造仕様</button>
     </div>
     <input id="fileNameInput" class="fname-input" placeholder="ファイル名（空欄なら自動）" title="共有ドライブ上のファイル名">
     <span id="saveStatus" class="save-status"></span>
     <div class="spacer"></div>
     <button class="btn" onclick="deleteCurrent()">削除</button>
     <button class="btn" onclick="saveFile()">バックアップDL(.json)</button>
-    <button class="btn primary" onclick="exportPDF()">PDF出力</button>
+    <button class="btn primary" onclick="exportPDF()">この資料をPDF出力</button>
   </div>
 
   <div id="conflictBar">
@@ -200,45 +212,62 @@
     <div class="pane-form" id="form"></div>
     <div class="pane-preview">
       <div id="scaler" style="width:210mm">
-        <div class="doc" id="doc-offer"><div class="sheet" id="pv-offer"></div></div>
-        <div class="doc" id="doc-plan" style="display:none"><div class="sheet" id="pv-plan"></div></div>
+        <div class="doc" id="doc-a"><div class="sheet" id="pv-a"></div></div>
+        <div class="doc" id="doc-b" style="display:none"><div class="sheet" id="pv-b"></div></div>
+        <div class="doc" id="doc-c" style="display:none"><div class="sheet" id="pv-c"></div></div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-// スケジュール：契約締結予定日を基準(0日)に、各工程の日数オフセット（編集可）
+/* ========== 定数・データモデル ========== */
 const SCHED = [
-  {label:"非独占的ライセンス契約の締結", interval:0},   // 基準日
-  {label:"企画書の提示・合意",           interval:3},   // 前工程から
-  {label:"スタンプヘッド試作品の確認",     interval:11},
-  {label:"アンバサダー展開",             interval:16},
-  {label:"予約販売の告知",               interval:15},
-  {label:"予約販売開始",                 interval:15},
-  {label:"生産開始",                     interval:15},
-  {label:"配送開始",                     interval:15},
+  {label:"ライセンス契約の締結",      interval:0},
+  {label:"設計シートの合意",          interval:3},
+  {label:"書き下ろし・素材の受領",     interval:14},
+  {label:"スタンプヘッド試作の確認",   interval:11},
+  {label:"予約販売の告知",           interval:10},
+  {label:"予約販売開始",             interval:14},
+  {label:"生産開始",                interval:1},
+  {label:"配送開始",                interval:21},
+];
+const CIRCLED=["①","②","③","④","⑤","⑥"];
+const DIMS=["","2D","3D"];
+const SHAPES=["","丸型","四角型","シルエット型"];
+const SIZES=["","15mm","25mm","30mm","40mm"];
+// プレイブックのお題ヒント（役割の型）— 担当者の思考の足場。強制ではない。
+const ROLE_HINTS=[
+  "世界観の顔（指名買い・認知拡大の主役。独自外形で一目でIPと分かる）",
+  "3D彫りの立体（凹凸・奥行きで所有満足。上級者需要）",
+  "セパレート／色分け映え（細かなモチーフ多数＝色分け動画で拡散）",
+  "入門・量産（初心者が成功できる単体。裾野を広げる）",
 ];
 
-const CIRCLED=["①","②","③","④","⑤","⑥"];
-function blankConcept(){return {title:"",genga:"",stamp:"",wax:"",postcard:"",waxColors:null};}
+function blankItem(){return {
+  ttl:"", role:"", dim:"", shape:"", size:"", motif:"", separate:false,
+  illust:"", brief:"", price:"", qty:"",
+  waxText:"", wax:"", waxColors:null,
+  genga:"", stamp:"", postcard:""
+};}
 function defaultData(){
   return {
-    fileName:"",
-    creator:"", ip:"", staff:"",
-    contractDate:"",
-    boxCount:1,
-    secretEnabled:true, secretRate:"",
-    blindPrice:"", completePrice:"", presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
+    fileName:"", creator:"", ip:"", staff:"",
+    contractDate:"", licenseRate:"10",
+    theme:"",
+    itemCount:3,
+    secretEnabled:false, secretRate:"",
     sales:{blind:true, complete:true, single:false, assort:false},
-    schedule:SCHED.map(s=>({label:s.label, interval:s.interval})),
+    blindPrice:"", completePrice:"",
+    presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
+    postcardIncluded:true,
+    postcardNote:"各コンセプトに対になるポストカード（背景台紙）を用意。クリエイター様のロゴにHOMUのロゴを重ねて印刷します。",
     overall:{core:"", motif:"", fans:""},
-    package:"", packageNote:"このメインビジュアルはポストカードに印刷され、さらにパッケージにも使用されます。（AI生成／任意でクリエイター自主制作可・納期2週間）",
-    concepts:[blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept()],
-    secret:blankConcept()
+    schedule:SCHED.map(s=>({label:s.label, interval:s.interval})),
+    items:[blankItem(),blankItem(),blankItem(),blankItem(),blankItem(),blankItem()],
+    secret:blankItem()
   };
 }
-// 基準日(YYYY-MM-DD)＋日数 → YYYY/MM/DD
 function addDays(isoDate, days){
   if(!isoDate) return "";
   const d=new Date(isoDate+"T00:00:00");
@@ -249,30 +278,24 @@ function addDays(isoDate, days){
 function secretCount(){ return data.secretEnabled?1:0; }
 let data = defaultData();
 
-/* ---------- 共有ドライブ保存 ---------- */
-let currentId=null;
-let baseModified=null;       // 開いた/最後に保存した時点の更新時刻（競合検知用）
+/* ========== 共有ドライブ保存（配線：既存を踏襲） ========== */
+let currentId=null, baseModified=null;
 let saveTimer=null, saving=false, dirtyAgain=false;
-let pendingDirty=false;      // 未保存の変更があるか（閉じる前保存の判定）
-let conflictActive=false;    // 競合解決待ち
-let saveFailCount=0;         // 連続保存失敗回数（#5 案内のため）
-let scheduleOpen=false;      // スケジュール日数の調整トグル（既定で閉じる）
+let pendingDirty=false, conflictActive=false, saveFailCount=0, scheduleOpen=false;
 function setStatus(t){ const e=document.getElementById("saveStatus"); if(e) e.textContent=t; }
 function hhmm(d){ return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
-function metaOf(){ return { creator:(data.creator||""), theme:((data.overall&&data.overall.core)||"").replace(/\s+/g," ").trim().slice(0,40) }; }
+function metaOf(){ return { creator:(data.creator||""), theme:((data.theme)||"").replace(/\s+/g," ").trim().slice(0,40) }; }
 function fileBase(){
   const fn=(data.fileName||"").trim();
   if(fn) return fn;
-  return ((data.creator&&data.creator.trim())||"無題")+"_企画書";
+  return ((data.creator&&data.creator.trim())||"無題")+"_コラボ資料";
 }
 function setUrl(id){ try{ history.replaceState(null,"",location.pathname+"?id="+encodeURIComponent(id)); }catch(e){} }
 function clearUrl(){ try{ history.replaceState(null,"",location.pathname); }catch(e){} }
 
-/* 入力変更時に各所から呼ばれる → デバウンスして自動保存 */
 function autosave(){
   if(!currentId || conflictActive) return;
-  pendingDirty=true;
-  setStatus("保存中…");
+  pendingDirty=true; setStatus("保存中…");
   clearTimeout(saveTimer);
   saveTimer=setTimeout(function(){ saveNow(false); },1200);
 }
@@ -281,19 +304,15 @@ async function saveNow(force){
   if(saving){ dirtyAgain=true; return; }
   saving=true;
   try{
-    // #4 競合検知：保存前にドライブの最新更新時刻を確認
     if(!force && baseModified){
       try{
         const mr=await fetch("/api/tools/projects/"+currentId+"?meta=1");
         if(mr.ok){
           const mj=await mr.json();
           const remoteMod=mj.meta&&mj.meta.modifiedTime;
-          if(remoteMod && remoteMod!==baseModified){
-            showConflict(mj.meta);
-            return; // finally で saving を戻す
-          }
+          if(remoteMod && remoteMod!==baseModified){ showConflict(mj.meta); return; }
         }
-      }catch(e){ /* 確認に失敗しても保存は続行 */ }
+      }catch(e){}
     }
     const res=await fetch("/api/tools/projects/"+currentId,{method:"PUT",
       headers:{"Content-Type":"application/json"},
@@ -305,7 +324,6 @@ async function saveNow(force){
     setStatus("保存しました "+hhmm(new Date()));
   }catch(e){
     console.error(e); saveFailCount++;
-    // #5 失敗が続く時の明確な案内
     if(e&&e.status===401){ setStatus("⚠ ログインが切れた可能性"); showSaveError(true); }
     else if(saveFailCount>=3){ setStatus("⚠ 保存に繰り返し失敗"); showSaveError(false); }
     else { setStatus("⚠ 保存に失敗。再試行します…"); }
@@ -315,54 +333,46 @@ async function saveNow(force){
     if(dirtyAgain && !conflictActive){ dirtyAgain=false; autosave(); }
   }
 }
-/* ローカルにバックアップDL（任意） */
 function saveFile(){
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fileBase()+".json"; a.click();
 }
-
-/* ---------- #4 競合バー ---------- */
 function showConflict(meta){
   conflictActive=true; pendingDirty=true;
   const who=(meta&&meta.lastModifyingUser&&meta.lastModifyingUser.displayName)||"他の人";
   const when=fmtTime(meta&&meta.modifiedTime);
   const bar=document.getElementById("conflictBar");
   bar.querySelector(".msg").textContent="⚠ "+who+" がこの案件を更新しました（"+when+"）。あなたの未保存の変更があります。";
-  bar.style.display="flex";
-  setStatus("競合のため保存を保留中");
+  bar.style.display="flex"; setStatus("競合のため保存を保留中");
 }
 function hideConflict(){ conflictActive=false; document.getElementById("conflictBar").style.display="none"; }
 async function conflictReload(){
-  // 最新を読み込む（自分の未保存の変更は破棄）
   try{
     const res=await fetch("/api/tools/projects/"+currentId);
     if(!res.ok) throw new Error(await res.text());
     const j=await res.json();
     data=Object.assign(defaultData(),(j.content&&typeof j.content==="object"&&!Array.isArray(j.content))?j.content:{});
+    normalize();
     try{ const mr=await fetch("/api/tools/projects/"+currentId+"?meta=1"); if(mr.ok){ const mj=await mr.json(); baseModified=mj.meta&&mj.meta.modifiedTime; } }catch(e){}
     hideConflict(); buildForm(); render(); fitPreview();
     pendingDirty=false; setStatus("最新を読み込みました");
   }catch(e){ alert("読み込みに失敗しました: "+(e.message||e)); }
 }
 async function conflictOverwrite(){
-  // 自分の変更で上書き：現在のドライブ更新時刻に合わせてから強制保存
   try{ const mr=await fetch("/api/tools/projects/"+currentId+"?meta=1"); if(mr.ok){ const mj=await mr.json(); baseModified=mj.meta&&mj.meta.modifiedTime; } }catch(e){}
-  hideConflict();
-  await saveNow(true);
+  hideConflict(); await saveNow(true);
 }
-
-/* ---------- #5 保存失敗が続く時の案内 ---------- */
 function showSaveError(isAuth){
   const bar=document.getElementById("saveErrorBar");
   bar.querySelector(".msg").textContent = isAuth
-    ? "⚠ ログインが切れた可能性があります。「別タブで再ログイン」してください（こちらの保存は自動で再開します）。念のため「バックアップをダウンロード」も推奨。"
-    : "⚠ 保存に繰り返し失敗しています。ネットワーク接続をご確認ください。念のため「バックアップをダウンロード」しておくと安心です（自動で再試行中）。";
+    ? "⚠ ログインが切れた可能性があります。「別タブで再ログイン」してください（保存は自動で再開します）。念のため「バックアップをダウンロード」も推奨。"
+    : "⚠ 保存に繰り返し失敗しています。ネットワークをご確認ください。念のため「バックアップをダウンロード」しておくと安心です（自動で再試行中）。";
   bar.style.display="flex";
 }
 function hideSaveError(){ const b=document.getElementById("saveErrorBar"); if(b) b.style.display="none"; }
 function reloginTab(){ window.open("/tools/login","_blank","noopener"); }
 
-/* ---------- 一覧・開く・新規・戻る ---------- */
+/* ========== 一覧・開く・新規・戻る ========== */
 function fmtTime(iso){ try{ const d=new Date(iso); return (d.getMonth()+1)+"/"+d.getDate()+" "+hhmm(d); }catch(e){ return ""; } }
 async function fetchProjects(){
   const grid=document.getElementById("listGrid");
@@ -389,14 +399,10 @@ function renderList(files){
     c.onclick=function(){ openProject(f.id, f.modifiedTime); };
     const del=el("button","card-del"); del.textContent="削除"; del.title="この案件を削除（ゴミ箱へ）";
     del.addEventListener("click",function(ev){ ev.stopPropagation(); deleteProject(f.id, nm||ap.creator||""); });
-    c.appendChild(del);
-    grid.appendChild(c);
+    c.appendChild(del); grid.appendChild(c);
   });
 }
-function showEdit(){
-  document.getElementById("listScreen").style.display="none";
-  document.getElementById("editScreen").style.display="block";
-}
+function showEdit(){ document.getElementById("listScreen").style.display="none"; document.getElementById("editScreen").style.display="block"; }
 function goList(){
   currentId=null; baseModified=null; pendingDirty=false; saveFailCount=0; hideConflict(); hideSaveError();
   clearUrl();
@@ -405,17 +411,27 @@ function goList(){
   document.getElementById("listScreen").style.display="block";
   fetchProjects();
 }
+// 旧データ/欠損に強くする
+function normalize(){
+  if(!Array.isArray(data.items)) data.items=[];
+  while(data.items.length<6) data.items.push(blankItem());
+  data.items=data.items.map(it=>Object.assign(blankItem(),it||{}));
+  data.secret=Object.assign(blankItem(),data.secret||{});
+  data.overall=Object.assign({core:"",motif:"",fans:""},data.overall||{});
+  data.sales=Object.assign({blind:true,complete:true,single:false,assort:false},data.sales||{});
+  if(!Array.isArray(data.schedule)||!data.schedule.length) data.schedule=SCHED.map(s=>({label:s.label,interval:s.interval}));
+  data.itemCount=Math.min(6,Math.max(1,parseInt(data.itemCount,10)||1));
+}
 async function openProject(id, modifiedTime){
   setStatus(""); hideConflict(); hideSaveError(); saveFailCount=0;
   try{
     const res=await fetch("/api/tools/projects/"+id);
-    if(res.status===422){ const j=await res.json().catch(function(){return {};}); alert(j.error||"このファイルは企画書の形式ではないため開けません。"); goList(); return; }
+    if(res.status===422){ const j=await res.json().catch(function(){return {};}); alert(j.error||"このファイルは開けません。"); goList(); return; }
     if(!res.ok) throw new Error(await res.text());
     const j=await res.json();
-    // #2 想定外/壊れた中身でも落とさない
     const c=(j.content&&typeof j.content==="object"&&!Array.isArray(j.content))?j.content:null;
-    if(c===null){ alert("このファイルは企画書の形式ではない可能性があります。新しい空の企画書として開きます。"); }
-    data=Object.assign(defaultData(), c||{});
+    if(c===null){ alert("このファイルはコラボ資料の形式でない可能性があります。空の資料として開きます。"); }
+    data=Object.assign(defaultData(), c||{}); normalize();
     currentId=id; pendingDirty=false;
     if(modifiedTime){ baseModified=modifiedTime; }
     else { baseModified=null; try{ const mr=await fetch("/api/tools/projects/"+id+"?meta=1"); if(mr.ok){ const mj=await mr.json(); baseModified=mj.meta&&mj.meta.modifiedTime; } }catch(e){} }
@@ -429,10 +445,10 @@ async function newProject(){
   try{
     const res=await fetch("/api/tools/projects",{method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({name:"無題_企画書",content:fresh,meta:{creator:"",theme:""}})});
+      body:JSON.stringify({name:"無題_コラボ資料",content:fresh,meta:{creator:"",theme:""}})});
     if(!res.ok) throw new Error(await res.text());
     const f=await res.json();
-    data=fresh; currentId=f.id; baseModified=f.modifiedTime||null; pendingDirty=false; saveFailCount=0; hideSaveError();
+    data=fresh; normalize(); currentId=f.id; baseModified=f.modifiedTime||null; pendingDirty=false; saveFailCount=0; hideSaveError();
     setUrl(f.id);
     const fni=document.getElementById("fileNameInput"); if(fni) fni.value="";
     showEdit(); buildForm(); render(); fitPreview(); setStatus("新規作成しました");
@@ -442,8 +458,6 @@ async function backToList(){
   if(currentId && pendingDirty && !conflictActive){ clearTimeout(saveTimer); await saveNow(false); }
   goList();
 }
-
-/* ---------- 削除（ゴミ箱へ・復元可能） ---------- */
 async function deleteProject(id, label){
   if(!id) return;
   const nm=(label&&label.trim())||"この案件";
@@ -451,38 +465,29 @@ async function deleteProject(id, label){
   try{
     const res=await fetch("/api/tools/projects/"+id,{method:"DELETE"});
     if(!res.ok) throw new Error(await res.text());
-    if(currentId===id){ goList(); }
-    else { fetchProjects(); }
+    if(currentId===id){ goList(); } else { fetchProjects(); }
   }catch(e){ alert("削除に失敗しました: "+(e.message||e)); }
 }
 function deleteCurrent(){ if(currentId) deleteProject(currentId, (data&&data.creator)||""); }
 
-/* ---------- #3 閉じる前にデータを失わない ---------- */
 window.addEventListener("beforeunload",function(e){
-  if(currentId && (pendingDirty || saving || conflictActive)){
-    e.preventDefault(); e.returnValue="";
-  }
+  if(currentId && (pendingDirty || saving || conflictActive)){ e.preventDefault(); e.returnValue=""; }
 });
 document.addEventListener("visibilitychange",function(){
-  if(document.visibilityState==="hidden" && currentId && pendingDirty && !conflictActive){
-    clearTimeout(saveTimer); saveNow(false);
-  }
+  if(document.visibilityState==="hidden" && currentId && pendingDirty && !conflictActive){ clearTimeout(saveTimer); saveNow(false); }
 });
-
 function initApp(){
   const fni=document.getElementById("fileNameInput");
   if(fni) fni.addEventListener("input",function(){ data.fileName=fni.value; autosave(); });
   const id=new URLSearchParams(location.search).get("id");
-  if(id){ openProject(id); }
-  else { fetchProjects(); }
+  if(id){ openProject(id); } else { fetchProjects(); }
 }
 
-/* ---------- doc switch & print ---------- */
+/* ========== ドキュメント切替 & 印刷 ========== */
 document.getElementById("seg").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b)return;
   [...document.querySelectorAll("#seg button")].forEach(x=>x.classList.toggle("active",x===b));
-  document.getElementById("doc-offer").style.display = b.dataset.doc==="offer"?"block":"none";
-  document.getElementById("doc-plan").style.display  = b.dataset.doc==="plan"?"block":"none";
+  ["a","b","c"].forEach(k=>{ document.getElementById("doc-"+k).style.display = b.dataset.doc===k?"block":"none"; });
 });
 function exportPDF(){
   const active=document.querySelector("#seg button.active").dataset.doc;
@@ -491,16 +496,14 @@ function exportPDF(){
   window.print();
 }
 
-/* ---------- recipe picker (WAXシミュレーターの保存レシピから画像を選ぶ) ---------- */
+/* ========== レシピピッカー（WAXシミュレーターの保存レシピ） ========== */
 let _recipesCache=null;
 async function loadWaxRecipes(){
   if(_recipesCache) return _recipesCache;
   const res=await fetch("/api/tools/wax",{headers:{Accept:"application/json"}});
   if(!res.ok) throw new Error("wax fetch "+res.status);
-  const data=await res.json();
-  const recs=(Array.isArray(data.products)?data.products:[])
-    .filter(p=>p&&p.recipe&&!p.archived)
-    .sort((a,b)=>(b._t||0)-(a._t||0));
+  const dj=await res.json();
+  const recs=(Array.isArray(dj.products)?dj.products:[]).filter(p=>p&&p.recipe&&!p.archived).sort((a,b)=>(b._t||0)-(a._t||0));
   _recipesCache=recs; return recs;
 }
 function openRecipePicker(cb){
@@ -515,8 +518,7 @@ function openRecipePicker(cb){
   loadWaxRecipes().then(recs=>{
     if(!recs.length){ body.innerHTML='<div class="rp-empty">保存されたレシピがありません。<br>WAXシミュレーターで「★ レシピとして保存」してください。</div>'; return; }
     const search=el("input","rp-search"); search.type="text"; search.placeholder="レシピ名で検索…";
-    const list=el("div");
-    body.innerHTML=""; body.appendChild(search); body.appendChild(list);
+    const list=el("div"); body.innerHTML=""; body.appendChild(search); body.appendChild(list);
     function paint(q){
       q=(q||"").trim().toLowerCase();
       const shown=recs.filter(r=>!q||(r.name||"").toLowerCase().includes(q));
@@ -527,22 +529,21 @@ function openRecipePicker(cb){
         const desc=(r.items||[]).map(it=>it.name+" "+Math.round(it.ratio)+"%").join(" / ");
         const nm=el("div","rp-name"); nm.innerHTML=esc(r.name)+"<small>"+esc(desc)+"</small>"; row.appendChild(nm);
         const imgs=el("div","rp-imgs");
-        const src=r.thumbBag||r.thumb||"";  // 袋画像を使う（無い場合だけお皿で代用）
+        const src=r.thumbBag||r.thumb||"";
         if(src){
           const p=el("div","rp-pick"); p.innerHTML='<img src="'+src+'">'+(r.thumbBag?'':'<span>お皿のみ</span>');
           const colors=(r.items||[]).map(it=>({color:it.color,name:it.name,ratio:it.ratio,type:it.type}));
-          p.onclick=()=>{ document.body.removeChild(ov); cb(src, colors); };
+          p.onclick=()=>{ document.body.removeChild(ov); cb(src, colors, r.name); };
           imgs.appendChild(p);
         } else { imgs.appendChild(el("div","hint","画像なし（シミュレーターで保存し直してください）")); }
         row.appendChild(imgs); list.appendChild(row);
       });
     }
-    search.oninput=()=>paint(search.value);
-    paint("");
+    search.oninput=()=>paint(search.value); paint("");
   }).catch(err=>{ body.innerHTML='<div class="rp-empty">レシピを読み込めませんでした。<br>'+esc(String(err.message||err))+'</div>'; });
 }
 
-/* ---------- プレビュー画像クリックで拡大（ライトボックス） ---------- */
+/* ========== ライトボックス ========== */
 document.addEventListener("click",function(e){
   const img=e.target&&e.target.closest&&e.target.closest(".pv-img");
   if(!img||!img.src) return;
@@ -552,22 +553,20 @@ document.addEventListener("click",function(e){
   document.body.appendChild(ov);
 });
 
-/* ---------- image handling ---------- */
+/* ========== 画像 ========== */
 function pickImage(cb){
   const i=document.createElement("input"); i.type="file"; i.accept="image/*";
-  i.onchange=()=>{ const f=i.files[0]; if(!f)return; const r=new FileReader();
-    r.onload=()=>cb(r.result); r.readAsDataURL(f); };
+  i.onchange=()=>{ const f=i.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>cb(r.result); r.readAsDataURL(f); };
   i.click();
 }
 function imgSlot(label, getVal, setVal){
   const wrap=document.createElement("div"); wrap.className="imgslot";
   function paint(){
-    const v=getVal();
-    wrap.innerHTML="";
+    const v=getVal(); wrap.innerHTML="";
     if(v){ const im=document.createElement("img"); im.src=v; wrap.appendChild(im);
       const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除";
       rm.onclick=ev=>{ev.stopPropagation(); setVal(""); paint(); render(); autosave();}; wrap.appendChild(rm);
-    } else { wrap.textContent=label+"（クリック / ドラッグ＆ドロップ）"; }
+    } else { wrap.textContent=label+"（クリック / D&D）"; }
   }
   wrap.onclick=()=>pickImage(d=>{setVal(d);paint();render();autosave();});
   wrap.addEventListener("dragover",e=>{e.preventDefault();wrap.classList.add("drag");});
@@ -575,63 +574,90 @@ function imgSlot(label, getVal, setVal){
   wrap.addEventListener("drop",e=>{e.preventDefault();wrap.classList.remove("drag");
     const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith("image")){const r=new FileReader();
       r.onload=()=>{setVal(r.result);paint();render();autosave();};r.readAsDataURL(f);}});
-  paint();
-  return wrap;
+  paint(); return wrap;
 }
 
-/* ---------- form builder ---------- */
+/* ========== フォーム部品 ========== */
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;}
 function field(label,key,obj,ta,ph){
   const l=el("label","fl",label); const inp=ta?el("textarea"):el("input");
-  if(!ta)inp.type="text"; inp.value=obj[key]||"";
-  if(ph) inp.placeholder=ph;
+  if(!ta)inp.type="text"; inp.value=obj[key]||""; if(ph) inp.placeholder=ph;
   inp.oninput=()=>{obj[key]=inp.value;render();autosave();};
   const w=el("div"); w.appendChild(l); w.appendChild(inp); return w;
 }
-function numField(label,key,obj){
-  const l=el("label","fl",label); const inp=el("input"); inp.type="number"; inp.value=obj[key];
-  inp.oninput=()=>{obj[key]=parseInt(inp.value)||0;buildForm();render();autosave();};
-  const w=el("div"); w.appendChild(l); w.appendChild(inp); return w;
+function selectField(label,key,obj,options){
+  const l=el("label","fl",label); const s=el("select");
+  options.forEach(o=>{ const op=el("option"); op.value=o; op.textContent=o||"（未選択）"; if((obj[key]||"")===o) op.selected=true; s.appendChild(op); });
+  s.onchange=()=>{ obj[key]=s.value; render(); autosave(); };
+  const w=el("div"); w.appendChild(l); w.appendChild(s); return w;
 }
-// コンプリートセット単価 ＝ ブラインド単価 × 種類数（自動計算）
+function chkField(label,key,obj){
+  const w=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=!!obj[key];
+  c.onchange=()=>{ obj[key]=c.checked; render(); autosave(); };
+  w.append(c, document.createTextNode(label)); return w;
+}
 function computeComplete(){
   const n=parseInt(String(data.blindPrice||"").replace(/[^0-9]/g,""),10);
-  const cnt=parseInt(data.boxCount,10)||0;
-  data.completePrice = (n && cnt) ? String(n*cnt) : "";
+  const cnt=parseInt(data.itemCount,10)||0;
+  data.completePrice=(n&&cnt)?String(n*cnt):"";
 }
 
-function conceptForm(c,title,secret){
-  const box=el("div","concept-form"+(secret?" secret":"")); box.appendChild(el("div","fl",title));
-  if(!secret) box.appendChild(field("商品名","title",c));
-  box.appendChild(el("div","fl","① 使用したい原画"));
-  box.appendChild(imgSlot(secret?"シークレット画像":"使用したい原画",()=>c.genga,v=>c.genga=v));
-  box.appendChild(el("div","fl","② 商品化イメージ"));
-  const g=el("div","row");
-  [["スタンプヘッド","stamp"],["ワックスカラー","wax"],["ポストカード","postcard"]].forEach(([nm,k])=>{
-    const d=el("div"); d.appendChild(el("div","hint",nm));
-    const setter = k==="wax" ? (v=>{ c.wax=v; c.waxColors=null; }) : (v=>c[k]=v); // 手動アップロード時は色チップを消す
-    d.appendChild(imgSlot(nm,()=>c[k],setter));
-    if(k==="wax"){ const b=el("button","recipe-btn","🗂 レシピから選択"); b.type="button";
-      b.onclick=()=>openRecipePicker((img,colors)=>{ c.wax=img; c.waxColors=colors; buildForm(); render(); autosave(); });
-      d.appendChild(b); }
-    g.appendChild(d);
+function itemForm(it,title,secret){
+  const box=el("div","item-form"+(secret?" secret":"")); box.appendChild(el("div","ihead",title));
+  box.appendChild(field(secret?"シークレットの名称（社内用）":"お題タイトル（商品名の候補）","ttl",it));
+  const rf=field("役割","role",it,false,"例：世界観の顔／3D彫り／セパレート映え／入門");
+  box.appendChild(rf);
+  const r1=el("div","row");
+  r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES), selectField("サイズ","size",it,SIZES));
+  box.appendChild(r1);
+  box.appendChild(chkField("セパレート（分離）構造にする","separate",it));
+  box.appendChild(field("モチーフ・構図の方向","motif",it,true,"例：麦の穂と小鳥を、輪郭ごと封蝋に閉じ込める独自シルエット。色分けできるよう小モチーフを散らす。"));
+  const r2=el("div","row");
+  r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,"例：2800"), field("製造数量見込(社内)","qty",it,false,"例：200"));
+  box.appendChild(r2);
+  box.appendChild(field("クリエイターへのお題（自由度も明記）","brief",it,true,"コンセプトだけ提示し、詳細は自由に。変更・アレンジ歓迎。NGがあれば記載。"));
+  // ワックス色
+  box.appendChild(el("label","fl","コラボワックス色"));
+  box.appendChild(field("色の指定（テキスト）","waxText",it,false,"例：くすみブルー系"));
+  const rb=el("button","recipe-btn","🗂 WAXシミュレーターのレシピから選ぶ"); rb.type="button";
+  rb.onclick=()=>openRecipePicker((img,colors,nm)=>{ it.wax=img; it.waxColors=colors; if(nm&&!it.waxText) it.waxText=nm; render(); autosave(); });
+  box.appendChild(rb);
+  // 後工程の画像（任意・折りたたみ）
+  const det=el("details","imgcollapse"); det.innerHTML="<summary>▸ 画像を添付（原画・試作など・任意）</summary>";
+  const ig=el("div","row"); ig.style.marginTop="6px";
+  [["genga","原画/ラフ"],["stamp","スタンプ試作"],["postcard","ポストカード"]].forEach(([k,nm])=>{
+    const d=el("div"); d.appendChild(el("div","hint",nm)); d.appendChild(imgSlot(nm,()=>it[k],v=>it[k]=v)); ig.appendChild(d);
   });
-  box.appendChild(g);
+  det.appendChild(ig); box.appendChild(det);
   return box;
 }
 
 function buildForm(){
   const F=document.getElementById("form"); F.innerHTML="";
 
-  let fs=el("fieldset"); fs.appendChild(el("legend",null,"案件情報（共通）"));
+  // 案件情報（共通）
+  let fs=el("fieldset"); fs.appendChild(el("legend",null,"案件情報（全資料で共通）"));
   fs.appendChild(field("クリエイター名","creator",data));
   fs.appendChild(field("IP / キャラ名","ip",data));
   fs.appendChild(field("担当","staff",data));
   F.appendChild(fs);
 
-  // 販売方法・販売するものの定義（オファー資料／企画書 共通）
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法（オファー資料／企画書 共通）"));
-  fs.appendChild(el("div","hint","コンセプトボックス 種類数（通常）：現在 "+data.boxCount+"種（下の「コンセプト案」で追加・削除できます）"));
+  // 提案資料（定型）の変数
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"① 提案資料（毎回ほぼ定型）"));
+  fs.appendChild(el("div","note","この資料は<b>安心してもらい合意を取る</b>ためのもの。中身はほぼ定型で、差し込むのは下の条件と上の案件情報だけ。"));
+  const cdW=el("div"); cdW.appendChild(el("label","fl","契約締結予定日（スケジュールの基準日）"));
+  const cdInp=el("input"); cdInp.type="date"; cdInp.value=data.contractDate||"";
+  cdInp.oninput=function(){ data.contractDate=cdInp.value; render(); autosave(); };
+  cdW.appendChild(cdInp); fs.appendChild(cdW);
+  fs.appendChild(field("ライセンス料（売上の何%・税抜）","licenseRate",data,false,"例：10"));
+  F.appendChild(fs);
+
+  // 販売方法（共通）
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料／製造仕様 共通）"));
+  const icW=el("div"); icW.appendChild(el("label","fl","コンセプト（スタンプヘッド）点数：通常"));
+  const icInp=el("input"); icInp.type="number"; icInp.min="1"; icInp.max="6"; icInp.value=data.itemCount;
+  icInp.oninput=function(){ data.itemCount=Math.min(6,Math.max(1,parseInt(icInp.value,10)||1)); computeComplete(); buildForm(); render(); autosave(); };
+  icW.appendChild(icInp); icW.appendChild(el("div","hint","下の「設計シート」の点数と連動します（1〜6）。")); fs.appendChild(icW);
   const secW=el("label","chk"); const secC=el("input"); secC.type="checkbox"; secC.checked=!!data.secretEnabled;
   secC.onchange=function(){ data.secretEnabled=secC.checked; buildForm(); render(); autosave(); };
   secW.append(secC, document.createTextNode("シークレットあり")); fs.appendChild(secW);
@@ -639,215 +665,257 @@ function buildForm(){
     const rateW=el("div"); rateW.appendChild(el("label","fl","シークレット当選確率（1/n の n）"));
     const rateI=el("input"); rateI.type="number"; rateI.min="1"; rateI.placeholder="例）10"; rateI.value=data.secretRate||"";
     rateI.oninput=function(){ data.secretRate=rateI.value; render(); autosave(); };
-    rateW.appendChild(rateI); rateW.appendChild(el("div","hint","当選確率 1/n（例：10 なら 1/10）"));
-    fs.appendChild(rateW);
+    rateW.appendChild(rateI); fs.appendChild(rateW);
   }
   [["blind","ブラインドボックス"],["complete","コンプリートセット（全種・被りなし）"],["single","単品販売"],["assort","アソートボックス販売"]].forEach(function(p){
-    const w=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=!!data.sales[p[0]];
-    c.onchange=function(){ data.sales[p[0]]=c.checked; render(); autosave(); };
-    w.append(c, document.createTextNode(p[1])); fs.appendChild(w);
+    fs.appendChild(chkField(p[1],p[0],data.sales));
   });
   const blindDiv=el("div"); blindDiv.appendChild(el("label","fl","ブラインドBOX 単価"));
   const blindInp=el("input"); blindInp.type="text"; blindInp.value=data.blindPrice||"";
-  const compDiv=el("div"); compDiv.appendChild(el("label","fl","コンプリートセット 単価（自動計算）"));
-  const compInp=el("input"); compInp.type="text"; compInp.readOnly=true;
-  compInp.style.background="#f1ede4"; compInp.style.color="var(--gray)";
+  const compDiv=el("div"); compDiv.appendChild(el("label","fl","コンプリートセット 単価（自動）"));
+  const compInp=el("input"); compInp.type="text"; compInp.readOnly=true; compInp.style.background="#f1ede4"; compInp.style.color="var(--gray)";
   function refreshComplete(){ computeComplete(); compInp.value=data.completePrice||""; }
   blindInp.oninput=function(){ data.blindPrice=blindInp.value; refreshComplete(); render(); autosave(); };
-  refreshComplete();
-  blindDiv.appendChild(blindInp);
-  compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 種類数（通常）"));
+  refreshComplete(); blindDiv.appendChild(blindInp);
+  compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 点数"));
   const priceRow=el("div","row"); priceRow.append(blindDiv,compDiv); fs.appendChild(priceRow);
   fs.appendChild(field("プレゼント企画メモ","presentNote",data));
   F.appendChild(fs);
 
-  // スケジュール（契約締結予定日から自動計算・日数編集可）
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"オファー資料：スケジュール（自動計算）"));
-  const cdW=el("div"); cdW.appendChild(el("label","fl","契約締結予定日（基準日）"));
-  const cdInp=el("input"); cdInp.type="date"; cdInp.value=data.contractDate||"";
-  const dateSpans=[];
-  function refreshSchedule(){ let cum=0; data.schedule.forEach(function(s,i){ cum+=parseInt(s.interval,10)||0; if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,cum) || "（基準日を入力）"; }); }
-  cdInp.oninput=function(){ data.contractDate=cdInp.value; refreshSchedule(); render(); autosave(); };
-  cdW.appendChild(cdInp); fs.appendChild(cdW);
-  // 日数調整：基本は全案件で共通なので既定で閉じる
-  const toggle=el("button","btn"); toggle.type="button"; toggle.style.cssText="margin:10px 0 4px;font-size:12px;";
-  const editWrap=el("div");
-  function syncToggle(){ toggle.textContent=(scheduleOpen?"▾":"▸")+" 各工程の日数を調整（基本は全案件で共通）"; editWrap.style.display=scheduleOpen?"block":"none"; }
-  toggle.onclick=function(){ scheduleOpen=!scheduleOpen; syncToggle(); };
-  fs.appendChild(toggle);
-  editWrap.appendChild(el("div","hint","各工程に「前の工程から何日後か」を入力します（変えると日付が自動更新）。"));
-  data.schedule.forEach(function(s,i){
-    const row=el("div"); row.style.cssText="display:flex;align-items:center;gap:8px;margin:8px 0;";
-    const lab=el("div"); lab.style.cssText="flex:1;font-size:12px;color:var(--ink);"; lab.textContent=s.label;
-    const dateSpan=el("span","hint"); dateSpan.style.cssText="min-width:96px;text-align:right;color:var(--gray);"; dateSpans[i]=dateSpan;
-    if(i===0){
-      const base=el("span","hint"); base.textContent="基準日";
-      row.append(lab,base,dateSpan);
-    } else {
-      const dInp=el("input"); dInp.type="number"; dInp.value=s.interval; dInp.style.width="64px"; dInp.title="前の工程からの日数";
-      dInp.oninput=function(){ s.interval=parseInt(dInp.value,10)||0; refreshSchedule(); render(); autosave(); };
-      const unit=el("span","hint"); unit.textContent="日後（前工程から）";
-      row.append(lab,dInp,unit,dateSpan);
-    }
-    editWrap.appendChild(row);
-  });
-  refreshSchedule(); syncToggle();
-  fs.appendChild(editWrap);
+  // 設計シート：全体
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：全体コンセプト"));
+  fs.appendChild(el("div","note","<b>担当者が考えて埋めるページ。</b>埋めれば、そのままクリエイターへの<b>書き下ろし依頼</b>になります。テーマ（1つ）だけHOMUが提示し、あとは自由に描いてもらう前提。"));
+  fs.appendChild(field("全体コンセプト（テーマ・HOMUが提示する1つ）","theme",data,true,"例：「くしゃかわ便り」— なかまたちが、それぞれのやり方で誰かへの想いを届ける。通年で使える定番として設計。"));
+  fs.appendChild(field("作品の核・大切にしたい魅力","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。"));
+  fs.appendChild(field("封蝋で活かしたいモチーフ・表現","motif",data.overall,true,"シルエットで映える／単色でも伝わる など。"));
+  fs.appendChild(field("ファンが反応・期待していること","fans",data.overall,true,"SNSの反応から、何に惹かれ何を求めているか。"));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：今回のコラボで大切にしたいこと"));
-  const cnote=el("div");
-  cnote.style.cssText="background:#f3efe7;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.7;margin-bottom:10px;";
-  cnote.innerHTML="企画担当が考え・調べて埋めます。<b>クリエイターさんも読む内容</b>なので、敬意のある前向きな言葉で書いてください。";
-  fs.appendChild(cnote);
-  fs.appendChild(field("① 作品の核・大切にしたい魅力","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。SNSの反応や本人との会話から。例：やわらかな色づかいと、静かな物語性。"));
-  fs.appendChild(field("② 封蝋スタンプで活かしたいモチーフ・表現","motif",data.overall,true,"どのモチーフ・表現を封蝋スタンプで活かすか（シルエットで映える／単色でも伝わる など）。“活かしたい点”として前向きに。"));
-  fs.appendChild(field("③ ファンが反応・期待していること","fans",data.overall,true,"SNSのコメントや反応から、ファンが何に惹かれ、何を求めているか。例：『この場面をグッズに』という声が多い。"));
-  F.appendChild(fs);
-
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：本コラボのメインビジュアル"));
-  fs.appendChild(el("div","hint","このメインビジュアルがポストカードに印刷され、さらにパッケージにも使われます。"));
-  fs.appendChild(imgSlot("メインビジュアル画像",()=>data.package,v=>data.package=v));
-  fs.appendChild(field("補足メモ","packageNote",data,true));
-  F.appendChild(fs);
-
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：コンセプト案（ブラインドボックスの中身）"));
-  for(let i=0;i<data.boxCount;i++){
-    const block=conceptForm(data.concepts[i],"ブラインドボックス"+CIRCLED[i]);
-    if(data.boxCount>1){
-      const rm=el("button","btn"); rm.type="button"; rm.textContent="このブラインドボックスを削除";
-      rm.style.cssText="font-size:11px;margin-top:6px;";
-      (function(idx){ rm.onclick=function(){ data.concepts.splice(idx,1); data.concepts.push(blankConcept()); data.boxCount--; buildForm(); render(); autosave(); }; })(i);
+  // 設計シート：商品構成（お題）
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"② 設計シート：商品構成と書き下ろしのお題"));
+  fs.appendChild(el("div","note","勝ち筋の型（<b>役割で差をつける</b>）：<br>"+ROLE_HINTS.map(h=>"・"+h).join("<br>")+"<br>＋独自外形（円・四角は弱い）／セパレート＆色分け動画で拡散／初日に売上が集中するのでドロップ設計。"));
+  for(let i=0;i<data.itemCount;i++){
+    const block=itemForm(data.items[i],"スタンプヘッド "+CIRCLED[i]);
+    if(data.itemCount>1){
+      const rm=el("button","btn"); rm.type="button"; rm.textContent="この項目を削除"; rm.style.cssText="font-size:11px;margin-top:6px;";
+      (function(idx){ rm.onclick=function(){ data.items.splice(idx,1); data.items.push(blankItem()); data.itemCount--; computeComplete(); buildForm(); render(); autosave(); }; })(i);
       block.appendChild(rm);
     }
     fs.appendChild(block);
   }
-  if(data.boxCount<6){
-    const add=el("button","btn primary"); add.type="button"; add.textContent="＋ ブラインドボックスを追加";
-    add.style.cssText="margin-top:10px;";
-    add.onclick=function(){ if(data.boxCount<6){ data.boxCount++; buildForm(); render(); autosave(); } };
+  if(data.itemCount<6){
+    const add=el("button","btn primary"); add.type="button"; add.textContent="＋ スタンプヘッドを追加"; add.style.cssText="margin-top:10px;";
+    add.onclick=function(){ if(data.itemCount<6){ data.itemCount++; computeComplete(); buildForm(); render(); autosave(); } };
     fs.appendChild(add);
   }
-  if(data.secretEnabled) fs.appendChild(conceptForm(data.secret,"シークレット枠",true));
+  if(data.secretEnabled) fs.appendChild(itemForm(data.secret,"シークレット枠",true));
+  F.appendChild(fs);
+
+  // ポストカード
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"ポストカード（付随）"));
+  fs.appendChild(chkField("各コンセプトにポストカードを付ける","postcardIncluded",data));
+  fs.appendChild(field("ポストカードのメモ","postcardNote",data,true));
+  F.appendChild(fs);
+
+  // スケジュール
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"スケジュール（提案資料に記載・自動計算）"));
+  const dateSpans=[];
+  function refreshSchedule(){ let cum=0; data.schedule.forEach(function(s,i){ cum+=parseInt(s.interval,10)||0; if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,cum) || "（基準日を入力）"; }); }
+  const toggle=el("button","btn"); toggle.type="button"; toggle.style.cssText="margin:2px 0 4px;font-size:12px;";
+  const editWrap=el("div");
+  function syncToggle(){ toggle.textContent=(scheduleOpen?"▾":"▸")+" 各工程の日数を調整（基本は全案件で共通）"; editWrap.style.display=scheduleOpen?"block":"none"; }
+  toggle.onclick=function(){ scheduleOpen=!scheduleOpen; syncToggle(); }; fs.appendChild(toggle);
+  editWrap.appendChild(el("div","hint","各工程に「前の工程から何日後か」を入力（変えると日付が自動更新）。"));
+  data.schedule.forEach(function(s,i){
+    const row=el("div"); row.style.cssText="display:flex;align-items:center;gap:8px;margin:8px 0;";
+    const lab=el("div"); lab.style.cssText="flex:1;font-size:12px;color:var(--ink);"; lab.textContent=s.label;
+    const dateSpan=el("span","hint"); dateSpan.style.cssText="min-width:96px;text-align:right;color:var(--gray);"; dateSpans[i]=dateSpan;
+    if(i===0){ const base=el("span","hint"); base.textContent="基準日"; row.append(lab,base,dateSpan); }
+    else {
+      const dInp=el("input"); dInp.type="number"; dInp.value=s.interval; dInp.style.width="64px"; dInp.title="前の工程からの日数";
+      dInp.oninput=function(){ s.interval=parseInt(dInp.value,10)||0; refreshSchedule(); render(); autosave(); };
+      const unit=el("span","hint"); unit.textContent="日後"; row.append(lab,dInp,unit,dateSpan);
+    }
+    editWrap.appendChild(row);
+  });
+  refreshSchedule(); syncToggle(); fs.appendChild(editWrap);
   F.appendChild(fs);
 }
 
-/* ---------- preview render ---------- */
+/* ========== プレビュー描画 ========== */
 function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-function pvImg(v,cap,h){ h=h||118;
-  const inner = v ? `<img class="pv-img" src="${v}">` : `<div class="pv-box" style="height:100%">${cap}</div>`;
-  return `<div style="height:${h}px">${inner}</div><div class="pv-cap">${cap}</div>`;
-}
 function ans(v){ return v? `<span class="a">${esc(v)}</span>` : `<span class="a empty">（未記入）</span>`; }
+function ipx(){ return data.ip?("（IP："+esc(data.ip)+"）"):""; }
+function secLabel(){ return data.secretEnabled?("＋シークレット"+secretCount()+"種"):""; }
 
-// 販売するものの定義（オファー資料・企画書 共通の表示）
 function renderSalesDef(){
-  const total=data.boxCount, sc=secretCount();
-  let blindDesc = "全"+(total+sc)+"種"+(sc? "（通常"+total+"種＋シークレット"+sc+"種）":"")+"・1箱共通価格";
-  if(sc && data.secretRate) blindDesc += "／シークレット当選確率 1/"+esc(data.secretRate);
+  const total=data.itemCount, sc=secretCount();
+  let blindDesc="全"+(total+sc)+"種"+(sc?"（通常"+total+"種＋シークレット"+sc+"種）":"")+"・1箱共通価格";
+  if(sc && data.secretRate) blindDesc+="／シークレット当選確率 1/"+esc(data.secretRate);
   const modes=[];
   if(data.sales.blind)    modes.push({nm:"ブラインドボックス", dsc:blindDesc, pr:data.blindPrice});
   if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+total+"種・"+total+"点セット（被りなし）", pr:data.completePrice});
-  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"コンセプトセットを1点から購入できる", pr:""});
-  if(data.sales.assort)   modes.push({nm:"アソートボックス販売", dsc:"複数のコンセプトをまとめた詰め合わせ", pr:""});
-  const cards = modes.length
+  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"1点から購入できる", pr:""});
+  if(data.sales.assort)   modes.push({nm:"アソートボックス販売", dsc:"複数をまとめた詰め合わせ", pr:""});
+  const cards=modes.length
     ? '<div class="price-cards">'+modes.map(function(m){ return '<div class="price-card"><div class="nm">'+esc(m.nm)+'</div><div class="dsc">'+m.dsc+'</div>'+(m.pr?'<div class="pr">¥'+esc(m.pr)+'</div>':'')+'</div>'; }).join('')+'</div>'
     : '<p class="muted">（販売方法を選択してください）</p>';
-  return cards
-    + '<p>必要なコンセプトボックスは <b>'+(total+sc)+'種</b>'+(sc?'（通常'+total+'種＋シークレット'+sc+'種）':'')+'。</p>'
-    + '<p class="muted">※ '+esc(data.presentNote)+'</p>';
+  return cards+'<p class="muted">※ '+esc(data.presentNote)+'</p>';
+}
+function scheduleHtml(){
+  let cum=0;
+  return data.schedule.map(function(s,i){ cum+=parseInt(s.interval,10)||0; const note=i===0?"（基準日）":("（前工程＋"+s.interval+"日）"); return '<div class="sched"><span>'+esc(s.label)+note+'</span><span class="muted">'+(esc(addDays(data.contractDate,cum))||"____/__/__")+'</span></div>'; }).join("");
 }
 
-function renderOffer(){
-  const total=data.boxCount, sc=secretCount();
-  let cum=0;
-  const schedHtml=data.schedule.map(function(s,i){ cum+=parseInt(s.interval,10)||0; const note=i===0?"（基準日）":("（前工程＋"+s.interval+"日）"); return '<div class="sched"><span>'+esc(s.label)+note+'</span><span class="muted">'+(esc(addDays(data.contractDate,cum))||"____/__/__")+'</span></div>'; }).join("");
-  const ipx=data.ip?("（IP："+esc(data.ip)+"）"):"";
-  document.getElementById("pv-offer").innerHTML=`
+/* ---- ① 提案資料（定型） ---- */
+function renderA(){
+  const creator=esc(data.creator)||"〈クリエイター名〉";
+  const staff=esc(data.staff)||"____";
+  const total=data.itemCount, rate=esc(data.licenseRate)||"__";
+  document.getElementById("pv-a").innerHTML=`
     <div class="kicker">HOMU × CREATOR COLLABORATION</div>
-    <h2 class="tt">コラボレーション オファー</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} 様${ipx} ／ 担当：${esc(data.staff)||"____"}</div>
+    <h2 class="tt">HOMU × ${creator} 様</h2>
+    <div class="sub">シーリングスタンプ コラボレーション ご提案資料 ／ 担当：${staff}</div>
 
-    <h3>1. HOMUのコラボで作る商品＝「コンセプトボックス」</h3>
-    <p>HOMUのコラボ商品は、クリエイターさんの世界観を一つのテーマに落とし込んだ「コンセプトボックス」が単位です。1つのコンセプトボックスには、スタンプヘッド・コラボワックス・ポストカード（背景台紙）がセットで入ります。</p>
-    <p>今回のコラボでは、このコンセプトボックスを <b>${total}種${sc?("＋シークレット"+sc+"種"):""}</b> つくることを前提に進めます。</p>
+    <h3>1. はじめに</h3>
+    <p>このたびは、HOMUからのご提案にお目通しいただき、ありがとうございます。本資料は、${creator}様にできるだけご負担をおかけしない形で、シーリングスタンプのコラボ商品をご一緒できないかというご提案です。シーリングスタンプが初めてでも、イメージづくりからHOMUがしっかりお手伝いします。</p>
 
-    <h3>2. 販売方法</h3>
-    ${renderSalesDef()}
+    <h3>2. 本企画の位置づけ</h3>
+    <ul>
+      <li>本件のみの<b>単発コラボ</b>です。SNS運用や継続的な取り組みの義務は一切ありません。</li>
+      <li>現在の活動スタイルや、他社さまとのお取り組みに影響を与えることはありません。</li>
+      <li>イラストは<b>基本、書き下ろし</b>をお願いします（難しい場合は既存作品の活用もご相談可）。</li>
+      <li>製造・販売・カスタマーサポートは、すべてHOMUが担当します。</li>
+    </ul>
 
-    <h3>3. スケジュール</h3>
-    ${schedHtml}
-    <p class="muted" style="margin-top:8px">※ 上記の日付はあくまで目安・概算です。実際の日程は状況により前後します。</p>
+    <h3>3. 作る商品 ＝「コンセプトボックス」</h3>
+    <p>HOMUのコラボ商品は「コンセプトボックス」が単位です。1つのボックスに、<b>スタンプヘッド／コラボワックス／ポストカード（背景台紙）</b>がセットで入ります。今回は <b>${total}種${secLabel()}</b> を前提に進めます。</p>
+
+    <h3>4. 進め方</h3>
+    <ol>
+      <li>本資料で、コラボの詳細・条件にご合意いただく</li>
+      <li>「設計シート」で、テーマ・商品構成・各デザインのお題を一緒に固める</li>
+      <li>お題に沿って ${creator}様に書き下ろしいただく（自由にアレンジOK）</li>
+      <li>HOMUが試作 → ご確認 → 製造・販売・告知</li>
+      <li>売上を集計し、ライセンス料をお支払い（集計レポートを併せて共有）</li>
+    </ol>
+
+    <h3>5. 役割分担</h3>
+    <table class="role">
+      <tr><th>${creator} 様</th><td>イラスト・デザインのご提供（お題に沿った書き下ろし／既存の選定）。試作・校正のご確認。</td></tr>
+      <tr><th>HOMU</th><td>テーマ・お題のご提案／スタンプヘッドの造形・構造設計／工場とのやり取り・試作・量産・在庫・発送／各パッケージ・ワックス選定・ポストカード制作／販売運営・カスタマーサポート・告知。</td></tr>
+    </table>
+
+    <h3>6. 条件</h3>
+    <table class="role">
+      <tr><th>ライセンス料</th><td>本コラボ商品の売上に応じて、<b>${rate}%（税抜）</b>をお支払い。販売期間ごとに集計し、銀行振込。集計レポートも共有します。</td></tr>
+      <tr><th>著作権</th><td>イラストの著作権は ${creator}様に帰属します。HOMUは本コラボ商品の製造・販売の範囲でのみ使用します。</td></tr>
+      <tr><th>利用範囲</th><td>本単発コラボ商品およびその販売に必要な範囲（商品撮影・販促物・HOMUのSNS等）に限定します。</td></tr>
+      <tr><th>クレジット</th><td>商品ページ・販促物に「Illustration by ${creator}」等を明記します（表記はご希望に合わせます）。</td></tr>
+      <tr><th>契約形態</th><td>大がかりな契約ではなく、合意内容をまとめた簡易な覚書（コラボ確認書）を取り交わす形を想定しています。</td></tr>
+    </table>
+
+    <h3>7. スケジュール（目安）</h3>
+    ${scheduleHtml()}
+    <p class="muted" style="margin-top:8px">※ 日付は目安・概算です。実際の日程は状況により前後します。ご多用の時期は無理に進めません。</p>
+
+    <div class="pcard"><div class="ph">ご安心いただきたいこと</div>
+      <p style="margin:0">単発企画で継続義務はありません。著作権はあなたに帰属します。進行はあなたのペースを最優先します。シーリングスタンプが初めてでも、イメージづくりからHOMUが伴走します。</p>
+    </div>
+
+    <p>ご不明点があれば、どうぞお気軽にお知らせください。ご検討のほど、よろしくお願いいたします。</p>
+    <p class="muted" style="text-align:right;margin-top:14px">シーリングスタンプブランド HOMU ／ 株式会社BAULIFE　取締役　高橋 明日香</p>
   `;
 }
-function conceptPV(c,title,secret){
+
+/* ---- ② 設計シート（書き下ろし依頼） ---- */
+function itemBriefPV(it,title,secret){
+  const specs=[];
+  if(it.dim) specs.push("<b>形態</b> "+esc(it.dim));
+  if(it.shape) specs.push("<b>形状</b> "+esc(it.shape));
+  if(it.separate) specs.push("<b>セパレート</b>");
+  if(it.illust) specs.push("<b>必要イラスト</b> "+esc(it.illust));
   return `<div class="pcard${secret?" secret":""}">
-    <div class="ph">${title}${secret?'（中身は非公開／レア枠）':'：'+(esc(c.title)||"________（商品名未記入）")}</div>
-    <h4>① 使用したい原画</h4>
-    <div style="width:46%">${pvImg(c.genga, secret?"シークレット":"使用したい原画")}</div>
-    <h4>② 商品化イメージ</h4>
-    <div class="grid3">
-      <div>${pvImg(c.stamp,"スタンプヘッド",215)}</div>
-      <div>${pvImg(c.wax,"ワックスカラー",215)}${waxChips(c.waxColors)}</div>
-      <div>${pvImg(c.postcard,"ポストカード",215)}</div>
-    </div>
+    <div class="ph">${title}${secret?"（レア枠）":"："+(esc(it.ttl)||"（お題タイトル未記入）")}</div>
+    ${it.role?('<div class="meta"><span><b>役割：</b>'+esc(it.role)+'</span></div>'):""}
+    ${specs.length?('<div class="meta">'+specs.map(s=>"<span>"+s+"</span>").join("")+'</div>'):""}
+    <div class="qa"><div class="q">モチーフ・構図の方向</div>${ans(it.motif)}</div>
+    <div class="qa"><div class="q">お題（自由に描いていただいてOK）</div>${ans(it.brief)}</div>
+    ${it.genga?('<div style="width:40%">'+`<div style="height:118px"><img class="pv-img" src="${it.genga}"></div><div class="pv-cap">原画/ラフ</div>`+'</div>'):""}
   </div>`;
 }
-// 型→形状（八角/星/花/絵柄入り）
-function typeShape(t){ t=t||''; if(t.indexOf('八角')===0)return'octa'; if(t.indexOf('星')===0)return'star'; if(t==='アジサイ')return'blossom'; if(t==='絵柄入り')return'emaki'; return''; /*型不明=丸*/ }
-// 形状シルエットSVG（その色で塗る）
-function shapeSil(shape,color,size){ size=size||30; var f='fill="'+esc(color||'#ccc')+'"', inner='';
-  if(shape==='octa') inner='<polygon points="8,2 16,2 22,8 22,16 16,22 8,22 2,16 2,8" '+f+'/>';
-  else if(shape==='star') inner='<polygon points="12,1.5 14.7,8.8 22.5,9 16.3,13.9 18.6,21.5 12,16.8 5.4,21.5 7.7,13.9 1.5,9 9.3,8.8" '+f+'/>';
-  else if(shape==='blossom') inner='<g '+f+'><circle cx="12" cy="5.2" r="4.3"/><circle cx="18.6" cy="10" r="4.3"/><circle cx="16.1" cy="17.8" r="4.3"/><circle cx="7.9" cy="17.8" r="4.3"/><circle cx="5.4" cy="10" r="4.3"/><circle cx="12" cy="12" r="4.2"/></g>';
-  else if(shape==='butterfly') inner='<g '+f+'><ellipse cx="6.8" cy="8" rx="5.6" ry="4.6"/><ellipse cx="17.2" cy="8" rx="5.6" ry="4.6"/><ellipse cx="7.8" cy="16.2" rx="4.6" ry="4"/><ellipse cx="16.2" cy="16.2" rx="4.6" ry="4"/><rect x="11.2" y="5.5" width="1.6" height="13.5" rx="0.8"/></g>';
-  else if(shape==='fan') inner='<path d="M12 20.5 L5 9 A 8 8 0 0 1 19 9 Z" '+f+'/>';
-  else inner='<circle cx="12" cy="12" r="9.5" '+f+'/>'; // 型不明は丸（八角と誤認させない）
-  return '<svg class="wsil" viewBox="0 0 24 24" width="'+size+'" height="'+size+'">'+inner+'</svg>';
-}
-function waxChips(colors){
-  if(!colors||!colors.length) return '';
-  return '<div class="wax-chips">'+colors.map(function(c){
-    var sh=typeShape(c.type), icon;
-    if(sh==='emaki') icon='<span class="wsil-grp">'+shapeSil('butterfly',c.color,20)+shapeSil('fan',c.color,20)+shapeSil('blossom',c.color,20)+'</span>';
-    else icon=shapeSil(sh,c.color,30);
-    return '<span class="wax-chip">'+icon+'<b>'+(c.ratio!=null?Math.round(c.ratio)+'%':'')+'</b></span>';
-  }).join('')+'</div>';
-}
-function renderPlan(){
-  const total=data.boxCount;
-  const ipx=data.ip?("（IP："+esc(data.ip)+"）"):"";
-  let concepts=""; for(let i=0;i<total;i++) concepts+=conceptPV(data.concepts[i],"ブラインドボックス"+CIRCLED[i],false);
-  if(data.secretEnabled) concepts+=conceptPV(data.secret,"シークレット",true);
-  document.getElementById("pv-plan").innerHTML=`
-    <div class="kicker">HOMU × CREATOR COLLABORATION</div>
-    <h2 class="tt">コラボ企画書</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx} × HOMU</div>
+function renderB(){
+  const total=data.itemCount;
+  let items=""; for(let i=0;i<total;i++) items+=itemBriefPV(data.items[i],"スタンプヘッド "+CIRCLED[i],false);
+  if(data.secretEnabled) items+=itemBriefPV(data.secret,"シークレット",true);
+  document.getElementById("pv-b").innerHTML=`
+    <div class="kicker">HOMU × ${esc(data.creator)||"CREATOR"} COLLABORATION</div>
+    <h2 class="tt">コラボ設計シート</h2>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx()} × HOMU ／ 書き下ろしのお題と商品構成</div>
 
-    <h3>1. 今回のコラボで販売するものを定義する</h3>
-    ${renderSalesDef()}
+    <div class="pcard"><div class="ph">全体コンセプト（テーマ）</div><p style="margin:0">${ans(data.theme)}</p></div>
 
-    <h3>2. 今回のコラボで大切にしたいこと</h3>
+    <h3>1. 今回のコラボで大切にしたいこと</h3>
     <div class="qa"><div class="q">作品の核・大切にしたい魅力</div>${ans(data.overall.core)}</div>
-    <div class="qa"><div class="q">封蝋スタンプで活かしたいモチーフ・表現</div>${ans(data.overall.motif)}</div>
+    <div class="qa"><div class="q">封蝋で活かしたいモチーフ・表現</div>${ans(data.overall.motif)}</div>
     <div class="qa"><div class="q">ファンの皆さんが求めていること</div>${ans(data.overall.fans)}</div>
 
-    <h3>3. 本コラボのメインビジュアル</h3>
-    <p>このメインビジュアル画像が<b>ポストカードに印刷</b>され、さらに<b>パッケージにも使用</b>されます。</p>
-    <div style="width:60%">${pvImg(data.package,"メインビジュアル（ポストカード・パッケージに使用）")}</div>
-    <p class="muted">${esc(data.packageNote)}</p>
+    <h3>2. 商品構成と書き下ろしのお題</h3>
+    <p>今回は下記の <b>${total}種${secLabel()}</b> を制作します。各お題は「方向性」です。詳細は ${esc(data.creator)||"クリエイター"}様の自由に描いていただいてOKです（変更・アレンジ歓迎）。</p>
+    ${items}
 
-    <h3>4. コンセプト案</h3>
-    ${concepts}
-    <p class="muted" style="border-top:1px solid var(--line);padding-top:8px;margin-top:14px">※ 本企画書は提案であり、確定ではありません。</p>
+    ${data.postcardIncluded?('<h3>3. ポストカード</h3><p class="muted">'+esc(data.postcardNote)+'</p>'):""}
+
+    <p class="muted" style="border-top:1px solid var(--line);padding-top:8px;margin-top:14px">※ 本シートは相談のたたき台です。一緒に埋めながら確定します。</p>
   `;
 }
-function render(){ renderOffer(); renderPlan(); }
+
+/* ---- ③ 製造仕様（社内） ---- */
+function specRow(it,label){
+  return `<tr>
+    <td>${esc(label)}</td>
+    <td>${esc(it.ttl)||"—"}</td>
+    <td class="c">${esc(it.dim)||"—"}</td>
+    <td class="c">${esc(it.shape)||"—"}</td>
+    <td class="c">${esc(it.size)||"—"}</td>
+    <td class="c">${it.separate?"○":"—"}</td>
+    <td>${esc(it.waxText)||"—"}</td>
+    <td class="c">${it.price?("¥"+esc(it.price)):"—"}</td>
+    <td class="c">${esc(it.qty)||"—"}</td>
+  </tr>`;
+}
+function renderC(){
+  const total=data.itemCount;
+  let rows=""; for(let i=0;i<total;i++) rows+=specRow(data.items[i],"スタンプ"+CIRCLED[i]);
+  if(data.secretEnabled) rows+=specRow(data.secret,"シークレット");
+  document.getElementById("pv-c").innerHTML=`
+    <div class="kicker">INTERNAL — 製造仕様</div>
+    <h2 class="tt">製造仕様サマリ</h2>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx()} × HOMU ／ 社内・工場発注用</div>
+
+    <h3>1. 販売方法・価格</h3>
+    ${renderSalesDef()}
+
+    <h3>2. スタンプヘッド仕様</h3>
+    <table class="spec">
+      <tr><th>#</th><th>お題</th><th>形態</th><th>形状</th><th>サイズ</th><th>セパ</th><th>ワックス色</th><th>単価</th><th>数量見込</th></tr>
+      ${rows}
+    </table>
+    <p class="muted">※ 実際の形状・サイズ・彫り可否は契約工場と相談のうえ確定。立体の高さ制限・モチーフの重なりは生産前に要確認。</p>
+
+    ${data.postcardIncluded?('<h3>3. ポストカード</h3><p class="muted">'+esc(data.postcardNote)+'</p>'):""}
+
+    <h3>${data.postcardIncluded?"4":"3"}. スケジュール</h3>
+    ${scheduleHtml()}
+  `;
+}
+
+function render(){ renderA(); renderB(); renderC(); }
 
 function fitPreview(){
   const pane=document.querySelector(".pane-preview");
   const avail=pane.clientWidth-48;
-  const sheetPx=794; // 210mm @96dpi
+  const sheetPx=794;
   document.getElementById("scaler").style.zoom=Math.min(1, Math.max(0.3, avail/sheetPx));
 }
 window.addEventListener("resize",fitPreview);
