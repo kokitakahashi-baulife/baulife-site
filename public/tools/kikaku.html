@@ -709,6 +709,7 @@ function buildForm(){
   secW.append(secC, document.createTextNode("シークレット枠あり（＋1種）")); fs.appendChild(secW);
   fs.appendChild(el("div","note","合計 <b>"+(data.itemCount+secretCount())+"種</b>"+(secretCount()?"（通常"+data.itemCount+"種 ＋ シークレット"+secretCount()+"種）":"")+"　＝　クリエイターへの書き下ろし依頼 "+(data.itemCount+secretCount())+"種。"));
   fs.appendChild(el("div","hint","販売する形にチェックを入れ、それぞれの単価を入力してください。"));
+  if(secretCount()) fs.appendChild(el("div","hint","※ シークレットは<b>コンプリートセット購入者全員</b>に付属します（単品には含みません）。"));
   [["complete","コンプリートセット","全種セットの単価（円）"],["single","単品販売","1種の単価（円）"]].forEach(function(p){
     const chk=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=!!data.sales[p[0]];
     c.onchange=function(){ data.sales[p[0]]=c.checked; buildForm(); render(); autosave(); };
@@ -809,8 +810,8 @@ function pvMedia(v,cap,kind){
 function renderSalesDef(){
   const total=data.itemCount, sc=secretCount();
   const modes=[];
-  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+(total+sc)+"種セット（被りなし）", pr:data.prices.complete});
-  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"1種から購入できる", pr:data.prices.single});
+  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:(sc?"通常"+total+"種＋シークレット"+sc+"種＝":"")+"全"+(total+sc)+"種セット"+(sc?"（シークレットはこのセット限定・購入者全員に付属）":"（被りなし）"), pr:data.prices.complete});
+  if(data.sales.single)   modes.push({nm:"単品販売", dsc:(sc?"通常"+total+"種から1種ずつ購入（シークレットは含みません）":"1種から購入できる"), pr:data.prices.single});
   const cards=modes.length
     ? '<div class="price-cards">'+modes.map(function(m){ return '<div class="price-card"><div class="nm">'+esc(m.nm)+'</div><div class="dsc">'+m.dsc+'</div>'+(m.pr?'<div class="pr">¥'+esc(m.pr)+'</div>':'')+'</div>'; }).join('')+'</div>'
     : '<p class="muted">（販売方法を選択してください）</p>';
