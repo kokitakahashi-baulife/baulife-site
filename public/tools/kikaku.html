@@ -122,6 +122,7 @@
   .media.portrait{width:46mm;} .media.portrait .mbox{aspect-ratio:100/148;}
   .media.square{width:40mm;} .media.square .mbox{aspect-ratio:1/1;}
   .media.wide{width:60mm;} .media.wide .mbox{height:100px;}
+  .media.box{width:100mm;} .media.box .mbox{aspect-ratio:4/3;}
   .media .mbox{width:100%;border-radius:6px;overflow:hidden;}
   .media.pdf .mbox{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);background:var(--cream);color:var(--red);font-size:9pt;font-weight:700;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
@@ -271,7 +272,7 @@ function defaultData(){
   return {
     fileName:"", creator:"", ip:"",
     contractDate:"",
-    theme:"", themeImg:"",
+    theme:"", themeImg:"", boxImg:"",
     itemCount:3,
     secretEnabled:false, secretRate:"",
     sales:{blind:true, complete:true, single:false},
@@ -663,6 +664,9 @@ function buildForm(){
   cdInp.oninput=function(){ data.contractDate=cdInp.value; render(); autosave(); };
   cdW.appendChild(cdInp); fs.appendChild(cdW);
   fs.appendChild(el("div","hint","ライセンス料は固定 "+LICENSE_RATE+"%（税抜）で資料に記載されます。"));
+  fs.appendChild(el("label","fl","コンセプトボックスのイメージ画像（提案資料に掲載）"));
+  fs.appendChild(imgSlot("コンセプトボックスのイメージ",()=>data.boxImg,v=>data.boxImg=v,"free",false));
+  fs.appendChild(el("div","hint","商品セットの写真やイメージ。未入力なら「画像が入ります」の枠が資料に表示されます。"));
   F.appendChild(fs);
 
   fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料に記載）"));
@@ -763,7 +767,7 @@ function ans(v){ return v? `<span class="a">${esc(v)}</span>` : `<span class="a 
 function ipx(){ return data.ip?("（IP："+esc(data.ip)+"）"):""; }
 function secLabel(){ return data.secretEnabled?("＋シークレット"+secretCount()+"種"):""; }
 function pvMedia(v,cap,kind){
-  const cls = kind==="portrait"?"portrait":kind==="square"?"square":"wide";
+  const cls = kind==="portrait"?"portrait":kind==="square"?"square":kind==="box"?"box":"wide";
   if(isPdf(v)) return `<div class="media ${cls} pdf"><div class="mbox">📄 PDF</div><div class="pv-cap">${cap}</div></div>`;
   const inner = v ? `<img class="pv-img" src="${v}">` : `<div class="pv-box">${cap}</div>`;
   return `<div class="media ${cls}"><div class="mbox">${inner}</div><div class="pv-cap">${cap}</div></div>`;
@@ -810,6 +814,7 @@ function renderA(){
     <h3>3. 作る商品 ＝「コンセプトボックス」</h3>
     <div class="boxdef">1つの<b>コンセプトボックス</b>には、<b>スタンプヘッド・コラボワックス・ポストカードが1点ずつ</b>入ります。この「1セット＝1コンセプトボックス」を1単位として、複数種類つくります。</div>
     <p>今回は、この<b>コンセプトボックスを ${total}種${secLabel()}</b> つくることを前提に進めます（テーマは共通で、中身のデザインが種類ごとに変わります）。</p>
+    ${pvMedia(data.boxImg,"コンセプトボックスのイメージ","box")}
 
     <h3>4. 販売方法</h3>
     ${renderSalesDef()}
