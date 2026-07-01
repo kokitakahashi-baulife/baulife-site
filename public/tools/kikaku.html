@@ -191,7 +191,7 @@
   <div class="list-head">
     <a class="portal-back" href="/tools">← 社内ポータル</a>
     <h1>HOMU コラボ資料ジェネレーター</h1>
-    <p>1件を埋めれば「提案資料（定型）／設計シート（書き下ろし依頼）／製造仕様（社内）」を一括で出力できます。共有ドライブに自動保存されます。</p>
+    <p>1件を埋めれば「提案資料（定型）」と「設計シート（書き下ろし依頼）」をまとめて出力できます。共有ドライブに自動保存されます。</p>
   </div>
   <div id="listGrid" class="list-grid"></div>
 </div>
@@ -202,7 +202,6 @@
     <div class="seg" id="seg">
       <button data-doc="a" class="active">提案資料</button>
       <button data-doc="b">設計シート</button>
-      <button data-doc="c">製造仕様</button>
     </div>
     <input id="fileNameInput" class="fname-input" placeholder="ファイル名（空欄なら自動）" title="共有ドライブ上のファイル名">
     <span id="saveStatus" class="save-status"></span>
@@ -230,7 +229,6 @@
       <div id="scaler" style="width:210mm">
         <div class="doc" id="doc-a"><div class="sheet" id="pv-a"></div></div>
         <div class="doc" id="doc-b" style="display:none"><div class="sheet" id="pv-b"></div></div>
-        <div class="doc" id="doc-c" style="display:none"><div class="sheet" id="pv-c"></div></div>
       </div>
     </div>
   </div>
@@ -507,7 +505,7 @@ function initApp(){
 document.getElementById("seg").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b)return;
   [...document.querySelectorAll("#seg button")].forEach(x=>x.classList.toggle("active",x===b));
-  ["a","b","c"].forEach(k=>{ document.getElementById("doc-"+k).style.display = b.dataset.doc===k?"block":"none"; });
+  ["a","b"].forEach(k=>{ document.getElementById("doc-"+k).style.display = b.dataset.doc===k?"block":"none"; });
 });
 function exportPDF(){
   const active=document.querySelector("#seg button.active").dataset.doc;
@@ -667,7 +665,7 @@ function buildForm(){
   fs.appendChild(el("div","hint","ライセンス料は固定 "+LICENSE_RATE+"%（税抜）で資料に記載されます。"));
   F.appendChild(fs);
 
-  fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料／製造仕様 共通）"));
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法・価格（提案資料に記載）"));
   fs.appendChild(el("div","note","<b>コンセプトボックス</b>＝スタンプヘッド・コラボワックス・ポストカードが<b>1点ずつ</b>入った1セット。これを<b>複数種類</b>つくります。"));
   const icW=el("div"); icW.appendChild(el("label","fl","コンセプトボックスの種類数（通常）"));
   const icInp=el("input"); icInp.type="number"; icInp.min="1"; icInp.max="6"; icInp.value=data.itemCount;
@@ -813,7 +811,10 @@ function renderA(){
     <div class="boxdef">1つの<b>コンセプトボックス</b>には、<b>スタンプヘッド・コラボワックス・ポストカードが1点ずつ</b>入ります。この「1セット＝1コンセプトボックス」を1単位として、複数種類つくります。</div>
     <p>今回は、この<b>コンセプトボックスを ${total}種${secLabel()}</b> つくることを前提に進めます（テーマは共通で、中身のデザインが種類ごとに変わります）。</p>
 
-    <h3>4. 進め方</h3>
+    <h3>4. 販売方法</h3>
+    ${renderSalesDef()}
+
+    <h3>5. 進め方</h3>
     <ol>
       <li>本資料で、コラボの詳細・条件にご合意いただく</li>
       <li>「設計シート」で、テーマ・商品構成・各デザインのお題を一緒に固める</li>
@@ -822,13 +823,13 @@ function renderA(){
       <li>売上を集計し、ライセンス料をお支払い（集計レポートを併せて共有）</li>
     </ol>
 
-    <h3>5. 役割分担</h3>
+    <h3>6. 役割分担</h3>
     <table class="role">
       <tr><th>${creator} 様</th><td>イラスト・デザインのご提供（お題に沿った書き下ろし／既存の選定）。試作・校正のご確認。</td></tr>
       <tr><th>HOMU</th><td>テーマ・お題のご提案／スタンプヘッドの造形・構造設計／工場とのやり取り・試作・量産・在庫・発送／各パッケージ・ワックス選定・ポストカード制作／販売運営・カスタマーサポート・告知。</td></tr>
     </table>
 
-    <h3>6. 条件</h3>
+    <h3>7. 条件</h3>
     <table class="role">
       <tr><th>ライセンス料</th><td>本コラボ商品の売上に応じて、<b>${rate}%（税抜）</b>をお支払い。販売期間ごとに集計し、銀行振込。集計レポートも共有します。</td></tr>
       <tr><th>著作権</th><td>イラストの著作権は ${creator}様に帰属します。HOMUは本コラボ商品の製造・販売の範囲でのみ使用します。</td></tr>
@@ -836,7 +837,7 @@ function renderA(){
       <tr><th>クレジット</th><td>商品ページ・販促物に「Illustration by ${creator}」等を明記します（表記はご希望に合わせます）。</td></tr>
     </table>
 
-    <h3>7. スケジュール（目安）</h3>
+    <h3>8. スケジュール（目安）</h3>
     ${scheduleHtml()}
     <p class="muted" style="margin-top:8px">※ 日付は目安・概算です。実際の日程は状況により前後します。ご多用の時期は無理に進めません。</p>
 
@@ -898,48 +899,7 @@ function renderB(){
   `;
 }
 
-/* ---- ③ 製造仕様（社内） ---- */
-function specRow(it,label){
-  return `<tr>
-    <td>${esc(label)}</td>
-    <td>${esc(it.ttl)||"—"}</td>
-    <td class="c">${esc(it.dim)||"—"}</td>
-    <td class="c">${esc(it.shape)||"—"}</td>
-    <td class="c">${esc(it.size)||"—"}</td>
-    <td class="c">${it.separate?"○":"—"}</td>
-    <td>${esc(it.waxText)||"—"}</td>
-    <td class="c">${it.price?("¥"+esc(it.price)):"—"}</td>
-    <td class="c">${esc(it.qty)||"—"}</td>
-  </tr>`;
-}
-function renderC(){
-  const total=data.itemCount;
-  let rows=""; for(let i=0;i<total;i++) rows+=specRow(data.items[i],"BOX"+CIRCLED[i]);
-  if(data.secretEnabled) rows+=specRow(data.secret,"シークレット");
-  document.getElementById("pv-c").innerHTML=`
-    <div class="kicker">INTERNAL — 製造仕様</div>
-    <h2 class="tt">製造仕様サマリ</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx()} × HOMU ／ 社内・工場発注用</div>
-
-    <h3>1. 販売方法・価格</h3>
-    <div class="boxdef">コンセプトボックス（ヘッド＋ワックス＋ポストカード）を <b>${total}種${secLabel()}</b>。</div>
-    ${renderSalesDef()}
-
-    <h3>2. スタンプヘッド仕様</h3>
-    <table class="spec">
-      <tr><th>#</th><th>お題</th><th>形態</th><th>形状</th><th>サイズ</th><th>セパ</th><th>ワックス色</th><th>単価</th><th>数量見込</th></tr>
-      ${rows}
-    </table>
-    <p class="muted">※ 実際の形状・サイズ・彫り可否は契約工場と相談のうえ確定。立体の高さ制限・モチーフの重なりは生産前に要確認。</p>
-
-    ${data.postcardIncluded?('<h3>3. ポストカード</h3><p class="muted">'+esc(data.postcardNote)+'</p>'):""}
-
-    <h3>${data.postcardIncluded?"4":"3"}. スケジュール</h3>
-    ${scheduleHtml()}
-  `;
-}
-
-function render(){ renderA(); renderB(); renderC(); }
+function render(){ renderA(); renderB(); }
 
 function fitPreview(){
   const pane=document.querySelector(".pane-preview");
