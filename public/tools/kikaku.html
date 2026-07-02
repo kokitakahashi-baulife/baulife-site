@@ -267,6 +267,7 @@ const DEFAULT_BOX_IMG="/tools/concept-box-default.webp"; // コンセプトボ�
 
 function blankItem(){return {
   ttl:"", role:"", dim:"", shape:"シルエット型", motif:"",
+  emotion:"", scene:"", composition:"",
   illust:"", brief:"", price:"", qty:"",
   waxText:"", wax:"", waxColors:null,
   genga:"", stamp:"", postcard:""
@@ -276,6 +277,7 @@ function defaultData(){
     fileName:"", creator:"", ip:"",
     contractDate:"",
     theme:"", themeName:"", themeSub:"", conceptNotes:"", themeKeywords:"", themeImg:"", boxImg:DEFAULT_BOX_IMG,
+    hook:"", palette:"", styleFamily:"",
     itemCount:4,
     secretEnabled:true,
     sales:{complete:true, single:true},
@@ -633,34 +635,110 @@ function chkField(label,key,obj){
 }
 function ownTag(kind){ const t=kind==="homu"?"HOMU記入":kind==="hear"?"クリエイターにヒアリング":"HOMU×クリエイターで合意"; return '<span class="own '+kind+'">'+t+'</span>'; }
 
-function buildAiPrompt(){
-  const total=data.itemCount+secretCount();
-  const roles=ROLE_OPTIONS.filter(Boolean).join("／");
-  return [
-    "あなたはシーリングスタンプのコラボ企画のプロです。以下の条件で、コンセプトボックス"+total+"種のたたき台を考えてください。",
-    "IP・作品名："+((data.ip||data.creator)||"（未記入）"),
-    "テーマ："+(data.theme||"（未記入）"),
-    "コンセプトボックス＝スタンプヘッド1点＋ワックス＋ポストカード。各種、クリエイターに書き下ろしイラストを1点ずつ依頼します。",
-    "",
-    "【売れるデザインの勝ち筋（必ず踏まえる）】"
-  ].concat(DESIGN_ADVICE.map(function(a,i){return (i+1)+". "+a;})).concat([
-    "",
-    "【出力ルール】",
-    "・役割は互いに差をつける（"+roles+" のいずれか）。",
-    "・形状はシルエット型・独自外形を中心に。",
-    "・あいさつや説明は書かず、次のJSON配列だけを出力（"+total+"要素）。",
-    '[{"ttl":"商品名の候補","role":"役割","dim":"2D または 3D","shape":"丸型/四角型/シルエット型","motif":"モチーフ・構図の方向(ひとこと)","brief":"クリエイターへのお題(自由度も明記)"}]'
-  ]).join("\n");
+var COMPO_ARCHETYPES=["静物（オブジェを中央に配置）","風景・情景（奥行きのある場面）","象徴オブジェ1点（主役を1つ大きく）","窓・アーチ越し（フレーム構図）","俯瞰の静物（真上から並べる）","小さなモチーフの反復（パターン）","コラージュ（要素を散らす）","幾何・色面（面と形で構成）","ミニマル・シンボル（余白多め・記号的）","地図・俯瞰図風（世界を見下ろす）"];
+function copyText(p, btn, label){
+  var done=function(){ var o=btn.textContent; btn.textContent="✓ コピーしました"; setTimeout(function(){ btn.textContent=label||o; },1600); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(done, function(){ window.prompt("コピーして貼り付けてください", p); }); }
+  else { window.prompt("コピーして貼り付けてください", p); }
 }
-function applyAiJson(text){
-  let arr;
+function themeReady(){ return !!((data.ip||data.creator||"").trim()) && !!(data.themeName||data.theme||"").trim(); }
+// ② 全体テーマ → コンセプトボックスを一括設計
+function buildBoxesPrompt(){
+  var ip=(data.ip||data.creator)||"〈IP名〉";
+  var n=data.itemCount, sc=secretCount(), total=n+sc;
+  return [
+    "あなたは「売れるシーリングスタンプ（封蝋）」を熟知したコラボ企画者です。",
+    "下記の全体テーマに基づき、コンセプトボックスを設計してください。",
+    "各ボックスはテーマにぶら下がりつつ、互いにはっきり異なり、集めたくなる違いを持つこと。",
+    "",
+    "# 全体テーマ",
+    "- IP・作品："+ip,
+    "- テーマ："+(data.themeName||"（未記入）")+"／"+(data.themeSub||"（サブコピー未記入）"),
+    "- 差別化点："+(data.hook||"（未記入）"),
+    "- パレットの系統："+(data.palette||"（未記入）"),
+    "- 作風の家族："+(data.styleFamily||"（未記入）"),
+    "",
+    "# 設計ルール",
+    "- 通常"+n+"種"+(sc?" ＋ シークレット"+sc+"種":"")+"（合計"+total+"要素）。",
+    "- 全ボックスでテーマ・差別化点・作風の家族・パレット系統を共有（統一感）。",
+    "- 各ボックスは【情景・核の感情・構図】を変えて差別化（集めたくなる違い）。",
+    "- 構図は次から互いに重複しないよう割り当てる："+COMPO_ARCHETYPES.map(function(c){return c.replace(/（.*）/,"");}).join("／")+"。",
+    (sc?"- シークレットは最も特別感のある1枚（レア感・見せ場）。":""),
+    "- キャラ本体はスタンプ側で書き下ろす前提。ここでは各ボックスの“情景の方向”を設計する。",
+    "- あいさつ・説明は書かず、JSON配列だけを出力（"+total+"要素"+(sc?"・最後の"+sc+"要素は secret:true":"")+"）。",
+    "",
+    "# 出力JSON（配列）",
+    "[",
+    "  {",
+    '    "ttl": "商品名の候補（10〜16字）",',
+    '    "role": "役割（世界観の顔／3D彫り／色分け映え／入門 等）",',
+    '    "emotion": "このボックスで立てる“核の感情”1つ",',
+    '    "scene": "ポストカードの情景・モチーフの方向（1〜2文）",',
+    '    "composition": "指定構図（上のアーキタイプから・他と重複しない）",',
+    '    "secret": false',
+    "  }",
+    "]"
+  ].filter(Boolean).join("\n");
+}
+function applyBoxesJson(text){
+  var arr;
   try{ arr=JSON.parse((text||"").trim()); }catch(e){ alert("JSONの読み取りに失敗しました。AIの出力から [ ... ] のJSON配列だけを貼り付けてください。"); return; }
   if(!Array.isArray(arr)){ alert("JSON配列（[ ... ]）を貼り付けてください。"); return; }
-  function fill(it,o){ if(!o||typeof o!=="object")return; ["ttl","role","dim","shape","motif","brief"].forEach(function(k){ if(o[k]!=null&&o[k]!=="") it[k]=String(o[k]); }); }
-  for(let i=0;i<data.itemCount && i<arr.length;i++) fill(data.items[i],arr[i]);
-  if(data.secretEnabled && arr.length>data.itemCount) fill(data.secret,arr[data.itemCount]);
+  function fill(it,o){ if(!o||typeof o!=="object")return; ["ttl","role","motif","emotion","scene","composition"].forEach(function(k){ if(o[k]!=null&&o[k]!=="") it[k]=String(o[k]); }); }
+  var idx=0;
+  arr.forEach(function(o){
+    if(o&&o.secret){ if(data.secretEnabled) fill(data.secret,o); }
+    else if(idx<data.itemCount){ fill(data.items[idx],o); idx++; }
+  });
   buildForm(); render(); autosave();
-  alert("AIのたたき台を反映しました。内容を確認・調整してください。");
+  alert("コンセプトボックスを反映しました。内容を確認・調整してください。");
+}
+// ③ 1ボックス → ポストカード画像生成プロンプト（ChatGPT等の画像生成AI用）
+function buildPostcardPrompt(it){
+  var ip=(data.ip||data.creator)||"〈IP名〉";
+  var compo=(it.composition||"").trim()||"〈構図（企画者が指定）〉";
+  var credit=(data.creator?data.creator+" × HOMU":"〈クリエイター名〉 × HOMU");
+  return [
+    "# 役割",
+    "あなたはグッズ・パッケージ用ポストカードのアートディレクター兼イラストレーターです。",
+    "下記の1商品ぶんのポストカード原画を、画像生成AI用に1枚だけ生成してください。",
+    "",
+    "# この商品の位置づけ",
+    "- IP・作品："+ip,
+    "- コラボ全体テーマ："+(data.themeName||"〈テーマ名〉")+"／"+(data.themeSub||"〈サブコピー〉"),
+    "- 全体の差別化点："+(data.hook||"〈distinctive_hook〉"),
+    "- このボックス："+(it.ttl||"〈ボックス名〉"),
+    "- 立てたい核の感情："+(it.emotion||"〈核の感情〉"),
+    "- 情景の方向："+(it.scene||"〈情景・モチーフの方向〉"),
+    "",
+    "# 用途・レイアウト（厳守）",
+    "- これは箱の窓から見える“台紙”。中央にメインビジュアルを置き、その上に別途スタンプを押す前提で、",
+    "  中央〜やや上に視線を集め、押印の余地（手のひら大の空き）を1〜2箇所残す。",
+    "- 文字の余白は最下部のみに確保（上部・左右には文字を入れない）。最下部に小さく1行： "+credit,
+    "- 縦向き（ポストカード比率 おおよそ 2:3）。四辺に3〜5%の余白（塗り足しではなく静かな余白）。",
+    "",
+    "# 作風・色（全ボックス共通で揃える）",
+    "- 作風の家族："+(data.styleFamily||"〈作風の家族／レンジ〉")+"（この範囲内で表現。手描きに限らずグラフィック表現も可）。",
+    "- パレット："+(data.palette||"〈配色系統〉")+"。彩度・明度をこの系統に寄せ、全ボックスで色の家族感を保つ。",
+    "- 光と気分：情景に合う光（時間帯・光源・空気感）を具体的に決めて描く。単調な平塗りにしない。",
+    "- 仕上げ品質：印刷物として成立する解像感・階調。質素になりすぎず、余白と密度のメリハリをつける。",
+    "",
+    "# 構図（この商品の指定）",
+    "- 指定構図："+compo+"。この構図で、上の情景を成立させる。",
+    "",
+    "# 著作権・禁止（厳守）",
+    "- IPの原画・キャラクター本体を再現/転載しない。キャラは描かず、世界観を補助する【背景・情景】のみ。",
+    "- 既存作品のトレース・模写・ロゴ流用をしない。",
+    "- 文字は最下部の1行クレジットのみ。それ以外の文章・透かし・UI・枠線は入れない。",
+    "",
+    "# 出力前の自己チェック（満たすまで直す）",
+    "1. キャラ本体を描いていないか（背景・情景のみか）。",
+    "2. 中央に押印の余地があるか。文字は最下部だけか。",
+    "3. パレットと作風の家族に沿い、他ボックスと“家族”に見えるか。",
+    "4. 指定構図になっているか。情景と核の感情が伝わるか。",
+    "",
+    "上記を満たすポストカード原画を1枚、画像として出力してください。"
+  ].join("\n");
 }
 function buildThemePrompt(){
   const ip=(data.ip||data.creator)||"〈ここにIP名〉";
@@ -682,7 +760,11 @@ function buildThemePrompt(){
     "2. 差別化ポイントの特定：",
     "   このIPが“他の作品・他のキャラ”と決定的に違う点を1つ言い切る（distinctive_hook）。",
     "   テーマ・コピー・イラスト方向は、すべてこの一点に寄せる。時期はあくまで軽い風味。",
-    "3. 出力：下記JSONを1つだけ出力。",
+    "3. パレットと作風の家族を決める：",
+    "   - palette：このコラボ全体の配色系統（3〜5色の系統＋差し色を、色名で）。全商品で共有する。",
+    "   - style_family：このIPに合う“作風の家族／レンジ”（特定の作家名でなく、表現の特徴と幅で。",
+    "     手描き/デジタル/コラージュ/幾何 等どれが合うか、揃える点と許す幅）。",
+    "4. 出力：下記JSONを1つだけ出力。",
     "",
     "# 良いテーマの条件",
     "- そのIPでしか成立しないこと。他のIPに置き換えて成立するテーマは【失格】。",
@@ -711,6 +793,8 @@ function buildThemePrompt(){
     '    "subcopy": "サブコピー（1行・15字前後・公開用）",',
     '    "description": "公開用の説明文（約180〜220字・詩的かつ具体・クリシェ回避）"',
     '  },',
+    '  "palette": "全商品で共有する配色系統（3〜5色＋差し色・色名で）",',
+    '  "style_family": "作風の家族／レンジ（特徴と幅で。揃える点と許す幅を1〜2文）",',
     '  "illustration_hint": "書き下ろしイラストの方向性のヒント：このIPの世界観を魅力的にグッズ化するために、どんなシーンを描いてもらうと良いか。色味・背景の雰囲気まで含め、distinctive_hook が伝わる内容にする。"',
     "}"
   ].join("\n");
@@ -723,6 +807,9 @@ function applyThemeJson(text){
   if(t.name) data.themeName=String(t.name);
   if(t.subcopy) data.themeSub=String(t.subcopy);
   if(t.description) data.theme=String(t.description);
+  if(o.distinctive_hook) data.hook=String(o.distinctive_hook);
+  if(o.palette) data.palette=String(o.palette);
+  if(o.style_family) data.styleFamily=String(o.style_family);
   const notes=[];
   if(o.distinctive_hook) notes.push("■ 差別化ポイント\n"+o.distinctive_hook);
   if(Array.isArray(r.worldview_keywords)&&r.worldview_keywords.length) notes.push("■ 世界観キーワード\n"+r.worldview_keywords.join("、"));
@@ -742,6 +829,19 @@ function itemForm(it,title,secret){
   r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES));
   box.appendChild(r1);
   box.appendChild(field("モチーフ・構図の方向（ひとこと）","motif",it,false,"例：麦の穂と小鳥を独自シルエットで"));
+  // ポストカード設計（②で自動入力・③で使用）
+  const pcWrap=el("div"); pcWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:9px 11px;margin:8px 0;background:var(--tint);";
+  pcWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🖼 ポストカード（箱の窓に見える台紙）</b><br>下は②の一括生成で自動入力されます。整えたら「③画像プロンプト」をChatGPTへ。"));
+  pcWrap.appendChild(field("核の感情","emotion",it,false,"このボックスで立てる気持ち1つ"));
+  pcWrap.appendChild(field("情景・モチーフの方向","scene",it,true,"キャラ本体は描かず、世界観を補助する背景・情景。1〜2文。"));
+  pcWrap.appendChild(field("指定構図","composition",it,false,"②が割り当て。空なら🎲で選べます。"));
+  const rrBtn=el("button","btn"); rrBtn.type="button"; rrBtn.textContent="🎲 構図をランダムに選ぶ"; rrBtn.style.cssText="font-size:11px;margin:2px 0 6px;";
+  rrBtn.onclick=function(){ var pool=COMPO_ARCHETYPES.filter(function(c){ return c!==it.composition; }); it.composition=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
+  pcWrap.appendChild(rrBtn);
+  const pcBtn=el("button","btn primary"); pcBtn.type="button"; pcBtn.textContent="③ ポストカード画像プロンプトをコピー"; pcBtn.style.cssText="display:block;width:100%;font-size:12px;";
+  pcBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildPostcardPrompt(it), pcBtn, "③ ポストカード画像プロンプトをコピー"); };
+  pcWrap.appendChild(pcBtn);
+  box.appendChild(pcWrap);
   const r2=el("div","row");
   r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,"例：2800"), field("製造数量見込(社内)","qty",it,false,"例：200"));
   box.appendChild(r2);
@@ -817,6 +917,11 @@ function buildForm(){
   fs.appendChild(field("テーマ名（一言）","themeName",data,false,"例：ちょっぴりきみょうな、なかまたち"));
   fs.appendChild(field("サブコピー（1行）","themeSub",data,false,"例：くしゃっと、いとおしい。"));
   fs.appendChild(field("説明文（公開用・SNS/ポストカード裏）","theme",data,true,"約180〜220字。上のAIボタンで自動生成できます。"));
+  const r0=el("div","row");
+  r0.append(field("パレット（配色系統）","palette",data,false,"AI反映で自動。全商品で共有"), field("作風の家族（レンジ）","styleFamily",data,false,"AI反映で自動。作品全体の作風"));
+  fs.appendChild(r0);
+  fs.appendChild(el("div","hint","↑ パレット・作風の家族は<b>各ボックスのポストカード生成プロンプト（③）に差し込まれます</b>。全商品の統一感の土台。"));
+  fs.appendChild(field("差別化点（distinctive_hook・内部メモ）","hook",data,false,"AI反映で自動。このIP最大の固有性"));
   fs.appendChild(field("コンセプトの根拠・書き下ろしの方向（内部メモ）","conceptNotes",data,true,"AI反映で自動入力（差別化点・リサーチ・書き下ろし方向）。社内用。"));
   fs.appendChild(el("label","fl","テーマ／ポストカードのキーイラスト（縦・パッケージにも使用｜画像 or PDF）"));
   fs.appendChild(imgSlot("キーイラスト",()=>data.themeImg,v=>data.themeImg=v,"portrait",true));
@@ -833,13 +938,13 @@ function buildForm(){
   fs=fset("b","② 設計シート：コンセプトボックスの構成とお題");
   fs.appendChild(el("div","note","<b>役割で差をつける</b>のが勝ち筋（プルダウンで選択）：世界観の顔／3D彫りの立体／セパレート・色分け映え／入門・量産。<br>※ 売れるデザインのコツ（勝ち筋）は、設計シートPDFに自動でクリエイター向けアドバイスとして載ります。"));
   const aiBox=el("div"); aiBox.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--tint);";
-  aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 AIでたたき台を作る（任意）</b><br>「プロンプトをコピー」→ ChatGPT等に貼って実行 → 出てきたJSONを下欄に貼って「反映」。IP・テーマを先に入れておくと精度が上がります。"));
-  const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="プロンプトをコピー"; cpBtn.style.cssText="margin:6px 0;display:block;";
-  const aiTa=el("textarea"); aiTa.placeholder="AIが出力したJSON（[ ... ]）をここに貼り付け"; aiTa.style.minHeight="56px";
-  cpBtn.onclick=function(){ const p=buildAiPrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ cpBtn.textContent="✓ コピーしました"; setTimeout(function(){cpBtn.textContent="プロンプトをコピー";},1500); }, function(){ aiTa.value=p; }); } else { aiTa.value=p; } };
+  aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 ② 全体テーマからコンセプトボックスを一括生成</b><br>先に上の<b>全体コンセプト（テーマ・パレット・作風）</b>を作っておく → ①プロンプトをコピー → web対応のClaude等で実行 → ②出てきたJSON配列を下欄に貼って反映。通常"+data.itemCount+"種"+(secretCount()?"＋シークレット":"")+"が一括で埋まります。"));
+  const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="① プロンプトをコピー"; cpBtn.style.cssText="margin:6px 0;display:block;";
+  const aiTa=el("textarea"); aiTa.placeholder="② AIが出力したJSON配列（[ ... ]）をここに貼り付け"; aiTa.style.minHeight="56px";
+  cpBtn.onclick=function(){ if(!themeReady()){ alert("先に上の「全体コンセプト」でテーマを作ってください（IP名＋テーマ名）。\nテーマ・パレット・作風がプロンプトに差し込まれます。"); return; } copyText(buildBoxesPrompt(), cpBtn, "① プロンプトをコピー"); };
   aiBox.appendChild(cpBtn); aiBox.appendChild(aiTa);
-  const apBtn=el("button","btn"); apBtn.type="button"; apBtn.textContent="貼り付けを反映"; apBtn.style.marginTop="6px";
-  apBtn.onclick=function(){ applyAiJson(aiTa.value); };
+  const apBtn=el("button","btn"); apBtn.type="button"; apBtn.textContent="② 貼り付けを反映"; apBtn.style.marginTop="6px";
+  apBtn.onclick=function(){ applyBoxesJson(aiTa.value); };
   aiBox.appendChild(apBtn); fs.appendChild(aiBox);
   for(let i=0;i<data.itemCount;i++){
     const block=itemForm(data.items[i],"コンセプトボックス "+CIRCLED[i]);
