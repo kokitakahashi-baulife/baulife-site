@@ -254,13 +254,13 @@ const SCHED = [
 const CIRCLED=["①","②","③","④","⑤","⑥"];
 const DIMS=["","2D","3D"];
 const SHAPES=["","丸型","四角型","シルエット型"];
-const ROLE_OPTIONS=["","世界観の顔","3D彫りの立体","セパレート／色分け映え","入門・量産","その他"];
+const ROLE_OPTIONS=["","顔（フラッグシップ）","入口（はじめの一箱）","ギフト主力（贈り回転）","深掘り（コアファン・意外性）","シークレット（コンプリート報酬）","その他"];
 // HOMU → クリエイターへ渡す「売れるデザインの勝ち筋」（設計シートに常時掲載）
 const DESIGN_ADVICE=[
   "スタンプヘッドの外形は、円や四角より“その作品だけの独自シルエット”が強い（一目でその作品と分かり、拡散・指名買いにつながります）。",
   "細かなモチーフを散りばめると、色を塗り分けて押す動画が映えて拡散されやすいです。色分けできる構図だと◎。",
   "立体（3D彫り）に向くのは、モチーフの重なりが少なく高低差を出せる構図。平面（2D）は線画や複数キャラの並びが得意です。",
-  "全部を同じ雰囲気にせず“役割”で差をつけると、全種そろえたくなります（世界観の顔／立体で魅せる／色分けで映える／初心者向けの入門）。",
+  "全部を同じ雰囲気にせず、1つ1つ表情・情景・見せ場を変えると、並べたときの“ちがい”がコレクション欲を生みます。",
 ];
 const LICENSE_RATE="10"; // ライセンス料は固定10%（税抜）
 const PRESENT_NOTE="一部のスタンプヘッド等を、フォロワーへのプレゼント企画で配布します。";
@@ -682,7 +682,8 @@ function buildBoxesPrompt(){
     "- 構図は次から互いに重複しないよう割り当てる："+COMPO_ARCHETYPES.map(function(c){return c.replace(/（.*）/,"");}).join("／")+"。",
     (sc?"- シークレットは最も特別感のある1枚（レア感・見せ場・コンプリート購入者限定）。":""),
     "- 書き下ろしの邪魔をしない：スタンプは“感情の仕事”と“お任せ範囲”を示すのみ。ポーズ・構図・描き方は指定しない。",
-    "- role は必ず次のいずれかちょうど1つにする（プルダウン連携のため）："+ROLE_OPTIONS.filter(Boolean).join("／")+"。役割の細かなニュアンスは description に書く。",
+    "- role＝セット内での“立ち位置（売り・集めの観点）”。必ず次のいずれかちょうど1つ："+ROLE_OPTIONS.filter(Boolean).join("／")+"。",
+    "  各ボックスに異なる役割を割り当て、セットが偏らないように（同じ役割の重複を避け、入口/顔/ギフト主力/深掘りが揃うと理想。シークレットは role=シークレット）。細かなニュアンスは description に書く。",
     "- ポストカードと封蝋の関係は箱ごとに変える（毎回“押して完成”に寄せない。押印余地の残し方や情景との関係に変化を）。",
     "- あいさつ・説明は書かず、JSON配列だけを出力（"+total+"要素"+(sc?"・最後の"+sc+"要素は secret:true":"")+"）。",
     "",
@@ -947,7 +948,7 @@ function itemForm(it,title,secret){
   box.appendChild(field(secret?"シークレットのタイトル（コンセプト／パッケージ表記）":"ボックスタイトル（コンセプト／パッケージ表記）","ttl",it));
   box.appendChild(field("詳細説明（この箱の狙い・世界観での立ち位置）","desc",it,true,"②で自動入力。提案資料/パッケージにも使える説明文。"));
   box.appendChild(field("商品サムネイルの方向（言葉×無言ビジュアル・EC/SNS表示）","thumb",it,true,"②で自動入力。ことばが主役になる唯一の場所。商品名＋無言のモノの見せ方。"));
-  box.appendChild(selectField("役割（プルダウン）","role",it,ROLE_OPTIONS));
+  box.appendChild(selectField("役割（セット内での立ち位置）","role",it,ROLE_OPTIONS));
   const r1=el("div","row");
   r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES));
   box.appendChild(r1);
@@ -1081,7 +1082,7 @@ function buildForm(){
   F.appendChild(fs);
 
   fs=fset("b","② 設計シート：コンセプトボックスの構成とお題");
-  fs.appendChild(el("div","note","<b>役割で差をつける</b>のが勝ち筋（プルダウンで選択）：世界観の顔／3D彫りの立体／セパレート・色分け映え／入門・量産。<br>※ 売れるデザインのコツ（勝ち筋）は、設計シートPDFに自動でクリエイター向けアドバイスとして載ります。"));
+  fs.appendChild(el("div","note","<b>役割＝セット内での立ち位置</b>（売り・集めの観点）：顔／入口／ギフト主力／深掘り／シークレット。同じ役割が重ならないよう散らすと、全種そろえたくなります（形態2D/3Dや色分けは“作り方”＝別途、人が判断）。<br>※ 売れるデザインのコツは設計シートPDFにクリエイター向けアドバイスとして載ります。"));
   const aiBox=el("div"); aiBox.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--tint);";
   aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 ② 全体テーマからコンセプトボックスを一括生成</b><br>先に<b>①戦略＋テーマ</b>を作っておく → ①プロンプトをコピー → web対応のClaude等で実行 → ②出てきたJSON配列を下欄に貼って反映。ブリーフの軸で通常"+data.itemCount+"種"+(secretCount()?"＋シークレット":"")+"に分かれます。"));
   const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="① プロンプトをコピー"; cpBtn.style.cssText="margin:6px 0;display:block;";
