@@ -31,7 +31,13 @@
   .pane-form{width:44%;min-width:380px;overflow-y:auto;padding:18px 20px 80px;border-right:1px solid var(--line);}
   .pane-preview{flex:1;overflow-y:auto;background:#ece6db;padding:24px;display:flex;justify-content:center;}
   fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 16px;padding:12px 14px;background:var(--paper);}
-  legend{font-size:13px;font-weight:700;color:var(--red);padding:0 6px;}
+  legend{font-size:13px;font-weight:700;color:var(--red);padding:0 6px;cursor:pointer;user-select:none;}
+  legend::before{content:"▾ ";font-size:10px;color:var(--gray);}
+  fieldset.collapsed{padding-bottom:10px;}
+  fieldset.collapsed>*:not(legend){display:none!important;}
+  fieldset.collapsed>legend::before{content:"▸ ";}
+  .item-form.collapsed>*:not(.ihead){display:none!important;}
+  .item-form.collapsed{margin:6px 0;}
   label.fl{display:block;font-size:12px;color:var(--gray);margin:10px 0 3px;}
   input[type=text],input[type=number],input[type=date],textarea,select{width:100%;border:1px solid var(--line);border-radius:7px;
     padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
@@ -39,7 +45,7 @@
   .row{display:flex;gap:10px;}
   .row>div{flex:1;}
   .chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:6px 0;}
-  .note{background:#f3efe7;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.7;margin-bottom:10px;}
+  .note{background:#f3efe7;border-radius:8px;padding:8px 11px;font-size:11px;color:var(--gray);line-height:1.6;margin-bottom:9px;}
   .note b{color:var(--red);}
   .hint{font-size:11px;color:var(--gray);margin:2px 0 0;}
   .own{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap;}
@@ -60,7 +66,9 @@
     border-radius:5px;font-size:11px;padding:1px 6px;cursor:pointer;color:var(--red);z-index:2;}
   .item-form{border-left:3px solid var(--red);padding-left:10px;margin:14px 0;}
   .item-form.secret{border-left-color:#b98a3c;}
-  .item-form .ihead{font-size:12.5px;font-weight:700;color:var(--red);margin:2px 0 4px;}
+  .item-form .ihead{font-size:12.5px;font-weight:700;color:var(--red);margin:2px 0 4px;cursor:pointer;user-select:none;}
+  .item-form .ihead::before{content:"▾ ";font-size:10px;color:var(--gray);}
+  .item-form.collapsed .ihead::before{content:"▸ ";}
   .recipe-btn{margin-top:6px;width:100%;border:1px solid var(--line);background:var(--paper);border-radius:7px;
     padding:6px;font-size:12px;cursor:pointer;color:var(--red);}
   .recipe-btn:hover{background:var(--tint);}
@@ -616,7 +624,14 @@ function imgSlot(label, getVal, setVal, kind, allowPdf){
 
 /* ========== フォーム部品 ========== */
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;}
-function fset(tab,legend){const fs=el("fieldset"); fs.dataset.tab=tab; fs.appendChild(el("legend",null,legend)); return fs;}
+var uiCollapsed={}; // 開閉状態をbuildForm再描画をまたいで保持（キー=見出し文字/ボックス見出し）
+function fset(tab,legend){
+  const fs=el("fieldset"); fs.dataset.tab=tab;
+  const lg=el("legend",null,legend); fs.appendChild(lg);
+  if(uiCollapsed["sec:"+legend]===true) fs.classList.add("collapsed");
+  lg.onclick=function(){ const c=fs.classList.toggle("collapsed"); uiCollapsed["sec:"+legend]=c; };
+  return fs;
+}
 function field(label,key,obj,ta,ph){
   const l=el("label","fl",label); const inp=ta?el("textarea"):el("input");
   if(!ta)inp.type="text"; inp.value=obj[key]||""; if(ph) inp.placeholder=ph;
@@ -965,7 +980,12 @@ function applyStrategyJson(text){
 }
 
 function itemForm(it,title,secret){
-  const box=el("div","item-form"+(secret?" secret":"")); box.appendChild(el("div","ihead",title));
+  const box=el("div","item-form"+(secret?" secret":""));
+  const head=el("div","ihead",title+((it.ttl||"").trim()?"　／　"+it.ttl:""));
+  box.appendChild(head);
+  // ボックスは既定で畳む（見出し＝番号＋タイトルだけ表示・クリックで展開）。明示的にfalse(=開く)なら展開
+  if(uiCollapsed["box:"+title]!==false) box.classList.add("collapsed");
+  head.onclick=function(){ uiCollapsed["box:"+title]=box.classList.toggle("collapsed"); };
   box.appendChild(field(secret?"シークレットのタイトル（コンセプト／パッケージ表記）":"ボックスタイトル（コンセプト／パッケージ表記）","ttl",it));
   box.appendChild(field("詳細説明（この箱の狙い・世界観での立ち位置）","desc",it,true,"②で自動入力。提案資料/パッケージにも使える説明文。"));
   box.appendChild(field("商品サムネイルの方向（言葉×無言ビジュアル・EC/SNS表示）","thumb",it,true,"②で自動入力。ことばが主役になる唯一の場所。商品名＋無言のモノの見せ方。"));
