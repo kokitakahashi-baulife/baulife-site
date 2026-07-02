@@ -991,6 +991,8 @@ function itemForm(it,title,secret){
   pcBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildPostcardPrompt(it), pcBtn, "③ ポストカード画像プロンプトをコピー"); };
   pcWrap.appendChild(pcBtn);
   pcWrap.appendChild(runHint("ChatGPT（画像生成）","https://chatgpt.com/"));
+  pcWrap.appendChild(el("div","hint","↓ 生成した画像をここにアップ（このボックスのポストカード）"));
+  pcWrap.appendChild(imgSlot("ポストカード",()=>it.postcard,v=>it.postcard=v,"portrait",true));
   box.appendChild(pcWrap);
   const r2=el("div","row");
   r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,"例：2800"), field("製造数量見込(社内)","qty",it,false,"例：200"));
@@ -1001,11 +1003,10 @@ function itemForm(it,title,secret){
   const rb=el("button","recipe-btn","🗂 WAXシミュレーターのレシピから選ぶ"); rb.type="button";
   rb.onclick=()=>openRecipePicker((img,colors,nm)=>{ it.wax=img; it.waxColors=colors; if(nm&&!it.waxText) it.waxText=nm; render(); autosave(); });
   box.appendChild(rb);
-  const det=el("details","imgcollapse"); det.innerHTML="<summary>▸ 画像を添付（原画・試作・ポストカード・任意）</summary>";
+  const det=el("details","imgcollapse"); det.innerHTML="<summary>▸ 画像を添付（原画・試作・任意）</summary>";
   const ig=el("div","row"); ig.style.marginTop="6px";
   const g1=el("div"); g1.appendChild(el("div","hint","原画/ラフ")); g1.appendChild(imgSlot("原画",()=>it.genga,v=>it.genga=v,"free",true)); ig.appendChild(g1);
   const g2=el("div"); g2.appendChild(el("div","hint","スタンプ試作")); g2.appendChild(imgSlot("試作",()=>it.stamp,v=>it.stamp=v,"square",false)); ig.appendChild(g2);
-  const g3=el("div"); g3.appendChild(el("div","hint","ポストカード（縦）")); g3.appendChild(imgSlot("ポストカード",()=>it.postcard,v=>it.postcard=v,"portrait",true)); ig.appendChild(g3);
   det.appendChild(ig); box.appendChild(det);
   return box;
 }
@@ -1094,9 +1095,7 @@ function buildForm(){
   fs.appendChild(el("div","hint","↑ パレット・作風の家族は<b>各ボックスのポストカード生成プロンプト（③）に差し込まれます</b>。全商品の統一感の土台。"));
   fs.appendChild(field("差別化点（distinctive_hook・内部メモ）","hook",data,false,"AI反映で自動。このIP最大の固有性"));
   fs.appendChild(field("コンセプトの根拠・書き下ろしの方向（内部メモ）","conceptNotes",data,true,"AI反映で自動入力（差別化点・リサーチ・書き下ろし方向）。社内用。"));
-  fs.appendChild(el("label","fl","テーマ／ポストカードのキーイラスト（縦・パッケージにも使用｜画像 or PDF）"));
-  fs.appendChild(imgSlot("キーイラスト",()=>data.themeImg,v=>data.themeImg=v,"portrait",true));
-  fs.appendChild(el("div","hint","このイラストがパッケージにも使われ、各コンセプトボックスを考える際のテーマの基準になります。"));
+  fs.appendChild(el("div","hint","※ ポストカードは<b>各コンセプトボックスごと</b>に生成・添付します（下の「コンセプトボックスの構成」内）。テーマ全体のポストカードは廃止しました。"));
   F.appendChild(fs);
 
   fs=fset("b","② 設計シート：作品について");
@@ -1285,7 +1284,6 @@ function renderB(){
     <h3>1. 全体コンセプト（テーマ）${ownTag("both")}</h3>
     ${data.themeName?('<div class="hero" style="font-size:16pt">「'+esc(data.themeName)+'」'+(data.themeSub?'<br><span class="heros">'+esc(data.themeSub)+'</span>':'')+'</div>'):''}
     <p>${ans(data.theme)}</p>
-    ${pvMedia(data.themeImg,"テーマ／ポストカードのキーイラスト（パッケージにも使用）","portrait")}
 
     <h3>2. デザインのポイント（HOMUより）<span class="own homu">HOMU → クリエイターへ</span></h3>
     <p>HOMUは「シーリングスタンプとして売れる・映えるデザイン」の知見があります。書き下ろしの参考にしてください。</p>
