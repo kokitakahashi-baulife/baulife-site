@@ -281,7 +281,7 @@ const SCHED = [
 ];
 const CIRCLED=["①","②","③","④","⑤","⑥"];
 const DIMS=["","2D","3D"];
-const SHAPES=["","丸型","四角型","シルエット型"];
+const SHAPES=["","円形","スクエア","オーバル","シルエット"];
 const ROLE_OPTIONS=["","顔（フラッグシップ）","入口（はじめの一箱）","ギフト主力（贈り回転）","深掘り（コアファン・意外性）","シークレット（コンプリート報酬）","その他"];
 // HOMU → クリエイターへ渡す「売れる・愛されるヘッドの勝ち筋」（設計シートに常時掲載）
 const DESIGN_ADVICE=[
@@ -314,7 +314,7 @@ const PRESENT_NOTE="一部のスタンプヘッド等を、フォロワーへの
 const DEFAULT_BOX_IMG="/tools/concept-box-default.webp"; // コンセプトボックスの既定イメージ（提案資料）
 
 function blankItem(){return {
-  ttl:"", role:"", dim:"", shape:"シルエット型", motif:"",
+  ttl:"", role:"", dim:"", shape:"", motif:"",
   desc:"", emotion:"", scene:"", composition:"", touch:"", thumb:"",
   illust:"", brief:"", price:"", qty:"",
   waxText:"", wax:"", waxColors:null,
@@ -789,7 +789,7 @@ function buildBoxesPrompt(){
     "  ただし全て style_family（作風の家族）の“幅”に馴染ませ、パレット共有と合わせて【家族に見える統一感は必ず保つ】。タッチセット（"+total+"個を使い切る）：",
     "  "+touchSet.map(function(c,i){return (i+1)+") "+c;}).join("\n  "),
     (sc?"- シークレットは最も特別感のある1枚（レア感・見せ場・コンプリート購入者限定）。":""),
-    "- 書き下ろしの邪魔をしない：スタンプは“感情の仕事”と“お任せ範囲”を示すのみ。ポーズ・構図・描き方は指定しない。",
+    "- 書き下ろしの邪魔をしない：スタンプは“モチーフのキーワード”を示すのみ。ポーズ・構図・描き方は指定しない。",
     "- role＝セット内での“立ち位置（売り・集めの観点）”。必ず次のいずれかちょうど1つ："+ROLE_OPTIONS.filter(Boolean).join("／")+"。",
     "  各ボックスに異なる役割を割り当て、セットが偏らないように（同じ役割の重複を避け、入口/顔/ギフト主力/深掘りが揃うと理想。シークレットは role=シークレット）。細かなニュアンスは description に書く。",
     "- ポストカードと封蝋の関係は箱ごとに変える（毎回“押して完成”に寄せない。押印余地の残し方や情景との関係に変化を）。",
@@ -801,9 +801,7 @@ function buildBoxesPrompt(){
     '    "title": "ボックスタイトル＝この箱のコンセプトを表す商品名（ことば/コピー可・パッケージ表記・10〜18字）",',
     '    "core_emotion": "核の感情ひとつ",',
     '    "description": "詳細説明：この箱の狙い・世界観での立ち位置＋集めたくなる理由（2〜3文）",',
-    '    "stamp_head": "スタンプヘッドのモチーフ・デザインの方向（書き下ろしの中心＝ビジュアル。感情の“仕事”を示す。※文字・コピーは刻まない）",',
-    '    "stamp_free": "クリエイターにお任せする範囲（ポーズ・構図・アレンジ等・明言）",',
-    '    "stamp_avoid": "この箱で避けること（構造的NG）",',
+    '    "stamp_head": "モチーフ・デザインのアイデア：キーワードを2〜5個だけ（短く・「／」区切り。例：毛布／三日月／湯気）。※文字は刻まない。ポーズや描き方は指定しない",',
     '    "postcard_design": "ポストカードのデザイン方向（背景・情景のみ・キャラ本体は描かない・文字なし）",',
     '    "composition": "上の【構図セット】から、このボックスに割り当てた構図をそのまま入れる（セット内で1回だけ使用）",',
     '    "postcard_touch": "上の【タッチセット】から割り当てたタッチ（style_familyの範囲内で成立させる・セット内で1回だけ使用）",',
@@ -826,10 +824,6 @@ function applyBoxesJson(text){
     put(it,"emotion",o.core_emotion!=null?o.core_emotion:o.emotion);
     put(it,"desc",o.description);
     put(it,"motif",o.stamp_head!=null?o.stamp_head:o.motif);
-    var b=[];
-    if(o.stamp_free) b.push("【お任せ】"+o.stamp_free);
-    if(o.stamp_avoid) b.push("【避ける】"+o.stamp_avoid);
-    if(b.length) it.brief=b.join("\n"); else put(it,"brief",o.brief);
     put(it,"scene",o.postcard_design!=null?o.postcard_design:o.scene);
     put(it,"composition",o.composition);
     put(it,"touch",o.postcard_touch);
@@ -1067,48 +1061,61 @@ function itemForm(it,title,secret){
   // ボックスは既定で畳む（見出し＝番号＋タイトルだけ表示・クリックで展開）。明示的にfalse(=開く)なら展開
   if(uiCollapsed["box:"+title]!==false) box.classList.add("collapsed");
   head.onclick=function(){ uiCollapsed["box:"+title]=box.classList.toggle("collapsed"); };
-  box.appendChild(field(secret?"シークレットのタイトル（コンセプト／パッケージ表記）":"ボックスタイトル（コンセプト／パッケージ表記）","ttl",it));
-  box.appendChild(field("詳細説明（この箱の狙い・世界観での立ち位置）","desc",it,true,"②で自動入力。提案資料/パッケージにも使える説明文。"));
-  box.appendChild(field("商品サムネイルの方向（言葉×無言ビジュアル・EC/SNS表示）","thumb",it,true,"②で自動入力。ことばが主役になる唯一の場所。商品名＋無言のモノの見せ方。"));
-  box.appendChild(selectField("役割（セット内での立ち位置）","role",it,ROLE_OPTIONS));
-  const r1=el("div","row");
-  r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES));
-  box.appendChild(r1);
-  box.appendChild(field("スタンプヘッドのモチーフ・デザインの方向","motif",it,true,"書き下ろしの中心＝ビジュアル。※日本語のことばは刻まない（ことばはタイトル/パッケージへ）。"));
-  // ポストカード設計（②で自動入力・③で使用）
+  box.appendChild(field(secret?"シークレットのタイトル":"ボックスタイトル","ttl",it,false,"コンセプト／パッケージ表記（②で自動）"));
+  box.appendChild(field("ディスクリプション","desc",it,true,"②で自動。この箱の狙い・世界観での立ち位置。"));
+
+  // ポストカードデザイン（③生成 → 画像アップ）。生成用の情景/構図/タッチは折りたたみに退避
   const pcWrap=el("div"); pcWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:9px 11px;margin:8px 0;background:var(--tint);";
-  pcWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🖼 ポストカード（箱の窓に見える台紙）</b><br>下は②の一括生成で自動入力されます。整えたら「③画像プロンプト」をChatGPTへ。"));
-  pcWrap.appendChild(field("核の感情","emotion",it,false,"このボックスで立てる気持ち1つ"));
-  pcWrap.appendChild(field("情景・モチーフの方向","scene",it,true,"キャラ本体は描かず、世界観を補助する背景・情景。1〜2文。"));
-  pcWrap.appendChild(field("指定構図","composition",it,false,"②が割り当て。空なら🎲で選べます。"));
-  const rrBtn=el("button","btn"); rrBtn.type="button"; rrBtn.textContent="🎲 構図をランダムに選ぶ"; rrBtn.style.cssText="font-size:11px;margin:2px 0 6px;";
-  rrBtn.onclick=function(){ var pool=COMPO_ARCHETYPES.filter(function(c){ return c!==it.composition; }); it.composition=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
-  pcWrap.appendChild(rrBtn);
-  pcWrap.appendChild(field("タッチ（描き味・手描き/デジタル感）","touch",it,false,"②が割り当て（家族の範囲で振り分け）。空なら🎲で選べます。"));
-  const trBtn=el("button","btn"); trBtn.type="button"; trBtn.textContent="🎲 タッチをランダムに選ぶ"; trBtn.style.cssText="font-size:11px;margin:2px 0 6px;";
-  trBtn.onclick=function(){ var pool=TOUCH_AXES.filter(function(c){ return c!==it.touch; }); it.touch=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
-  pcWrap.appendChild(trBtn);
-  const pcBtn=el("button","btn primary"); pcBtn.type="button"; pcBtn.textContent="③ ポストカード画像プロンプトをコピー"; pcBtn.style.cssText="display:block;width:100%;font-size:12px;";
+  const pcHead=el("div","aihead"); pcHead.appendChild(el("b",null,"🖼 ポストカードデザイン"));
+  pcHead.appendChild(helpBtn("箱の窓に見える台紙。②で情景・構図・タッチが自動入力されるので、「③画像プロンプト」をコピー→ChatGPTで生成→下に画像をアップ。文字は入れない無言のビジュアル。"));
+  pcWrap.appendChild(pcHead);
+  const pcBtn=el("button","btn primary"); pcBtn.type="button"; pcBtn.textContent="③ ポストカード画像プロンプトをコピー"; pcBtn.style.cssText="display:block;width:100%;font-size:12px;margin:6px 0 0;";
   pcBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildPostcardPrompt(it), pcBtn, "③ ポストカード画像プロンプトをコピー"); };
   pcWrap.appendChild(pcBtn);
   pcWrap.appendChild(runHint("ChatGPT（画像生成）","https://chatgpt.com/"));
-  pcWrap.appendChild(el("div","hint","↓ 生成した画像をここにアップ（このボックスのポストカード）"));
-  pcWrap.appendChild(imgSlot("ポストカード",()=>it.postcard,v=>it.postcard=v,"portrait",true));
+  pcWrap.appendChild(imgSlot("生成画像をアップ",()=>it.postcard,v=>it.postcard=v,"portrait",true));
+  const pcDet=el("details"); pcDet.innerHTML="<summary style=\"font-size:11px;color:var(--gray);cursor:pointer;margin-top:6px\">▸ 生成の詳細（AIが自動入力：情景・構図・タッチ）</summary>";
+  const pcIn=el("div"); pcIn.style.marginTop="6px";
+  pcIn.appendChild(field("核の感情","emotion",it,false,""));
+  pcIn.appendChild(field("情景・モチーフの方向","scene",it,true,"背景・情景のみ（キャラ本体・文字なし）"));
+  pcIn.appendChild(field("指定構図","composition",it,false,""));
+  const rrBtn=el("button","btn"); rrBtn.type="button"; rrBtn.textContent="🎲 構図"; rrBtn.style.cssText="font-size:11px;margin:2px 6px 6px 0;";
+  rrBtn.onclick=function(){ var pool=COMPO_ARCHETYPES.filter(function(c){ return c!==it.composition; }); it.composition=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
+  pcIn.appendChild(rrBtn);
+  pcIn.appendChild(field("タッチ（描き味）","touch",it,false,""));
+  const trBtn=el("button","btn"); trBtn.type="button"; trBtn.textContent="🎲 タッチ"; trBtn.style.cssText="font-size:11px;margin:2px 0 4px;";
+  trBtn.onclick=function(){ var pool=TOUCH_AXES.filter(function(c){ return c!==it.touch; }); it.touch=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
+  pcIn.appendChild(trBtn);
+  pcDet.appendChild(pcIn); pcWrap.appendChild(pcDet);
   box.appendChild(pcWrap);
-  const r2=el("div","row");
-  r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,"例：2800"), field("製造数量見込(社内)","qty",it,false,"例：200"));
-  box.appendChild(r2);
-  box.appendChild(field("クリエイターへのお題（自由度も明記・任意）","brief",it,true,"コンセプトだけ提示し詳細は自由に。変更・アレンジ歓迎。NGがあれば記載。"));
-  box.appendChild(el("label","fl","コラボワックス色"));
-  box.appendChild(field("色の指定（テキスト）","waxText",it,false,"例：くすみブルー系"));
+
+  // モチーフ・デザインのアイデア（キーワードを箇条書き）
+  box.appendChild(field("モチーフ・デザインのアイデア（キーワードを箇条書き）","motif",it,true,"例：毛布／三日月／湯気　※文字は刻まない（ことばはタイトルへ）"));
+
+  // 書き下ろしイラスト（アップすると 型/彫刻 が出る）
+  box.appendChild(el("label","fl","書き下ろしイラスト"));
+  box.appendChild(imgSlot("イラストをアップ",()=>it.genga,v=>{ it.genga=v; buildForm(); render(); autosave(); },"free",true));
+  if((it.genga||"").trim()){
+    const r1=el("div","row");
+    r1.append(selectField("型","dim",it,DIMS), selectField("彫刻","shape",it,SHAPES));
+    box.appendChild(r1);
+  }
+
+  // その他（内部メモ）＝役割・サムネ・ワックス・数量・試作
+  const mDet=el("details"); mDet.innerHTML="<summary style=\"font-size:11px;color:var(--gray);cursor:pointer\">▸ その他（役割・サムネ・ワックス・数量・試作）</summary>";
+  const m=el("div"); m.style.marginTop="6px";
+  m.appendChild(selectField("役割（セット内での立ち位置）","role",it,ROLE_OPTIONS));
+  m.appendChild(field("商品サムネイルの方向（EC/SNS・言葉が主役）","thumb",it,true,""));
+  m.appendChild(el("label","fl","コラボワックス色"));
+  m.appendChild(field("色の指定（テキスト）","waxText",it,false,"例：くすみブルー系"));
   const rb=el("button","recipe-btn","🗂 WAXシミュレーターのレシピから選ぶ"); rb.type="button";
   rb.onclick=()=>openRecipePicker((img,colors,nm)=>{ it.wax=img; it.waxColors=colors; if(nm&&!it.waxText) it.waxText=nm; render(); autosave(); });
-  box.appendChild(rb);
-  const det=el("details","imgcollapse"); det.innerHTML="<summary>▸ 画像を添付（原画・試作・任意）</summary>";
-  const ig=el("div","row"); ig.style.marginTop="6px";
-  const g1=el("div"); g1.appendChild(el("div","hint","原画/ラフ")); g1.appendChild(imgSlot("原画",()=>it.genga,v=>it.genga=v,"free",true)); ig.appendChild(g1);
-  const g2=el("div"); g2.appendChild(el("div","hint","スタンプ試作")); g2.appendChild(imgSlot("試作",()=>it.stamp,v=>it.stamp=v,"square",false)); ig.appendChild(g2);
-  det.appendChild(ig); box.appendChild(det);
+  m.appendChild(rb);
+  const r2=el("div","row");
+  r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,""), field("製造数量見込","qty",it,false,""));
+  m.appendChild(r2);
+  m.appendChild(el("div","hint","スタンプ試作")); m.appendChild(imgSlot("試作",()=>it.stamp,v=>it.stamp=v,"square",false));
+  mDet.appendChild(m); box.appendChild(mDet);
   return box;
 }
 
@@ -1206,7 +1213,7 @@ function buildForm(){
   fs.appendChild(field("NG・ご要望（AI推測→要クリエイター確認）","ng",data.overall,true,"触れ方に注意したい点。あくまで推測なので、可能なら本人に確認。"));
   F.appendChild(fs);
 
-  fs=fset("b","② 設計シート：コンセプトボックスの構成とお題");
+  fs=fset("b","② 設計シート：コンセプトボックスの構成");
   fs.appendChild(el("div","note","<b>役割＝セット内での立ち位置</b>（売り・集めの観点）：顔／入口／ギフト主力／深掘り／シークレット。同じ役割が重ならないよう散らすと、全種そろえたくなります（形態2D/3Dや色分けは“作り方”＝別途、人が判断）。<br>※ 売れるデザインのコツは設計シートPDFにクリエイター向けアドバイスとして載ります。"));
   const aiBox=el("div","aiblk");
   aiHelp(aiBox,"🤖 ② コンセプトボックス一括生成","先に①戦略＋テーマを作る → ①コピー → Claude等で実行 → ②JSON配列を反映。ブリーフの軸で通常"+data.itemCount+"種"+(secretCount()?"＋シークレット":"")+"に分かれます。");
@@ -1360,16 +1367,17 @@ function renderA(){
 function itemBriefPV(it,title,secret){
   const specs=[];
   if(it.role) specs.push("<b>役割</b> "+esc(it.role));
-  if(it.dim) specs.push("<b>形態</b> "+esc(it.dim));
-  if(it.shape) specs.push("<b>形状</b> "+esc(it.shape));
-  if(it.illust) specs.push("<b>必要イラスト</b> "+esc(it.illust));
+  if(it.dim) specs.push("<b>型</b> "+esc(it.dim));
+  if(it.shape) specs.push("<b>彫刻</b> "+esc(it.shape));
+  let media="";
+  if(it.postcard) media+=pvMedia(it.postcard,"ポストカード","portrait");
+  if(it.genga) media+=pvMedia(it.genga,"書き下ろしイラスト","wide");
   return `<div class="pcard${secret?" secret":""}">
     <div class="ph">${title}${secret?"（レア枠）":"："+(esc(it.ttl)||"（タイトル未記入）")}</div>
     ${specs.length?('<div class="meta">'+specs.map(s=>"<span>"+s+"</span>").join("")+'</div>'):""}
     ${it.desc?('<div class="qa"><div class="q">コンセプト</div>'+ans(it.desc)+'</div>'):""}
-    <div class="qa"><div class="q">スタンプヘッドのモチーフ・デザインの方向</div>${ans(it.motif)}</div>
-    ${it.brief?('<div class="qa"><div class="q">お題（自由に描いていただいてOK）</div>'+ans(it.brief)+'</div>'):""}
-    ${it.genga?pvMedia(it.genga,"原画/ラフ","wide"):""}
+    ${it.motif?('<div class="qa"><div class="q">モチーフ・アイデア</div>'+ans(it.motif)+'</div>'):""}
+    ${media}
   </div>`;
 }
 function renderB(){
@@ -1402,8 +1410,8 @@ function renderB(){
     <div class="qa"><div class="q">ファンが反応・期待していること ${ownTag("ai")}</div>${ans(data.overall.fans)}</div>
     <div class="qa"><div class="q">NG・ご要望 ${ownTag("ai","AI推測→要確認")}</div>${ans(data.overall.ng)}</div>
 
-    <h3>4. コンセプトボックスの構成とお題 ${ownTag("both")}</h3>
-    <div class="boxdef">1コンセプトボックス＝スタンプヘッド・ワックス・ポストカードが1点ずつの1セット。下記の <b>${total}種${secLabel()}</b> をつくります。各お題は「方向性」です。詳細は ${esc(data.creator)||"クリエイター"}様の自由に描いていただいてOKです（変更・アレンジ歓迎）。</div>
+    <h3>4. コンセプトボックスの構成 ${ownTag("both")}</h3>
+    <div class="boxdef">1コンセプトボックス＝スタンプヘッド・ワックス・ポストカードが1点ずつの1セット。下記の <b>${total}種${secLabel()}</b> をつくります。モチーフのアイデアは「方向性」です。詳細は ${esc(data.creator)||"クリエイター"}様の自由に描いていただいてOKです（変更・アレンジ歓迎）。</div>
     ${items}
 
     ${data.postcardIncluded?('<h3>5. ポストカード</h3><p class="muted">'+esc(data.postcardNote)+'</p>'):""}
