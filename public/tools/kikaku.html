@@ -1106,9 +1106,9 @@ function renderB(){
   let items=""; for(let i=0;i<total;i++) items+=itemBriefPV(data.items[i],"コンセプトボックス "+CIRCLED[i],false);
   if(data.secretEnabled) items+=itemBriefPV(data.secret,"シークレット",true);
   document.getElementById("pv-b").innerHTML=`
-    <div class="kicker">HOMU × ${esc(data.creator)||"CREATOR"} COLLABORATION</div>
+    <div class="kicker">HOMU × ${data.creator?esc(data.creator)+"様":"CREATOR"} COLLABORATION</div>
     <h2 class="tt">コラボ設計シート</h2>
-    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx()} × HOMU ／ 書き下ろしのお題と商品構成</div>
+    <div class="sub">${data.creator?esc(data.creator)+"様":"〈クリエイター名〉"}${ipx()} × HOMU ／ 書き下ろしのお題と商品構成</div>
 
     <h3>1. 全体コンセプト（テーマ）${ownTag("both")}</h3>
     ${data.themeName?('<div class="hero" style="font-size:16pt">「'+esc(data.themeName)+'」'+(data.themeSub?'<br><span class="heros">'+esc(data.themeSub)+'</span>':'')+'</div>'):''}
