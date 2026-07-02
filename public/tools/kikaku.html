@@ -642,6 +642,14 @@ function copyText(p, btn, label){
   else { window.prompt("コピーして貼り付けてください", p); }
 }
 function themeReady(){ return !!((data.ip||data.creator||"").trim()) && !!(data.themeName||data.theme||"").trim(); }
+// 実行先を明示する小さな導線（コピー→どのAIで実行するか）
+function runHint(where, url){
+  var w=el("div"); w.style.cssText="display:flex;align-items:center;gap:8px;margin:6px 0 2px;font-size:11px;color:var(--ink,#555);";
+  w.appendChild(el("span",null,"→ コピーしたら "+where+" で実行"));
+  var a=el("a","btn"); a.textContent=where+"を開く ↗"; a.href=url; a.target="_blank"; a.rel="noopener";
+  a.style.cssText="font-size:11px;padding:3px 10px;text-decoration:none;white-space:nowrap;";
+  w.appendChild(a); return w;
+}
 // ② 全体テーマ → コンセプトボックスを一括設計
 function buildBoxesPrompt(){
   var ip=(data.ip||data.creator)||"〈IP名〉";
@@ -841,6 +849,7 @@ function itemForm(it,title,secret){
   const pcBtn=el("button","btn primary"); pcBtn.type="button"; pcBtn.textContent="③ ポストカード画像プロンプトをコピー"; pcBtn.style.cssText="display:block;width:100%;font-size:12px;";
   pcBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildPostcardPrompt(it), pcBtn, "③ ポストカード画像プロンプトをコピー"); };
   pcWrap.appendChild(pcBtn);
+  pcWrap.appendChild(runHint("ChatGPT（画像生成）","https://chatgpt.com/"));
   box.appendChild(pcWrap);
   const r2=el("div","row");
   r2.append(field("必要イラスト数","illust",it,false,"例：1点"), field("想定単価(円)","price",it,false,"例：2800"), field("製造数量見込(社内)","qty",it,false,"例：200"));
@@ -910,7 +919,7 @@ function buildForm(){
   const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="① プロンプトをコピー"; tpBtn.style.cssText="margin:4px 0;display:block;";
   const tjTa=el("textarea"); tjTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; tjTa.style.minHeight="56px";
   tpBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に上の「案件情報」で IP／キャラ名（またはクリエイター名）を入力してください。\n入力した名前がプロンプトに自動で差し込まれます。"); return; } const p=buildThemePrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ tpBtn.textContent="✓ "+((data.ip||data.creator).trim())+" でコピー"; setTimeout(function(){tpBtn.textContent="① プロンプトをコピー";},1800); }, function(){ window.prompt("コピーして Claude に貼ってください", p); }); } else { window.prompt("コピーして Claude に貼ってください", p); } };
-  tpWrap.appendChild(tpBtn); tpWrap.appendChild(tjTa);
+  tpWrap.appendChild(tpBtn); tpWrap.appendChild(runHint("Claude","https://claude.ai/new")); tpWrap.appendChild(tjTa);
   const tjBtn=el("button","btn"); tjBtn.type="button"; tjBtn.textContent="② 貼り付けを反映"; tjBtn.style.marginTop="6px";
   tjBtn.onclick=function(){ applyThemeJson(tjTa.value); };
   tpWrap.appendChild(tjBtn); fs.appendChild(tpWrap);
@@ -942,7 +951,7 @@ function buildForm(){
   const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="① プロンプトをコピー"; cpBtn.style.cssText="margin:6px 0;display:block;";
   const aiTa=el("textarea"); aiTa.placeholder="② AIが出力したJSON配列（[ ... ]）をここに貼り付け"; aiTa.style.minHeight="56px";
   cpBtn.onclick=function(){ if(!themeReady()){ alert("先に上の「全体コンセプト」でテーマを作ってください（IP名＋テーマ名）。\nテーマ・パレット・作風がプロンプトに差し込まれます。"); return; } copyText(buildBoxesPrompt(), cpBtn, "① プロンプトをコピー"); };
-  aiBox.appendChild(cpBtn); aiBox.appendChild(aiTa);
+  aiBox.appendChild(cpBtn); aiBox.appendChild(runHint("Claude","https://claude.ai/new")); aiBox.appendChild(aiTa);
   const apBtn=el("button","btn"); apBtn.type="button"; apBtn.textContent="② 貼り付けを反映"; apBtn.style.marginTop="6px";
   apBtn.onclick=function(){ applyBoxesJson(aiTa.value); };
   aiBox.appendChild(apBtn); fs.appendChild(aiBox);
