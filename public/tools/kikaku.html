@@ -813,14 +813,14 @@ function applyResearchJson(text){
   buildForm(); render(); autosave();
   alert("市場リサーチを反映しました。この内容は①テーマ生成の根拠として自動で渡されます。");
 }
-// ① 戦略ブリーフ（⓪リサーチ → “点で狙う”に絞る変換層。全下流の羅針盤）
-function buildBriefPrompt(){
+// ① 戦略＋全体テーマ（⓪の証拠から“点で狙う”戦略を立て、そのまま世界観の言葉＝テーマに翻訳）
+function buildStrategyPrompt(){
   var ip=(data.ip||data.creator)||"〈ここにIP名〉";
-  var hint=(data.themeKeywords||"").trim()||"なし";
+  var hint=(data.themeKeywords||"").trim()||"なし（あれば最優先で反映）";
   return [
-    "あなたは一流広告代理店のストラテジック・プランナーです。",
-    "下記IPのファン調査（証拠）をもとに、クリエイティブを“点で狙う”ための戦略ブリーフを1本に絞ってください。",
-    "（用途：シーリングスタンプ〈封蝋〉のコラボ商品。この後テーマ・商品・ビジュアルを全てこのブリーフから演繹します。）",
+    "あなたは一流広告代理店のストラテジック・プランナー兼コピーライターです。",
+    "下記IPのファン調査（証拠）をもとに、まず戦略を“点”に絞り、その戦略から全体テーマ（世界観の言葉）を導いてください。",
+    "（用途：シーリングスタンプ〈封蝋〉のコラボ商品。この後の商品・ビジュアルは全てこの出力から演繹します。）",
     "",
     "# 対象",
     "IP・作品名："+ip,
@@ -829,148 +829,82 @@ function buildBriefPrompt(){
     "# 入力：⓪市場・ファンリサーチ（証拠。これに接地させる）",
     ((data.marketResearch||"").trim() || "（未実施。無い場合はweb検索で最低限の裏取りをしてから書く）"),
     "",
-    "# 原則（一流の“点で狙う”に必須）",
-    "- ターゲットはセグメントでなく【一人の実在人物】。顔・生活・その瞬間の行動まで描く。",
-    "- 面（みんな）でなく点（一人・一瞬・一つの感情）を狙う。刺す相手を1人に決める。",
-    "- 発想はリサーチの証拠から演繹する。“それっぽい”ポエムは禁止。各判断に根拠を紐づける。",
-    "- 封蝋という行為（気持ちを閉じ込めて渡す）とIPの本質が重なる一点を突く。",
-    "- negative_signals（構造的NG）を必ずガードレールに落とす。",
+    "# 手順（この順で考える）",
+    "1. 戦略を絞る：ターゲットは【一人の実在人物】。面でなく点（一人・一瞬・一つの感情）を狙う。",
+    "   封蝋という行為（気持ちを閉じ込めて渡す）とIPの本質が重なる一点を突く。",
+    "   発想は証拠から演繹し“それっぽい”ポエムは禁止。negative_signals（構造的NG）は必ずガードレールに落とす。",
+    "2. テーマを導く：strategy.single_minded_idea（コア発想）を、そのIPの世界観の言葉に翻訳したものがテーマ。",
+    "   コア発想と矛盾する方向は禁止。",
+    "3. パレット・作風の家族・作品についての下書きも同時に出す。",
     "",
-    "# 出力（JSONのみ。あいさつ・説明は書かない）",
+    "# テーマの品質ルール",
+    "- そのIPでしか成立しないこと（他IPに置き換えて成立するテーマは失格）。一目でそのIPと分かる象徴性を持つ。",
+    "- subcopy/description は公開用（SNS/ポストカード）。詩的だが具体的で、クリシェ（どの商品にも言える決まり文句）を避ける。",
+    "- description は約180〜220字。name は10〜16字、subcopy は15字前後。",
+    "- 事実に基づく。情報が乏しい項目は「（推測）」と明記。あいさつや説明は書かず、JSONだけを出力。",
+    "",
+    "# 出力（JSONのみ）",
     "{",
-    '  "target_one_person": "刺す相手を一人に。年齢/生活/その日の場面/内面まで具体的に（1〜3文）",',
-    '  "moment": "この商品が人生に入る“ひとつの瞬間・occasion”（いつ・どこで・誰に向けて）",',
-    '  "human_tension": "その人の本音の矛盾を「〜したいけど〜できない」の形で1文",',
-    '  "single_minded_idea": "全制作物がぶら下がる“ひとつの発想”を1文で断定（コア・アイデア）",',
-    '  "category_break": "封蝋カテゴリの通念（華やか/装飾過多/エレガント等）を、このIPでどう裏切るか",',
-    '  "market_wave": "今この商品が刺さる追い風・“今である理由”（トレンド/需要の流れ）",',
-    '  "creative_implications": {',
-    '    "box_axis": "コンセプトボックスを分ける“戦略的な軸”（この軸なら集めたくなる。ブリーフから演繹）",',
-    '    "tone_dos": "作風・コピーで必ずやる方向（ブリーフ由来）",',
+    '  "strategy": {',
+    '    "target_one_person": "刺す相手を一人に。年齢/生活/その日の場面/内面まで（1〜3文）",',
+    '    "moment": "商品が人生に入る“ひとつの瞬間・occasion”（いつ・どこで・誰に）",',
+    '    "human_tension": "本音の矛盾を「〜したいけど〜できない」で1文",',
+    '    "single_minded_idea": "全制作物がぶら下がるコア発想を1文で断定",',
+    '    "category_break": "封蝋の通念（華やか/装飾過多/エレガント等）をどう裏切るか",',
+    '    "market_wave": "今この商品が刺さる追い風・今である理由",',
+    '    "box_axis": "コンセプトボックスを分ける戦略的な軸（集めたくなる・演繹）",',
+    '    "tone_dos": "作風・コピーで必ずやる方向",',
     '    "tone_donts": "やってはいけない構造的NG（negative_signalsから）"',
     "  },",
-    '  "evidence_links": "上の主要判断が、⓪リサーチのどの証拠に基づくか（接地の明示・簡潔に）"',
+    '  "distinctive_hook": "このIPが他と決定的に違う独自の魅力（1文）",',
+    '  "theme": {',
+    '    "name": "テーマ名（10〜16字）",',
+    '    "subcopy": "サブコピー（15字前後・公開用）",',
+    '    "description": "公開用の説明文（約180〜220字・詩的かつ具体・クリシェ回避）"',
+    "  },",
+    '  "palette": "全商品で共有する配色系統（3〜5色＋差し色・色名で）",',
+    '  "style_family": "作風の家族／レンジ（特徴と幅で・1〜2文）",',
+    '  "about": {',
+    '    "core": "作品の核・大切にしたい魅力（市場の声と世界観から1〜2文）",',
+    '    "fans": "ファンが反応・期待していること（実際の声から具体的に）",',
+    '    "ng_guess": "触れ方に注意したい点（推測・文末に（推測）・断定しない）"',
+    "  },",
+    '  "illustration_hint": "書き下ろしイラストの方向性のヒント（色味・背景の雰囲気まで・distinctive_hookが伝わる内容）"',
     "}"
   ].join("\n");
 }
-function applyBriefJson(text){
+function applyStrategyJson(text){
   var o;
   try{ o=JSON.parse((text||"").trim()); }catch(e){ alert("JSONの読み取りに失敗しました。AIの出力から { ... } のJSONだけを貼り付けてください。"); return; }
   if(!o||typeof o!=="object"||Array.isArray(o)){ alert("JSONオブジェクト（{ ... }）を貼り付けてください。"); return; }
-  var ci=o.creative_implications||{};
+  var st=o.strategy||{}, t=o.theme||{}, ab=o.about||{};
   var parts=[];
-  if(o.single_minded_idea) parts.push("◎ コア発想（全制作物の軸）\n"+o.single_minded_idea);
-  if(o.target_one_person) parts.push("■ 狙う一人\n"+o.target_one_person);
-  if(o.moment) parts.push("■ 刺す瞬間\n"+o.moment);
-  if(o.human_tension) parts.push("■ 本音の矛盾\n"+o.human_tension);
-  if(o.category_break) parts.push("■ カテゴリの通念破り\n"+o.category_break);
-  if(o.market_wave) parts.push("■ マーケットの波（今である理由）\n"+o.market_wave);
-  if(ci.box_axis) parts.push("■ ボックスを分ける軸\n"+ci.box_axis);
-  if(ci.tone_dos) parts.push("■ やる（Do）\n"+ci.tone_dos);
-  if(ci.tone_donts) parts.push("■ やらない（構造的NG）\n"+ci.tone_donts);
-  if(o.evidence_links) parts.push("― 根拠（⓪リサーチ）―\n"+o.evidence_links);
+  if(st.single_minded_idea) parts.push("◎ コア発想（全制作物の軸）\n"+st.single_minded_idea);
+  if(st.target_one_person) parts.push("■ 狙う一人\n"+st.target_one_person);
+  if(st.moment) parts.push("■ 刺す瞬間\n"+st.moment);
+  if(st.human_tension) parts.push("■ 本音の矛盾\n"+st.human_tension);
+  if(st.category_break) parts.push("■ カテゴリの通念破り\n"+st.category_break);
+  if(st.market_wave) parts.push("■ マーケットの波（今である理由）\n"+st.market_wave);
+  if(st.box_axis) parts.push("■ ボックスを分ける軸\n"+st.box_axis);
+  if(st.tone_dos) parts.push("■ やる（Do）\n"+st.tone_dos);
+  if(st.tone_donts) parts.push("■ やらない（構造的NG）\n"+st.tone_donts);
   data.brief = parts.join("\n\n");
-  data.briefIdea = o.single_minded_idea ? String(o.single_minded_idea) : "";
-  buildForm(); render(); autosave();
-  alert("戦略ブリーフを反映しました。以降のテーマ・ボックス・ポストカードは、このブリーフから演繹されます。");
-}
-function buildThemePrompt(){
-  const ip=(data.ip||data.creator)||"〈ここにIP名〉";
-  const hint=(data.themeKeywords||"").trim()||"なし（あれば最優先で反映）";
-  return [
-    "あなたは「売れるシーリングスタンプ（封蝋）」を熟知したコラボ企画者 兼 コピーライターです。",
-    "指定されたIPを調べ、そのIPでしか成立しないコラボ・コンセプト一式を作ってください。",
-    "（本件はシーリングスタンプのコラボ商品。文章はSNS告知やポストカードに使います。）",
-    "",
-    "# 入力",
-    "IP・作品名："+ip,
-    "任意の指定："+hint,
-    "",
-    "# 戦略ブリーフ（①・最優先で従う。テーマはこの“コア発想”の言語化）",
-    ((data.brief||"").trim() || "（まだ無し。無ければ下のリサーチと自力調査からテーマを立てる）"),
-    "",
-    "# 事前リサーチ（⓪の調査結果・ブリーフの裏づけ／補完）",
-    ((data.marketResearch||"").trim() || "（まだ無し。この場合は自分でweb検索して調べる）"),
-    "",
-    "# 手順",
-    "0. 戦略ブリーフがある場合、テーマ・サブコピー・説明は【コア発想を世界観の言葉に翻訳したもの】にする。ブリーフと矛盾する方向は禁止。",
-    "1. リサーチの扱い：",
-    "   - 上の【事前リサーチ】がある場合は、それを主な根拠にする（core/fans/NGはこの証拠に接地させる）。",
-    "     web検索は裏取り・補完のみに使い、事前リサーチと矛盾する断定はしない。",
-    "   - 事前リサーチが無い場合のみ、自分でweb検索し、世界観・ファンが好きな点・",
-    "     集めたくなる固有の理由・触れ方の注意点を、できるだけ一次情報から掴む。",
-    "   - 現在の時期・季節・トレンドも把握する（＝今ほしくなる風味づけのヒント。主役ではない）。",
-    "2. 差別化ポイントの特定：",
-    "   このIPが“他の作品・他のキャラ”と決定的に違う点を1つ言い切る（distinctive_hook）。",
-    "   テーマ・コピー・イラスト方向は、すべてこの一点に寄せる。時期はあくまで軽い風味。",
-    "3. パレットと作風の家族を決める：",
-    "   - palette：このコラボ全体の配色系統（3〜5色の系統＋差し色を、色名で）。全商品で共有する。",
-    "   - style_family：このIPに合う“作風の家族／レンジ”（特定の作家名でなく、表現の特徴と幅で。",
-    "     手描き/デジタル/コラージュ/幾何 等どれが合うか、揃える点と許す幅）。",
-    "4. 出力：下記JSONを1つだけ出力。",
-    "",
-    "# 良いテーマの条件",
-    "- そのIPでしか成立しないこと。他のIPに置き換えて成立するテーマは【失格】。",
-    "- 一目でそのIPだと分かる象徴性を持つこと。",
-    "- 色を塗り分けられる/細部のある要素を含み、グッズとして映える余地があること。",
-    "",
-    "# 品質ルール（必ず守る）",
-    "- 事実に基づく。情報が乏しい項目は「（推測）」と明記し、確度の低い断定はしない。",
-    "- 【差し替え不能テスト】書いたら自問：「これは他のIP・他のキャラにそのまま使い回せないか？」",
-    "  使い回せるなら、そのIPでしか成立しない具体（固有のキャラ性・作風・独自の空気感 等）に書き直す。",
-    "- subcopy と description は SNS告知・ポストカードに使う【公開用の文章】。",
-    "  詩的だが具体的で、どの商品にも言える汎用の決まり文句（クリシェ）を避ける。",
-    "- description は約180〜220字。「集めたくなる」「商品の狙い」など内部向けの言葉は書かない。",
-    "- name は10〜16字、subcopy は15字前後。あいさつや説明は書かず、JSONだけを出力。",
-    "",
-    "# 出力するJSON",
-    "{",
-    '  "distinctive_hook": "このIPが他の作品と決定的に違う独自の魅力（1文）",',
-    '  "research": {',
-    '    "worldview_keywords": ["世界観を表すキーワード3〜6個"],',
-    '    "fan_love": "ファンが特に好きにしている点（固有性を出す・1〜2文）",',
-    '    "collection_gift_angle": "このIPだからこそ集めたくなる/贈りたくなる固有の理由（1〜2文）"',
-    '  },',
-    '  "theme": {',
-    '    "name": "テーマ名（一言・10〜16字）",',
-    '    "subcopy": "サブコピー（1行・15字前後・公開用）",',
-    '    "description": "公開用の説明文（約180〜220字・詩的かつ具体・クリシェ回避）"',
-    '  },',
-    '  "palette": "全商品で共有する配色系統（3〜5色＋差し色・色名で）",',
-    '  "style_family": "作風の家族／レンジ（特徴と幅で。揃える点と許す幅を1〜2文）",',
-    '  "about": {',
-    '    "core": "作品の核・大切にしたい魅力：ファンが一番好きな“作品世界の核”を、市場の声と世界観から1〜2文で。",',
-    '    "fans": "ファンが反応・期待していること：SNS/レビュー等の実際の声から、固有の反応を具体的に1〜2文で。",',
-    '    "ng_guess": "触れ方に注意したい点・避けた方が良い方向（推測）：世界観と生の声から。文末に必ず（推測）と付け、最終はクリエイター確認前提で断定しない。"',
-    '  },',
-    '  "illustration_hint": "書き下ろしイラストの方向性のヒント：このIPの世界観を魅力的にグッズ化するために、どんなシーンを描いてもらうと良いか。色味・背景の雰囲気まで含め、distinctive_hook が伝わる内容にする。"',
-    "}"
-  ].join("\n");
-}
-function applyThemeJson(text){
-  let o;
-  try{ o=JSON.parse((text||"").trim()); }catch(e){ alert("JSONの読み取りに失敗しました。AIの出力から { ... } のJSONだけを貼り付けてください。"); return; }
-  if(!o||typeof o!=="object"||Array.isArray(o)){ alert("JSONオブジェクト（{ ... }）を貼り付けてください。"); return; }
-  const t=o.theme||{}, r=o.research||{};
+  data.briefIdea = st.single_minded_idea ? String(st.single_minded_idea) : "";
   if(t.name) data.themeName=String(t.name);
   if(t.subcopy) data.themeSub=String(t.subcopy);
   if(t.description) data.theme=String(t.description);
   if(o.distinctive_hook) data.hook=String(o.distinctive_hook);
   if(o.palette) data.palette=String(o.palette);
   if(o.style_family) data.styleFamily=String(o.style_family);
-  const ab=o.about||{};
   if(ab.core) data.overall.core=String(ab.core);
   if(ab.fans) data.overall.fans=String(ab.fans);
   if(ab.ng_guess) data.overall.ng=String(ab.ng_guess);
-  const notes=[];
+  var notes=[];
   if(o.distinctive_hook) notes.push("■ 差別化ポイント\n"+o.distinctive_hook);
-  if(Array.isArray(r.worldview_keywords)&&r.worldview_keywords.length) notes.push("■ 世界観キーワード\n"+r.worldview_keywords.join("、"));
-  if(r.fan_love) notes.push("■ ファンが好きな点\n"+r.fan_love);
-  if(r.collection_gift_angle) notes.push("■ 集めたくなる/ギフトの切り口\n"+r.collection_gift_angle);
   if(o.illustration_hint) notes.push("■ 書き下ろしの方向性\n"+o.illustration_hint);
   if(notes.length) data.conceptNotes=notes.join("\n\n");
   buildForm(); render(); autosave();
-  alert("テーマを反映しました。内容を確認・調整してください。");
+  alert("戦略＋全体テーマを反映しました。設計シートに反映され、②ボックス生成に自動で渡ります。");
 }
 
 function itemForm(it,title,secret){
@@ -983,15 +917,15 @@ function itemForm(it,title,secret){
   box.appendChild(field("モチーフ・構図の方向（ひとこと）","motif",it,false,"例：麦の穂と小鳥を独自シルエットで"));
   // ポストカード設計（②で自動入力・③で使用）
   const pcWrap=el("div"); pcWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:9px 11px;margin:8px 0;background:var(--tint);";
-  pcWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🖼 ポストカード（箱の窓に見える台紙）</b><br>下は③の一括生成で自動入力されます。整えたら「④画像プロンプト」をChatGPTへ。"));
+  pcWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🖼 ポストカード（箱の窓に見える台紙）</b><br>下は②の一括生成で自動入力されます。整えたら「③画像プロンプト」をChatGPTへ。"));
   pcWrap.appendChild(field("核の感情","emotion",it,false,"このボックスで立てる気持ち1つ"));
   pcWrap.appendChild(field("情景・モチーフの方向","scene",it,true,"キャラ本体は描かず、世界観を補助する背景・情景。1〜2文。"));
   pcWrap.appendChild(field("指定構図","composition",it,false,"②が割り当て。空なら🎲で選べます。"));
   const rrBtn=el("button","btn"); rrBtn.type="button"; rrBtn.textContent="🎲 構図をランダムに選ぶ"; rrBtn.style.cssText="font-size:11px;margin:2px 0 6px;";
   rrBtn.onclick=function(){ var pool=COMPO_ARCHETYPES.filter(function(c){ return c!==it.composition; }); it.composition=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
   pcWrap.appendChild(rrBtn);
-  const pcBtn=el("button","btn primary"); pcBtn.type="button"; pcBtn.textContent="④ ポストカード画像プロンプトをコピー"; pcBtn.style.cssText="display:block;width:100%;font-size:12px;";
-  pcBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildPostcardPrompt(it), pcBtn, "④ ポストカード画像プロンプトをコピー"); };
+  const pcBtn=el("button","btn primary"); pcBtn.type="button"; pcBtn.textContent="③ ポストカード画像プロンプトをコピー"; pcBtn.style.cssText="display:block;width:100%;font-size:12px;";
+  pcBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildPostcardPrompt(it), pcBtn, "③ ポストカード画像プロンプトをコピー"); };
   pcWrap.appendChild(pcBtn);
   pcWrap.appendChild(runHint("ChatGPT（画像生成）","https://chatgpt.com/"));
   box.appendChild(pcWrap);
@@ -1060,7 +994,7 @@ function buildForm(){
   fs.appendChild(field("任意の指定・ヒント（正式名称/URL/この季節で 等・任意）","themeKeywords",data,false,"空ならAIにお任せ。例：正式表記 まいにちパン子 / クリスマスで"));
   // ⓪ 市場・ファンリサーチ（証拠ファースト。①テーマ生成の根拠になる）
   const rsWrap=el("div"); rsWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
-  rsWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🔎 ⓪ 市場・ファンリサーチ（最初にやる）</b><br>証拠ファースト（引用＋出典・多ソース・確信度つき）で調べるプロンプト。①プロンプトをコピー → <b>web検索できるClaude</b>で実行 → ②JSONを下欄に反映。結果は<b>①戦略ブリーフ・②テーマに自動で渡ります</b>。"));
+  rsWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🔎 ⓪ 市場・ファンリサーチ（最初にやる）</b><br>証拠ファースト（引用＋出典・多ソース・確信度つき）で調べるプロンプト。①プロンプトをコピー → <b>web検索できるClaude</b>で実行 → ②JSONを下欄に反映。結果は<b>①戦略＋テーマに自動で渡ります</b>。"));
   const rsBtn=el("button","btn primary"); rsBtn.type="button"; rsBtn.textContent="① リサーチ・プロンプトをコピー"; rsBtn.style.cssText="margin:4px 0;display:block;";
   rsBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildResearchPrompt(), rsBtn, "① リサーチ・プロンプトをコピー"); };
   rsWrap.appendChild(rsBtn); rsWrap.appendChild(runHint("Claude","https://claude.ai/new"));
@@ -1070,40 +1004,31 @@ function buildForm(){
   rsApply.onclick=function(){ applyResearchJson(rsTa.value); };
   rsWrap.appendChild(rsApply);
   if((data.marketResearch||"").trim()){
-    rsWrap.appendChild(field("リサーチ結果（①ブリーフ・②テーマに渡る・編集可）","marketResearch",data,true,""));
+    rsWrap.appendChild(field("リサーチ結果（①戦略＋テーマに渡る・編集可）","marketResearch",data,true,""));
   }
   fs.appendChild(rsWrap);
   // ① 戦略ブリーフ（⓪リサーチ→“点で狙う”に絞る。全下流の羅針盤）
-  const bfWrap=el("div"); bfWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
-  bfWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🎯 ① 戦略ブリーフ（“点で狙う”を作る）</b><br>⓪の証拠を、狙う一人・刺す瞬間・コア発想に絞る変換層。①プロンプトをコピー → Claudeで実行 → ②JSONを反映。<b>以降のテーマ・ボックス・ポストカードは全てこのブリーフから演繹されます。</b>"));
-  const bfBtn=el("button","btn primary"); bfBtn.type="button"; bfBtn.textContent="① プロンプトをコピー"; bfBtn.style.cssText="margin:4px 0;display:block;";
-  bfBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } if(!(data.marketResearch||"").trim()){ if(!confirm("⓪リサーチがまだ反映されていません。証拠なしでもブリーフは作れますが、精度は落ちます。このまま進めますか？")) return; } copyText(buildBriefPrompt(), bfBtn, "① プロンプトをコピー"); };
-  bfWrap.appendChild(bfBtn); bfWrap.appendChild(runHint("Claude","https://claude.ai/new"));
-  const bfTa=el("textarea"); bfTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; bfTa.style.minHeight="56px";
-  bfWrap.appendChild(bfTa);
-  const bfApply=el("button","btn"); bfApply.type="button"; bfApply.textContent="② 貼り付けを反映"; bfApply.style.marginTop="6px";
-  bfApply.onclick=function(){ applyBriefJson(bfTa.value); };
-  bfWrap.appendChild(bfApply);
-  if((data.brief||"").trim()){
-    bfWrap.appendChild(field("戦略ブリーフ（②テーマ・③ボックス・④ポストカードに渡る・編集可）","brief",data,true,""));
-  }
-  fs.appendChild(bfWrap);
+  // ① 戦略＋全体テーマ（⓪の証拠から“点で狙う”戦略を立て、そのままテーマに翻訳）
   const tpWrap=el("div"); tpWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
-  tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 ② IP名からテーマを作る</b><br>① プロンプトをコピー → web対応のClaudeに貼って実行 → ② 出てきたJSONを下欄に貼って反映。IP名・<b>⓪リサーチ・①ブリーフ</b>が自動で差し込まれ、テーマはコア発想の言語化になります。"));
+  tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🎯 ① 戦略＋全体テーマを作る</b><br>⓪の証拠から、狙う一人・刺す瞬間・コア発想（戦略）を絞り、そのまま全体テーマ（世界観の言葉）まで一気に導きます。①コピー → <b>Claude</b>で実行 → ②JSONを反映。<b>設計シートに反映され、②ボックス生成に自動で渡ります。</b>"));
   const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="① プロンプトをコピー"; tpBtn.style.cssText="margin:4px 0;display:block;";
   const tjTa=el("textarea"); tjTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; tjTa.style.minHeight="56px";
-  tpBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に上の「案件情報」で IP／キャラ名（またはクリエイター名）を入力してください。\n入力した名前がプロンプトに自動で差し込まれます。"); return; } const p=buildThemePrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ tpBtn.textContent="✓ "+((data.ip||data.creator).trim())+" でコピー"; setTimeout(function(){tpBtn.textContent="① プロンプトをコピー";},1800); }, function(){ window.prompt("コピーして Claude に貼ってください", p); }); } else { window.prompt("コピーして Claude に貼ってください", p); } };
+  tpBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に上の「案件情報」で IP／キャラ名（またはクリエイター名）を入力してください。"); return; } if(!(data.marketResearch||"").trim()){ if(!confirm("⓪リサーチがまだ反映されていません。証拠なしでも作れますが、精度は落ちます。このまま進めますか？")) return; } copyText(buildStrategyPrompt(), tpBtn, "① プロンプトをコピー"); };
   tpWrap.appendChild(tpBtn); tpWrap.appendChild(runHint("Claude","https://claude.ai/new")); tpWrap.appendChild(tjTa);
   const tjBtn=el("button","btn"); tjBtn.type="button"; tjBtn.textContent="② 貼り付けを反映"; tjBtn.style.marginTop="6px";
-  tjBtn.onclick=function(){ applyThemeJson(tjTa.value); };
-  tpWrap.appendChild(tjBtn); fs.appendChild(tpWrap);
+  tjBtn.onclick=function(){ applyStrategyJson(tjTa.value); };
+  tpWrap.appendChild(tjBtn);
+  if((data.brief||"").trim()){
+    tpWrap.appendChild(field("戦略ブリーフ（②ボックス・③ポストカードに渡る・編集可）","brief",data,true,""));
+  }
+  fs.appendChild(tpWrap);
   fs.appendChild(field("テーマ名（一言）","themeName",data,false,"例：ちょっぴりきみょうな、なかまたち"));
   fs.appendChild(field("サブコピー（1行）","themeSub",data,false,"例：くしゃっと、いとおしい。"));
   fs.appendChild(field("説明文（公開用・SNS/ポストカード裏）","theme",data,true,"約180〜220字。上のAIボタンで自動生成できます。"));
   const r0=el("div","row");
   r0.append(field("パレット（配色系統）","palette",data,false,"AI反映で自動。全商品で共有"), field("作風の家族（レンジ）","styleFamily",data,false,"AI反映で自動。作品全体の作風"));
   fs.appendChild(r0);
-  fs.appendChild(el("div","hint","↑ パレット・作風の家族は<b>各ボックスのポストカード生成プロンプト（④）に差し込まれます</b>。全商品の統一感の土台。"));
+  fs.appendChild(el("div","hint","↑ パレット・作風の家族は<b>各ボックスのポストカード生成プロンプト（③）に差し込まれます</b>。全商品の統一感の土台。"));
   fs.appendChild(field("差別化点（distinctive_hook・内部メモ）","hook",data,false,"AI反映で自動。このIP最大の固有性"));
   fs.appendChild(field("コンセプトの根拠・書き下ろしの方向（内部メモ）","conceptNotes",data,true,"AI反映で自動入力（差別化点・リサーチ・書き下ろし方向）。社内用。"));
   fs.appendChild(el("label","fl","テーマ／ポストカードのキーイラスト（縦・パッケージにも使用｜画像 or PDF）"));
@@ -1112,16 +1037,16 @@ function buildForm(){
   F.appendChild(fs);
 
   fs=fset("b","② 設計シート：作品について");
-  fs.appendChild(el("div","note","上の<b>②テーマ生成AI</b>が、世界観・市場（SNS/レビュー等）の声から<b>下書きを自動入力</b>します（要確認）。<br>とくに<b>NGは“推測”</b>なので、可能ならクリエイターさんに最終確認を。"));
-  fs.appendChild(field("作品の核・大切にしたい魅力（AI下書き→確認）","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。②テーマ生成で自動入力。"));
-  fs.appendChild(field("ファンが反応・期待していること（AI下書き→確認）","fans",data.overall,true,"SNS/レビュー等の市場の声から。②テーマ生成で自動入力。"));
+  fs.appendChild(el("div","note","上の<b>①戦略＋テーマAI</b>が、世界観・市場（SNS/レビュー等）の声から<b>下書きを自動入力</b>します（要確認）。<br>とくに<b>NGは“推測”</b>なので、可能ならクリエイターさんに最終確認を。"));
+  fs.appendChild(field("作品の核・大切にしたい魅力（AI下書き→確認）","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。①戦略＋テーマで自動入力。"));
+  fs.appendChild(field("ファンが反応・期待していること（AI下書き→確認）","fans",data.overall,true,"SNS/レビュー等の市場の声から。①戦略＋テーマで自動入力。"));
   fs.appendChild(field("NG・ご要望（AI推測→要クリエイター確認）","ng",data.overall,true,"触れ方に注意したい点。あくまで推測なので、可能なら本人に確認。"));
   F.appendChild(fs);
 
   fs=fset("b","② 設計シート：コンセプトボックスの構成とお題");
   fs.appendChild(el("div","note","<b>役割で差をつける</b>のが勝ち筋（プルダウンで選択）：世界観の顔／3D彫りの立体／セパレート・色分け映え／入門・量産。<br>※ 売れるデザインのコツ（勝ち筋）は、設計シートPDFに自動でクリエイター向けアドバイスとして載ります。"));
   const aiBox=el("div"); aiBox.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--tint);";
-  aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 ③ 全体テーマからコンセプトボックスを一括生成</b><br>先に<b>①ブリーフ・②テーマ</b>を作っておく → ①プロンプトをコピー → web対応のClaude等で実行 → ②出てきたJSON配列を下欄に貼って反映。ブリーフの軸で通常"+data.itemCount+"種"+(secretCount()?"＋シークレット":"")+"に分かれます。"));
+  aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 ② 全体テーマからコンセプトボックスを一括生成</b><br>先に<b>①戦略＋テーマ</b>を作っておく → ①プロンプトをコピー → web対応のClaude等で実行 → ②出てきたJSON配列を下欄に貼って反映。ブリーフの軸で通常"+data.itemCount+"種"+(secretCount()?"＋シークレット":"")+"に分かれます。"));
   const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="① プロンプトをコピー"; cpBtn.style.cssText="margin:6px 0;display:block;";
   const aiTa=el("textarea"); aiTa.placeholder="② AIが出力したJSON配列（[ ... ]）をここに貼り付け"; aiTa.style.minHeight="56px";
   cpBtn.onclick=function(){ if(!themeReady()){ alert("先に上の「全体コンセプト」でテーマを作ってください（IP名＋テーマ名）。\nテーマ・パレット・作風がプロンプトに差し込まれます。"); return; } copyText(buildBoxesPrompt(), cpBtn, "① プロンプトをコピー"); };
