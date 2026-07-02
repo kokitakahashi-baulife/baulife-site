@@ -268,7 +268,7 @@ const DEFAULT_BOX_IMG="/tools/concept-box-default.webp"; // コンセプトボ�
 
 function blankItem(){return {
   ttl:"", role:"", dim:"", shape:"シルエット型", motif:"",
-  desc:"", emotion:"", scene:"", composition:"",
+  desc:"", emotion:"", scene:"", composition:"", thumb:"",
   illust:"", brief:"", price:"", qty:"",
   waxText:"", wax:"", waxColors:null,
   genga:"", stamp:"", postcard:""
@@ -682,6 +682,8 @@ function buildBoxesPrompt(){
     "- 構図は次から互いに重複しないよう割り当てる："+COMPO_ARCHETYPES.map(function(c){return c.replace(/（.*）/,"");}).join("／")+"。",
     (sc?"- シークレットは最も特別感のある1枚（レア感・見せ場・コンプリート購入者限定）。":""),
     "- 書き下ろしの邪魔をしない：スタンプは“感情の仕事”と“お任せ範囲”を示すのみ。ポーズ・構図・描き方は指定しない。",
+    "- role は必ず次のいずれかちょうど1つにする（プルダウン連携のため）："+ROLE_OPTIONS.filter(Boolean).join("／")+"。役割の細かなニュアンスは description に書く。",
+    "- ポストカードと封蝋の関係は箱ごとに変える（毎回“押して完成”に寄せない。押印余地の残し方や情景との関係に変化を）。",
     "- あいさつ・説明は書かず、JSON配列だけを出力（"+total+"要素"+(sc?"・最後の"+sc+"要素は secret:true":"")+"）。",
     "",
     "# 出力JSON（配列・各要素）",
@@ -693,10 +695,12 @@ function buildBoxesPrompt(){
     '    "stamp_head": "スタンプヘッドのモチーフ・デザインの方向（書き下ろしの中心＝ビジュアル。感情の“仕事”を示す。※文字・コピーは刻まない）",',
     '    "stamp_free": "クリエイターにお任せする範囲（ポーズ・構図・アレンジ等・明言）",',
     '    "stamp_avoid": "この箱で避けること（構造的NG）",',
-    '    "postcard_design": "ポストカードのデザイン方向（背景・情景のみ・キャラ本体は描かない）",',
+    '    "postcard_design": "ポストカードのデザイン方向（背景・情景のみ・キャラ本体は描かない・文字なし）",',
     '    "composition": "ポストカードの構図（上のアーキタイプから・他と重複しない）",',
     '    "wax_palette": "ワックスのカラーパレットイメージ（全体パレットから・色名＋イメージ）",',
-    '    "role": "役割（世界観の顔／3D彫り／色分け映え／入門 等・任意）",',
+    '    "thumbnail_hint": "商品サムネイル（EC/SNSのデジタル表示）の方向：無言のモノ（スタンプ/ポストカード/蝋）の見せ方＋主役の【ことば（title）】の置き方（レイアウト・書体の雰囲気・余白）。※言葉が主役になる唯一の場所",',
+    '    "dim": "スタンプの形態（2D または 3D。立体的な彫りが映えるなら3D）",',
+    '    "role": "役割（次のいずれかちょうど1つ：'+ROLE_OPTIONS.filter(Boolean).join("／")+'）",',
     '    "secret": false',
     "  }",
     "]"
@@ -720,7 +724,9 @@ function applyBoxesJson(text){
     put(it,"scene",o.postcard_design!=null?o.postcard_design:o.scene);
     put(it,"composition",o.composition);
     put(it,"waxText",o.wax_palette!=null?o.wax_palette:o.waxText);
-    put(it,"role",o.role);
+    put(it,"thumb",o.thumbnail_hint);
+    if(o.dim==="2D"||o.dim==="3D") it.dim=o.dim;
+    if(ROLE_OPTIONS.indexOf(String(o.role))>-1) it.role=String(o.role); else put(it,"role",o.role); // 一致すればプルダウン連携
   }
   var idx=0;
   arr.forEach(function(o){
@@ -942,6 +948,7 @@ function itemForm(it,title,secret){
   const box=el("div","item-form"+(secret?" secret":"")); box.appendChild(el("div","ihead",title));
   box.appendChild(field(secret?"シークレットのタイトル（コンセプト／パッケージ表記）":"ボックスタイトル（コンセプト／パッケージ表記）","ttl",it));
   box.appendChild(field("詳細説明（この箱の狙い・世界観での立ち位置）","desc",it,true,"②で自動入力。提案資料/パッケージにも使える説明文。"));
+  box.appendChild(field("商品サムネイルの方向（言葉×無言ビジュアル・EC/SNS表示）","thumb",it,true,"②で自動入力。ことばが主役になる唯一の場所。商品名＋無言のモノの見せ方。"));
   box.appendChild(selectField("役割（プルダウン）","role",it,ROLE_OPTIONS));
   const r1=el("div","row");
   r1.append(selectField("形態","dim",it,DIMS), selectField("形状","shape",it,SHAPES));
