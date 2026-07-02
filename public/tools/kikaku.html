@@ -51,8 +51,12 @@
   .aiblk{border:1px dashed var(--red);border-radius:8px;padding:8px 10px;margin:7px 0;background:var(--tint);}
   .aiblk .aihead{display:flex;align-items:center;gap:6px;justify-content:space-between;}
   .aiblk .aihead b{font-size:12px;color:var(--red);}
-  .aiblk .aitog{font-size:10px;color:var(--gray);cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 7px;white-space:nowrap;}
-  .aiblk .aihowto{font-size:10.5px;color:var(--gray);margin:5px 0 0;line-height:1.55;}
+  .help{position:relative;display:inline-flex;flex-shrink:0;}
+  .help-b{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--gray);
+    font-size:11px;font-weight:700;line-height:1;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .help-b:hover{border-color:var(--red);color:var(--red);}
+  .help-pop{position:absolute;top:23px;right:0;z-index:50;width:238px;background:#fff;border:1px solid var(--line);
+    border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.16);padding:9px 11px;font-size:11px;color:var(--ink);line-height:1.6;text-align:left;font-weight:400;}
   .aiblk textarea{min-height:42px;margin-top:6px;}
   .aiblk .btn.primary{display:block;width:100%;margin:6px 0 0;}
   .own{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap;}
@@ -715,13 +719,29 @@ function copyText(p, btn, label){
   else { window.prompt("コピーして貼り付けてください", p); }
 }
 function themeReady(){ return !!((data.ip||data.creator||"").trim()) && !!(data.themeName||data.theme||"").trim(); }
-// AIブロックのコンパクトな見出し＋「使い方」トグル（注意書きは既定で隠す）
+// 使い方は「?」ボタン→ポップオーバー説明（折りたたみトグルとは別の役割として区別）
+function helpBtn(howtoHTML){
+  var wrap=el("span","help");
+  var b=el("button","help-b"); b.type="button"; b.textContent="?"; b.title="使い方";
+  var pop=el("div","help-pop"); pop.innerHTML=howtoHTML; pop.style.display="none";
+  wrap.append(b,pop);
+  b.onclick=function(e){
+    e.stopPropagation();
+    var willOpen=pop.style.display==="none";
+    document.querySelectorAll(".help-pop").forEach(function(p){ p.style.display="none"; });
+    pop.style.display=willOpen?"block":"none";
+    if(willOpen){
+      var closer=function(ev){ if(!wrap.contains(ev.target)){ pop.style.display="none"; document.removeEventListener("click",closer); } };
+      setTimeout(function(){ document.addEventListener("click",closer); },0);
+    }
+  };
+  return wrap;
+}
+// AIブロックのコンパクトな見出し（使い方は「?」ポップアップで）
 function aiHelp(box, title, howtoHTML){
   var head=el("div","aihead"); head.appendChild(el("b",null,title));
-  var tog=el("button","aitog"); tog.type="button"; tog.textContent="ⓘ 使い方"; head.appendChild(tog);
+  head.appendChild(helpBtn(howtoHTML));
   box.appendChild(head);
-  var ht=el("div","aihowto"); ht.innerHTML=howtoHTML; ht.style.display="none"; box.appendChild(ht);
-  tog.onclick=function(){ ht.style.display=ht.style.display==="none"?"":"none"; };
 }
 // 実行先を明示する小さな導線（コピー→どのAIで実行するか）
 function runHint(where, url){
