@@ -278,7 +278,7 @@ function defaultData(){
     fileName:"", creator:"", ip:"",
     contractDate:"",
     theme:"", themeName:"", themeSub:"", conceptNotes:"", themeKeywords:"", themeImg:"", boxImg:DEFAULT_BOX_IMG,
-    hook:"", palette:"", styleFamily:"",
+    hook:"", palette:"", styleFamily:"", marketResearch:"",
     itemCount:4,
     secretEnabled:true,
     sales:{complete:true, single:true},
@@ -749,6 +749,66 @@ function buildPostcardPrompt(it){
     "上記を満たすポストカード原画を1枚、画像として出力してください。"
   ].join("\n");
 }
+// ⓪ 市場・ファンリサーチ（証拠ファーストの調査プロンプト → ①テーマ生成の根拠になる）
+function buildResearchPrompt(){
+  var ip=(data.ip||data.creator)||"〈ここにIP名〉";
+  var hint=(data.themeKeywords||"").trim()||"なし";
+  return [
+    "あなたはファンコミュニティ調査のプロ（インサイト・リサーチャー）です。",
+    "指定IPについて、表層的な要約ではなく“証拠に基づく”市場・ファン調査を行ってください。",
+    "（用途：シーリングスタンプのコラボ企画。ファンが本当に欲しい方向とNGを見極めるための一次調査です。）",
+    "",
+    "# 対象",
+    "IP・作品名："+ip,
+    "任意の指定："+hint,
+    "",
+    "# 調査の原則（必ず守る）",
+    "1. 証拠ファースト：結論の前に、実際の声（引用/短い要約）＋出典を集める。要約から始めない。",
+    "2. 多ソース：最低でも複数プラットフォームを当たる。例：",
+    "   X（リプ欄・引用RT）／Instagramコメント／本人ショップのレビュー（BOOTH・minne・Creema・STORES 等）／",
+    "   YouTube・TikTokコメント／pixiv／note／ファンのハッシュタグ／掲示板・まとめ。",
+    "3. トライアンギュレーション：独立した2ソース以上で確認できた声のみ confidence=強。単発は 中〜推測。",
+    "4. 言うこと≠やること：発言だけでなく、実際に反応が大きい題材（いいね/RT/コメント量）から本当の関心を推定。",
+    "5. ネガも拾う：違和感・不評・過去のグッズで嫌がられた点など“NGの材料”を必ず別枠で探す。",
+    "6. 事実に基づく。裏が取れないものは confidence=推測 と明記し、断定しない。",
+    "",
+    "# 出力（JSONのみ。あいさつ・説明は書かない）",
+    "{",
+    '  "sources_checked": ["実際に確認したプラットフォーム名やURLの手がかり"],',
+    '  "evidence": [',
+    '    {"platform":"例：BOOTHレビュー","quote":"実際の声（引用または短い要約）","source_hint":"URL/投稿の特定手がかり","signal":"love|engagement|criticism|gift|demographic","confidence":"強|中|推測"}',
+    "  ],",
+    '  "synthesis": {',
+    '    "fan_love": "2ソース以上で裏が取れた“好きの核”（強シグナル中心・固有性を出す）",',
+    '    "engagement_reality": "実際に伸びている題材・反応（言うことでなくやること）",',
+    '    "negative_signals": "違和感/不評/過去に嫌がられた点（NGの材料・確信度も添える）",',
+    '    "gift_or_self": "ギフト需要か自分用か・購入文脈",',
+    '    "segments": "コア/ライト・年齢層など（分かる範囲・推測は明記）",',
+    '    "collection_angle": "このIPだからこそ集めたくなる固有の理由"',
+    "  }",
+    "}"
+  ].join("\n");
+}
+function applyResearchJson(text){
+  var o;
+  try{ o=JSON.parse((text||"").trim()); }catch(e){ alert("JSONの読み取りに失敗しました。AIの出力から { ... } のJSONだけを貼り付けてください。"); return; }
+  if(!o||typeof o!=="object"||Array.isArray(o)){ alert("JSONオブジェクト（{ ... }）を貼り付けてください。"); return; }
+  var s=o.synthesis||{}, ev=Array.isArray(o.evidence)?o.evidence:[];
+  var parts=[];
+  if(s.fan_love) parts.push("■ ファンの“好き”の核（裏取り）\n"+s.fan_love);
+  if(s.engagement_reality) parts.push("■ 実際に伸びている反応\n"+s.engagement_reality);
+  if(s.negative_signals) parts.push("■ 注意・NGの材料\n"+s.negative_signals);
+  if(s.gift_or_self) parts.push("■ 購入文脈（ギフト/自分用）\n"+s.gift_or_self);
+  if(s.segments) parts.push("■ セグメント\n"+s.segments);
+  if(s.collection_angle) parts.push("■ 集めたくなる理由\n"+s.collection_angle);
+  if(ev.length){
+    var lines=ev.slice(0,12).map(function(e){ e=e||{}; return "["+(e.confidence||"?")+"] ("+(e.platform||"?")+"/"+(e.signal||"?")+") "+(e.quote||""); });
+    parts.push("―― 証拠 "+ev.length+"件"+(ev.length>12?"（上位12件）":"")+" ――\n"+lines.join("\n"));
+  }
+  data.marketResearch = parts.join("\n\n");
+  buildForm(); render(); autosave();
+  alert("市場リサーチを反映しました。この内容は①テーマ生成の根拠として自動で渡されます。");
+}
 function buildThemePrompt(){
   const ip=(data.ip||data.creator)||"〈ここにIP名〉";
   const hint=(data.themeKeywords||"").trim()||"なし（あれば最優先で反映）";
@@ -761,12 +821,15 @@ function buildThemePrompt(){
     "IP・作品名："+ip,
     "任意の指定："+hint,
     "",
+    "# 事前リサーチ（⓪の調査結果・これを主な根拠にする）",
+    ((data.marketResearch||"").trim() || "（まだ無し。この場合は自分でweb検索して調べる）"),
+    "",
     "# 手順",
-    "1. リサーチ（web検索できる場合は必ず実施）：",
-    "   - このIPの世界観・作風、ファンが特に好きにしている点、",
-    "     このIPだからこそ集めたくなる/贈りたくなる固有の理由。",
-    "   - SNS・ショップのレビュー・ファンの投稿など“市場の生の声”を拾い、",
-    "     ファンが実際に反応・期待していること、逆に触れ方を誤ると嫌がられそうな点を掴む。",
+    "1. リサーチの扱い：",
+    "   - 上の【事前リサーチ】がある場合は、それを主な根拠にする（core/fans/NGはこの証拠に接地させる）。",
+    "     web検索は裏取り・補完のみに使い、事前リサーチと矛盾する断定はしない。",
+    "   - 事前リサーチが無い場合のみ、自分でweb検索し、世界観・ファンが好きな点・",
+    "     集めたくなる固有の理由・触れ方の注意点を、できるだけ一次情報から掴む。",
     "   - 現在の時期・季節・トレンドも把握する（＝今ほしくなる風味づけのヒント。主役ではない）。",
     "2. 差別化ポイントの特定：",
     "   このIPが“他の作品・他のキャラ”と決定的に違う点を1つ言い切る（distinctive_hook）。",
@@ -926,8 +989,23 @@ function buildForm(){
   fs=fset("b","② 設計シート：全体コンセプト（HOMU×クリエイターで合意）");
   fs.appendChild(el("div","note","<b>担当者が考えて埋めるページ。</b>埋めれば、そのままクリエイターへの<b>書き下ろし依頼</b>になります。"));
   fs.appendChild(field("任意の指定・ヒント（正式名称/URL/この季節で 等・任意）","themeKeywords",data,false,"空ならAIにお任せ。例：正式表記 まいにちパン子 / クリスマスで"));
+  // ⓪ 市場・ファンリサーチ（証拠ファースト。①テーマ生成の根拠になる）
+  const rsWrap=el("div"); rsWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
+  rsWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🔎 ⓪ 市場・ファンリサーチ（先にやると精度UP）</b><br>証拠ファースト（引用＋出典・多ソース・確信度つき）で調べるプロンプト。①プロンプトをコピー → <b>web検索できるClaude</b>で実行 → ②JSONを下欄に反映。結果は<b>①テーマ生成に自動で渡ります</b>。"));
+  const rsBtn=el("button","btn primary"); rsBtn.type="button"; rsBtn.textContent="① リサーチ・プロンプトをコピー"; rsBtn.style.cssText="margin:4px 0;display:block;";
+  rsBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildResearchPrompt(), rsBtn, "① リサーチ・プロンプトをコピー"); };
+  rsWrap.appendChild(rsBtn); rsWrap.appendChild(runHint("Claude","https://claude.ai/new"));
+  const rsTa=el("textarea"); rsTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; rsTa.style.minHeight="56px";
+  rsWrap.appendChild(rsTa);
+  const rsApply=el("button","btn"); rsApply.type="button"; rsApply.textContent="② 貼り付けを反映"; rsApply.style.marginTop="6px";
+  rsApply.onclick=function(){ applyResearchJson(rsTa.value); };
+  rsWrap.appendChild(rsApply);
+  if((data.marketResearch||"").trim()){
+    rsWrap.appendChild(field("リサーチ結果（①テーマ生成に渡る・編集可）","marketResearch",data,true,""));
+  }
+  fs.appendChild(rsWrap);
   const tpWrap=el("div"); tpWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
-  tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 IP名からテーマを作る</b><br>① プロンプトをコピー → web対応のClaudeに貼って実行 → ② 出てきたJSONを下欄に貼って反映。IP名（案件情報）が自動で入ります。"));
+  tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 ① IP名からテーマを作る</b><br>① プロンプトをコピー → web対応のClaudeに貼って実行 → ② 出てきたJSONを下欄に貼って反映。IP名（案件情報）と<b>⓪リサーチ結果</b>が自動で差し込まれます（⓪をやると根拠が強くなります）。"));
   const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="① プロンプトをコピー"; tpBtn.style.cssText="margin:4px 0;display:block;";
   const tjTa=el("textarea"); tjTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; tjTa.style.minHeight="56px";
   tpBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に上の「案件情報」で IP／キャラ名（またはクリエイター名）を入力してください。\n入力した名前がプロンプトに自動で差し込まれます。"); return; } const p=buildThemePrompt(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(function(){ tpBtn.textContent="✓ "+((data.ip||data.creator).trim())+" でコピー"; setTimeout(function(){tpBtn.textContent="① プロンプトをコピー";},1800); }, function(){ window.prompt("コピーして Claude に貼ってください", p); }); } else { window.prompt("コピーして Claude に貼ってください", p); } };
