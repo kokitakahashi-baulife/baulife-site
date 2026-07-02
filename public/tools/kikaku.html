@@ -636,7 +636,9 @@ function chkField(label,key,obj){
 }
 function ownTag(kind,label){ const t=label||(kind==="homu"?"HOMU記入":kind==="hear"?"クリエイターにヒアリング":kind==="ai"?"AIで下書き→確認":"HOMU×クリエイターで合意"); return '<span class="own '+kind+'">'+t+'</span>'; }
 
-var COMPO_ARCHETYPES=["静物（オブジェを中央に配置）","風景・情景（奥行きのある場面）","象徴オブジェ1点（主役を1つ大きく）","窓・アーチ越し（フレーム構図）","俯瞰の静物（真上から並べる）","小さなモチーフの反復（パターン）","コラージュ（要素を散らす）","幾何・色面（面と形で構成）","ミニマル・シンボル（余白多め・記号的）","地図・俯瞰図風（世界を見下ろす）"];
+// ポストカード構図アーキタイプ（全て“中央に押印余地を残す・穏やか・無言”を満たすものに厳選）
+var COMPO_ARCHETYPES=["中央に主役オブジェ1点、周囲は静かな余白","引きの情景（奥行きある風景・空気感で見せる）","窓・アーチ越しのフレーム（枠の中に情景）","真上からの俯瞰（静物を余白多めに配置）","上下または左右の帯に寄せ、中央は空ける","対角の余白（片側にモチーフ・反対は大きく空ける）","霧・光のグラデーション（極ミニマル・ほぼ余白）","縁に小さなモチーフを散らし、中央はクリアに保つ"];
+function shuffleArr(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function copyText(p, btn, label){
   var done=function(){ var o=btn.textContent; btn.textContent="✓ コピーしました"; setTimeout(function(){ btn.textContent=label||o; },1600); };
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(done, function(){ window.prompt("コピーして貼り付けてください", p); }); }
@@ -655,6 +657,8 @@ function runHint(where, url){
 function buildBoxesPrompt(){
   var ip=(data.ip||data.creator)||"〈IP名〉";
   var n=data.itemCount, sc=secretCount(), total=n+sc;
+  // 偏り防止：ツールが構図プールからランダムに重複なしのセットを組む（AIはこの中で各箱にフィット割当）
+  var compoSet=shuffleArr(COMPO_ARCHETYPES).slice(0, Math.min(total, COMPO_ARCHETYPES.length));
   return [
     "あなたは「売れるシーリングスタンプ（封蝋）」を熟知したコラボ企画者です。",
     "下記の全体テーマに基づき、コンセプトボックスを設計してください。",
@@ -679,7 +683,9 @@ function buildBoxesPrompt(){
     "- 通常"+n+"種"+(sc?" ＋ シークレット"+sc+"種":"")+"（合計"+total+"要素）。",
     "- 全ボックスでテーマ・差別化点・作風の家族・パレット系統を共有（統一感）。",
     "- 各ボックスは【タイトルのことば・核の感情・スタンプのモチーフ・ポストカードの情景・構図】を変えて差別化（集めたくなる違い）。",
-    "- 構図は次から互いに重複しないよう割り当てる："+COMPO_ARCHETYPES.map(function(c){return c.replace(/（.*）/,"");}).join("／")+"。",
+    "- ポストカードの構図は、下の【構図セット】を各ボックスに1つずつ・重複なく割り当てる（偏り防止のためツールが用意）。",
+    "  各構図に最も合うボックスに割り当て、その構図で成立する postcard_design を書く。構図セットは"+total+"個をちょうど使い切る：",
+    "  "+compoSet.map(function(c,i){return (i+1)+") "+c;}).join("\n  "),
     (sc?"- シークレットは最も特別感のある1枚（レア感・見せ場・コンプリート購入者限定）。":""),
     "- 書き下ろしの邪魔をしない：スタンプは“感情の仕事”と“お任せ範囲”を示すのみ。ポーズ・構図・描き方は指定しない。",
     "- role＝セット内での“立ち位置（売り・集めの観点）”。必ず次のいずれかちょうど1つ："+ROLE_OPTIONS.filter(Boolean).join("／")+"。",
@@ -697,7 +703,7 @@ function buildBoxesPrompt(){
     '    "stamp_free": "クリエイターにお任せする範囲（ポーズ・構図・アレンジ等・明言）",',
     '    "stamp_avoid": "この箱で避けること（構造的NG）",',
     '    "postcard_design": "ポストカードのデザイン方向（背景・情景のみ・キャラ本体は描かない・文字なし）",',
-    '    "composition": "ポストカードの構図（上のアーキタイプから・他と重複しない）",',
+    '    "composition": "上の【構図セット】から、このボックスに割り当てた構図をそのまま入れる（セット内で1回だけ使用）",',
     '    "wax_palette": "ワックスのカラーパレットイメージ（全体パレットから・色名＋イメージ）",',
     '    "thumbnail_hint": "商品サムネイル（EC/SNSのデジタル表示）の方向：無言のモノ（スタンプ/ポストカード/蝋）の見せ方＋主役の【ことば（title）】の置き方（レイアウト・書体の雰囲気・余白）。※言葉が主役になる唯一の場所",',
     '    "role": "役割（次のいずれかちょうど1つ：'+ROLE_OPTIONS.filter(Boolean).join("／")+'）",',
