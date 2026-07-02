@@ -115,6 +115,15 @@
   .sheet .qa .a.empty{color:#bdb3a4;font-style:italic;}
   .sheet .advice{background:#f7f2ea;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0 12px;}
   .sheet .advice ul{margin:0;}
+  .sheet .advice li{margin-bottom:5px;}
+  .sheet .gtitle{font-size:10.5pt;font-weight:700;color:var(--ink);margin:12px 0 6px;}
+  .sheet .headrefs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 12px;}
+  .sheet .headref{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;}
+  .sheet .headref .im{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#faf7f1;}
+  .sheet .headref .im img{width:100%;height:100%;object-fit:cover;}
+  .sheet .headref .cap{font-size:8pt;color:var(--gray);line-height:1.45;padding:5px 7px;}
+  .sheet .typeguide{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:4px 0 12px;font-size:9.5pt;line-height:1.7;}
+  .sheet .typeguide div{margin:3px 0;}
   .sheet .boxdef{background:var(--tint);border-radius:8px;padding:9px 12px;font-size:10pt;margin:6px 0 10px;}
   .sheet .hero{background:var(--tint);border:1.5px solid var(--red);border-radius:10px;padding:12px 16px;margin:6px 0 12px;font-size:14pt;font-weight:700;color:var(--ink);line-height:1.5;}
   .sheet .hero b{color:var(--red);font-size:17pt;}
@@ -263,12 +272,31 @@ const CIRCLED=["①","②","③","④","⑤","⑥"];
 const DIMS=["","2D","3D"];
 const SHAPES=["","丸型","四角型","シルエット型"];
 const ROLE_OPTIONS=["","顔（フラッグシップ）","入口（はじめの一箱）","ギフト主力（贈り回転）","深掘り（コアファン・意外性）","シークレット（コンプリート報酬）","その他"];
-// HOMU → クリエイターへ渡す「売れるデザインの勝ち筋」（設計シートに常時掲載）
+// HOMU → クリエイターへ渡す「売れる・愛されるヘッドの勝ち筋」（設計シートに常時掲載）
 const DESIGN_ADVICE=[
-  "スタンプヘッドの外形は、円や四角より“その作品だけの独自シルエット”が強い（一目でその作品と分かり、拡散・指名買いにつながります）。",
-  "細かなモチーフを散りばめると、色を塗り分けて押す動画が映えて拡散されやすいです。色分けできる構図だと◎。",
-  "立体（3D彫り）に向くのは、モチーフの重なりが少なく高低差を出せる構図。平面（2D）は線画や複数キャラの並びが得意です。",
-  "全部を同じ雰囲気にせず、1つ1つ表情・情景・見せ場を変えると、並べたときの“ちがい”がコレクション欲を生みます。",
+  "【一目で“それ”と分かる独自シルエット】丸や四角の既製枠より、そのキャラ・モチーフ固有の輪郭が強い。「これ○○だ！」と分かる形は、指名買いとSNS拡散につながります。",
+  "【しぐさ・関係・一場面で“物語”を持たせる】ただのアイコンより、乗る・しがみつく・寄り添う等の動きや感情がある方が、集めたくなる・贈りたくなる。押すたびに小さな物語が生まれます。",
+  "【3Dは“ぷっくり”立体感が主役】高低差・奥行きのあるモチーフは所有欲と動画映えが段違い。ただしモチーフの重なりが多いと彫刻が難しくなるので、重なりは控えめに高低差で見せると◎。",
+  "【色を塗り分けられる“面の分かれ”を作る】パーツが分かれていると、ワックスの色を塗り分けて押す動画が映えて拡散されやすい。塗り分けの余地を意識してください。",
+  "【主役は1つ、25〜30mmに絞る】小さな判子に情報を詰め込みすぎない。主役を1つに絞り余白を残すと、上質に見え、押した時もきれいに映えます。",
+  "【手のひらで“愛でたくなる”完結した世界】小さくても、そのキャラの世界がそこで完結している存在感を。集めて並べたくなる「シリーズの1体」として設計すると強い。",
+];
+// 参考：HOMUの実際のヘッド作例（設計シートのギャラリーに掲載・cdn.shopify）
+const HEAD_REFS=[
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/38.png?v=1768036519",cap:"シルエット型3D／“流れ星に乗る”しぐさで物語が生まれる"},
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/38_2.png?v=1768035606",cap:"シルエット型／“りんごにしがみつく”愛でたくなる仕草"},
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/38_1.png?v=1768034622",cap:"丸型3D／電球の“中”に夜空。意外性のある一場面"},
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/38_3.png?v=1768036133",cap:"複数モチーフ／色を塗り分けて押すと映える"},
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/20260314_3dac6c00-bb2a-42ff-b54b-780e8af4ed6b.jpg?v=1774514244",cap:"3D／立体の重なりで“ぷっくり”見せる"},
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/59_4d6810c8-d1c5-4723-8746-1da60d9c3240.png?v=1772934709",cap:"寝顔の情景で感情が伝わる一場面"},
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/2162b10a3713934502401dc94d1bd03a.jpg?v=1773132872",cap:"主役を1つに絞った小さな世界（くまパンケーキ）"},
+  {img:"https://cdn.shopify.com/s/files/1/0635/1296/9290/files/Image_20260107_120116_649.jpg?v=1767754981",cap:"小物×キャラの組み合わせ（ねこプリン）"},
+];
+// 形態・形状の選び方（表情の出し方とトレードオフ）
+const TYPE_GUIDE=[
+  "<b>2D（丸型）</b>：線画と相性◎。二段の立体はできない分、面の凹凸で表情を出す。繊細な線・パターン向き。",
+  "<b>3D（丸型／四角の角丸型／シルエット型）</b>：立体の見せ場。奥行き・重なりで“ぷっくり”。<b>シルエット型</b>は独自外形＝最も“らしさ”が出る。重なりが多いと彫刻難度が上がるため、立体の高さ制限があれば事前に共有を。",
+  "<b>サイズ</b>：基本は30mm（一部15/25mm）。25〜30mmで映える情報量に絞る。",
 ];
 const LICENSE_RATE="10"; // ライセンス料は固定10%（税抜）
 const PRESENT_NOTE="一部のスタンプヘッド等を、フォロワーへのプレゼント企画で配布します。";
@@ -1294,6 +1322,8 @@ function itemBriefPV(it,title,secret){
 function renderB(){
   const total=data.itemCount;
   const advice='<div class="advice"><ul>'+DESIGN_ADVICE.map(a=>"<li>"+esc(a)+"</li>").join("")+'</ul></div>';
+  const headGallery='<div class="headrefs">'+HEAD_REFS.map(h=>'<div class="headref"><div class="im"><img src="'+h.img+'" alt=""></div><div class="cap">'+esc(h.cap)+'</div></div>').join("")+'</div>';
+  const typeGuide='<div class="typeguide">'+TYPE_GUIDE.map(t=>"<div>"+t+"</div>").join("")+'</div>';
   let items=""; for(let i=0;i<total;i++) items+=itemBriefPV(data.items[i],"コンセプトボックス "+CIRCLED[i],false);
   if(data.secretEnabled) items+=itemBriefPV(data.secret,"シークレット",true);
   document.getElementById("pv-b").innerHTML=`
@@ -1306,8 +1336,13 @@ function renderB(){
     <p>${ans(data.theme)}</p>
 
     <h3>2. デザインのポイント（HOMUより）<span class="own homu">HOMU → クリエイターへ</span></h3>
-    <p>HOMUは「シーリングスタンプとして売れる・映えるデザイン」の知見があります。書き下ろしの参考にしてください。</p>
+    <p>HOMUには「シーリングスタンプとして<b>売れる・人気が出る・楽しんでもらえる</b>デザイン」の知見があります。下記は<b>書き下ろしのヒント／ガイド</b>です（形の縛りではなく、狙いどころ）。</p>
+    <div class="gtitle">■ 売れる・愛されるヘッドのポイント</div>
     ${advice}
+    <div class="gtitle">■ HOMUのヘッド作例（こういう“狙い”が効きます）</div>
+    ${headGallery}
+    <div class="gtitle">■ 形態・形状の選び方</div>
+    ${typeGuide}
 
     <h3>3. 作品について</h3>
     <div class="qa"><div class="q">作品の核・大切にしたい魅力 ${ownTag("ai")}</div>${ans(data.overall.core)}</div>
