@@ -46,6 +46,7 @@
   .own.homu{background:#f6d9df;color:var(--red);}
   .own.hear{background:#e3efdd;color:#4a7a3a;}
   .own.both{background:#e9e2f3;color:#6a4a9a;}
+  .own.ai{background:#dfeaf6;color:#356089;}
   .imgslot{margin-top:6px;border:1.5px dashed var(--line);border-radius:8px;background:#fff;
     min-height:64px;display:flex;align-items:center;justify-content:center;text-align:center;
     cursor:pointer;font-size:12px;color:var(--gray);position:relative;overflow:hidden;padding:6px;}
@@ -633,7 +634,7 @@ function chkField(label,key,obj){
   c.onchange=()=>{ obj[key]=c.checked; render(); autosave(); };
   w.append(c, document.createTextNode(label)); return w;
 }
-function ownTag(kind){ const t=kind==="homu"?"HOMU記入":kind==="hear"?"クリエイターにヒアリング":"HOMU×クリエイターで合意"; return '<span class="own '+kind+'">'+t+'</span>'; }
+function ownTag(kind,label){ const t=label||(kind==="homu"?"HOMU記入":kind==="hear"?"クリエイターにヒアリング":kind==="ai"?"AIで下書き→確認":"HOMU×クリエイターで合意"); return '<span class="own '+kind+'">'+t+'</span>'; }
 
 var COMPO_ARCHETYPES=["静物（オブジェを中央に配置）","風景・情景（奥行きのある場面）","象徴オブジェ1点（主役を1つ大きく）","窓・アーチ越し（フレーム構図）","俯瞰の静物（真上から並べる）","小さなモチーフの反復（パターン）","コラージュ（要素を散らす）","幾何・色面（面と形で構成）","ミニマル・シンボル（余白多め・記号的）","地図・俯瞰図風（世界を見下ろす）"];
 function copyText(p, btn, label){
@@ -764,6 +765,8 @@ function buildThemePrompt(){
     "1. リサーチ（web検索できる場合は必ず実施）：",
     "   - このIPの世界観・作風、ファンが特に好きにしている点、",
     "     このIPだからこそ集めたくなる/贈りたくなる固有の理由。",
+    "   - SNS・ショップのレビュー・ファンの投稿など“市場の生の声”を拾い、",
+    "     ファンが実際に反応・期待していること、逆に触れ方を誤ると嫌がられそうな点を掴む。",
     "   - 現在の時期・季節・トレンドも把握する（＝今ほしくなる風味づけのヒント。主役ではない）。",
     "2. 差別化ポイントの特定：",
     "   このIPが“他の作品・他のキャラ”と決定的に違う点を1つ言い切る（distinctive_hook）。",
@@ -803,6 +806,11 @@ function buildThemePrompt(){
     '  },',
     '  "palette": "全商品で共有する配色系統（3〜5色＋差し色・色名で）",',
     '  "style_family": "作風の家族／レンジ（特徴と幅で。揃える点と許す幅を1〜2文）",',
+    '  "about": {',
+    '    "core": "作品の核・大切にしたい魅力：ファンが一番好きな“作品世界の核”を、市場の声と世界観から1〜2文で。",',
+    '    "fans": "ファンが反応・期待していること：SNS/レビュー等の実際の声から、固有の反応を具体的に1〜2文で。",',
+    '    "ng_guess": "触れ方に注意したい点・避けた方が良い方向（推測）：世界観と生の声から。文末に必ず（推測）と付け、最終はクリエイター確認前提で断定しない。"',
+    '  },',
     '  "illustration_hint": "書き下ろしイラストの方向性のヒント：このIPの世界観を魅力的にグッズ化するために、どんなシーンを描いてもらうと良いか。色味・背景の雰囲気まで含め、distinctive_hook が伝わる内容にする。"',
     "}"
   ].join("\n");
@@ -818,6 +826,10 @@ function applyThemeJson(text){
   if(o.distinctive_hook) data.hook=String(o.distinctive_hook);
   if(o.palette) data.palette=String(o.palette);
   if(o.style_family) data.styleFamily=String(o.style_family);
+  const ab=o.about||{};
+  if(ab.core) data.overall.core=String(ab.core);
+  if(ab.fans) data.overall.fans=String(ab.fans);
+  if(ab.ng_guess) data.overall.ng=String(ab.ng_guess);
   const notes=[];
   if(o.distinctive_hook) notes.push("■ 差別化ポイント\n"+o.distinctive_hook);
   if(Array.isArray(r.worldview_keywords)&&r.worldview_keywords.length) notes.push("■ 世界観キーワード\n"+r.worldview_keywords.join("、"));
@@ -938,10 +950,10 @@ function buildForm(){
   F.appendChild(fs);
 
   fs=fset("b","② 設計シート：作品について");
-  fs.appendChild(el("div","note","「作品の核」はHOMUが観察して記入。<b>ファンが求めること・NG／ご要望は、クリエイターさんにヒアリング</b>して埋めます（今のHOMUだけでは掴みにくいため）。"));
-  fs.appendChild(field("作品の核・大切にしたい魅力（HOMU記入）","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。"));
-  fs.appendChild(field("ファンが反応・期待していること（ヒアリング）","fans",data.overall,true,"クリエイターさんに聞いて記入。SNSの反応など。"));
-  fs.appendChild(field("NG・ご要望（ヒアリング）","ng",data.overall,true,"やりたくない改変・大事にしたい点・希望など。"));
+  fs.appendChild(el("div","note","上の<b>①テーマ生成AI</b>が、世界観・市場（SNS/レビュー等）の声から<b>下書きを自動入力</b>します（要確認）。<br>とくに<b>NGは“推測”</b>なので、可能ならクリエイターさんに最終確認を。"));
+  fs.appendChild(field("作品の核・大切にしたい魅力（AI下書き→確認）","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。①テーマ生成で自動入力。"));
+  fs.appendChild(field("ファンが反応・期待していること（AI下書き→確認）","fans",data.overall,true,"SNS/レビュー等の市場の声から。①テーマ生成で自動入力。"));
+  fs.appendChild(field("NG・ご要望（AI推測→要クリエイター確認）","ng",data.overall,true,"触れ方に注意したい点。あくまで推測なので、可能なら本人に確認。"));
   F.appendChild(fs);
 
   fs=fset("b","② 設計シート：コンセプトボックスの構成とお題");
@@ -1129,9 +1141,9 @@ function renderB(){
     ${advice}
 
     <h3>3. 作品について</h3>
-    <div class="qa"><div class="q">作品の核・大切にしたい魅力 ${ownTag("homu")}</div>${ans(data.overall.core)}</div>
-    <div class="qa"><div class="q">ファンが反応・期待していること ${ownTag("hear")}</div>${ans(data.overall.fans)}</div>
-    <div class="qa"><div class="q">NG・ご要望 ${ownTag("hear")}</div>${ans(data.overall.ng)}</div>
+    <div class="qa"><div class="q">作品の核・大切にしたい魅力 ${ownTag("ai")}</div>${ans(data.overall.core)}</div>
+    <div class="qa"><div class="q">ファンが反応・期待していること ${ownTag("ai")}</div>${ans(data.overall.fans)}</div>
+    <div class="qa"><div class="q">NG・ご要望 ${ownTag("ai","AI推測→要確認")}</div>${ans(data.overall.ng)}</div>
 
     <h3>4. コンセプトボックスの構成とお題 ${ownTag("both")}</h3>
     <div class="boxdef">1コンセプトボックス＝スタンプヘッド・ワックス・ポストカードが1点ずつの1セット。下記の <b>${total}種${secLabel()}</b> をつくります。各お題は「方向性」です。詳細は ${esc(data.creator)||"クリエイター"}様の自由に描いていただいてOKです（変更・アレンジ歓迎）。</div>
