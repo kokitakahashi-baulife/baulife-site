@@ -268,7 +268,7 @@ const DEFAULT_BOX_IMG="/tools/concept-box-default.webp"; // コンセプトボ�
 
 function blankItem(){return {
   ttl:"", role:"", dim:"", shape:"シルエット型", motif:"",
-  desc:"", emotion:"", scene:"", composition:"", thumb:"",
+  desc:"", emotion:"", scene:"", composition:"", touch:"", thumb:"",
   illust:"", brief:"", price:"", qty:"",
   waxText:"", wax:"", waxColors:null,
   genga:"", stamp:"", postcard:""
@@ -639,6 +639,8 @@ function ownTag(kind,label){ const t=label||(kind==="homu"?"HOMU記入":kind==="
 // ポストカード構図アーキタイプ（全て“中央に押印余地を残す・穏やか・無言”を満たすものに厳選）
 var COMPO_ARCHETYPES=["中央に主役オブジェ1点、周囲は静かな余白","引きの情景（奥行きある風景・空気感で見せる）","窓・アーチ越しのフレーム（枠の中に情景）","真上からの俯瞰（静物を余白多めに配置）","上下または左右の帯に寄せ、中央は空ける","対角の余白（片側にモチーフ・反対は大きく空ける）","霧・光のグラデーション（極ミニマル・ほぼ余白）","縁に小さなモチーフを散らし、中央はクリアに保つ"];
 function shuffleArr(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+// ポストカードのタッチ（描き味）の振り分け軸。※全てstyle_family（作風の家族）の“幅”の中で成立させる前提
+var TOUCH_AXES=["線画主体（塗りは最小・線で見せる）","塗り・面主体（線は控えめ・色面で見せる）","水彩・にじみのあるアナログ質感","色鉛筆・クレヨンのざらついた質感","フラットで均質な塗り（すっきりデジタル寄り）","版画・リソグラフ風の質感","紙もの・コラージュの手触り","やわらかいグラデーション・ぼかし"];
 function copyText(p, btn, label){
   var done=function(){ var o=btn.textContent; btn.textContent="✓ コピーしました"; setTimeout(function(){ btn.textContent=label||o; },1600); };
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(done, function(){ window.prompt("コピーして貼り付けてください", p); }); }
@@ -657,8 +659,9 @@ function runHint(where, url){
 function buildBoxesPrompt(){
   var ip=(data.ip||data.creator)||"〈IP名〉";
   var n=data.itemCount, sc=secretCount(), total=n+sc;
-  // 偏り防止：ツールが構図プールからランダムに重複なしのセットを組む（AIはこの中で各箱にフィット割当）
+  // 偏り防止：ツールが構図/タッチのプールからランダムに重複なしのセットを組む（AIはこの中で各箱にフィット割当）
   var compoSet=shuffleArr(COMPO_ARCHETYPES).slice(0, Math.min(total, COMPO_ARCHETYPES.length));
+  var touchSet=shuffleArr(TOUCH_AXES).slice(0, Math.min(total, TOUCH_AXES.length));
   return [
     "あなたは「売れるシーリングスタンプ（封蝋）」を熟知したコラボ企画者です。",
     "下記の全体テーマに基づき、コンセプトボックスを設計してください。",
@@ -686,6 +689,9 @@ function buildBoxesPrompt(){
     "- ポストカードの構図は、下の【構図セット】を各ボックスに1つずつ・重複なく割り当てる（偏り防止のためツールが用意）。",
     "  各構図に最も合うボックスに割り当て、その構図で成立する postcard_design を書く。構図セットは"+total+"個をちょうど使い切る：",
     "  "+compoSet.map(function(c,i){return (i+1)+") "+c;}).join("\n  "),
+    "- ポストカードのタッチ（描き味・手描き感/デジタル感）も、下の【タッチセット】を1つずつ・重複なく割り当てる（偏り防止）。",
+    "  ただし全て style_family（作風の家族）の“幅”に馴染ませ、パレット共有と合わせて【家族に見える統一感は必ず保つ】。タッチセット（"+total+"個を使い切る）：",
+    "  "+touchSet.map(function(c,i){return (i+1)+") "+c;}).join("\n  "),
     (sc?"- シークレットは最も特別感のある1枚（レア感・見せ場・コンプリート購入者限定）。":""),
     "- 書き下ろしの邪魔をしない：スタンプは“感情の仕事”と“お任せ範囲”を示すのみ。ポーズ・構図・描き方は指定しない。",
     "- role＝セット内での“立ち位置（売り・集めの観点）”。必ず次のいずれかちょうど1つ："+ROLE_OPTIONS.filter(Boolean).join("／")+"。",
@@ -704,6 +710,7 @@ function buildBoxesPrompt(){
     '    "stamp_avoid": "この箱で避けること（構造的NG）",',
     '    "postcard_design": "ポストカードのデザイン方向（背景・情景のみ・キャラ本体は描かない・文字なし）",',
     '    "composition": "上の【構図セット】から、このボックスに割り当てた構図をそのまま入れる（セット内で1回だけ使用）",',
+    '    "postcard_touch": "上の【タッチセット】から割り当てたタッチ（style_familyの範囲内で成立させる・セット内で1回だけ使用）",',
     '    "wax_palette": "ワックスのカラーパレットイメージ（全体パレットから・色名＋イメージ）",',
     '    "thumbnail_hint": "商品サムネイル（EC/SNSのデジタル表示）の方向：無言のモノ（スタンプ/ポストカード/蝋）の見せ方＋主役の【ことば（title）】の置き方（レイアウト・書体の雰囲気・余白）。※言葉が主役になる唯一の場所",',
     '    "role": "役割（次のいずれかちょうど1つ：'+ROLE_OPTIONS.filter(Boolean).join("／")+'）",',
@@ -729,6 +736,7 @@ function applyBoxesJson(text){
     if(b.length) it.brief=b.join("\n"); else put(it,"brief",o.brief);
     put(it,"scene",o.postcard_design!=null?o.postcard_design:o.scene);
     put(it,"composition",o.composition);
+    put(it,"touch",o.postcard_touch);
     put(it,"waxText",o.wax_palette!=null?o.wax_palette:o.waxText);
     put(it,"thumb",o.thumbnail_hint);
     if(ROLE_OPTIONS.indexOf(String(o.role))>-1) it.role=String(o.role); else put(it,"role",o.role); // 一致すればプルダウン連携
@@ -765,8 +773,9 @@ function buildPostcardPrompt(it){
     "- 【文字は一切入れない】完全に無言のビジュアル。コピー・クレジット・ロゴ・記号も不可。ことばは商品名／サムネイル側で扱う。",
     "- 縦向き（ポストカード比率 おおよそ 2:3）。四辺に3〜5%の余白（塗り足しではなく静かな余白）。",
     "",
-    "# 作風・色（全ボックス共通で揃える）",
+    "# 作風・色（家族の範囲で揃え、タッチだけこのカード指定に寄せる）",
     "- 作風の家族："+(data.styleFamily||"〈作風の家族／レンジ〉")+"（この範囲内で表現。手描きに限らずグラフィック表現も可）。",
+    ((it.touch||"").trim()?"- このカードのタッチ（描き味）："+it.touch+"（作風の家族の範囲内で、この描き味に寄せる。パレット共有で家族感は保つ）":null),
     "- パレット："+(data.palette||"〈配色系統〉")+"。彩度・明度をこの系統に寄せ、全ボックスで色の家族感を保つ。",
     "- 光と気分：情景に合う光（時間帯・光源・空気感）を具体的に決めて描く。単調な平塗りにしない。",
     "- 仕上げ品質：印刷物として成立する解像感・階調。質素になりすぎず、余白と密度のメリハリをつける。",
@@ -968,6 +977,10 @@ function itemForm(it,title,secret){
   const rrBtn=el("button","btn"); rrBtn.type="button"; rrBtn.textContent="🎲 構図をランダムに選ぶ"; rrBtn.style.cssText="font-size:11px;margin:2px 0 6px;";
   rrBtn.onclick=function(){ var pool=COMPO_ARCHETYPES.filter(function(c){ return c!==it.composition; }); it.composition=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
   pcWrap.appendChild(rrBtn);
+  pcWrap.appendChild(field("タッチ（描き味・手描き/デジタル感）","touch",it,false,"②が割り当て（家族の範囲で振り分け）。空なら🎲で選べます。"));
+  const trBtn=el("button","btn"); trBtn.type="button"; trBtn.textContent="🎲 タッチをランダムに選ぶ"; trBtn.style.cssText="font-size:11px;margin:2px 0 6px;";
+  trBtn.onclick=function(){ var pool=TOUCH_AXES.filter(function(c){ return c!==it.touch; }); it.touch=pool[Math.floor(Math.random()*pool.length)]; buildForm(); render(); autosave(); };
+  pcWrap.appendChild(trBtn);
   const pcBtn=el("button","btn primary"); pcBtn.type="button"; pcBtn.textContent="③ ポストカード画像プロンプトをコピー"; pcBtn.style.cssText="display:block;width:100%;font-size:12px;";
   pcBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildPostcardPrompt(it), pcBtn, "③ ポストカード画像プロンプトをコピー"); };
   pcWrap.appendChild(pcBtn);
