@@ -48,6 +48,13 @@
   .note{background:#f3efe7;border-radius:8px;padding:8px 11px;font-size:11px;color:var(--gray);line-height:1.6;margin-bottom:9px;}
   .note b{color:var(--red);}
   .hint{font-size:11px;color:var(--gray);margin:2px 0 0;}
+  .aiblk{border:1px dashed var(--red);border-radius:8px;padding:8px 10px;margin:7px 0;background:var(--tint);}
+  .aiblk .aihead{display:flex;align-items:center;gap:6px;justify-content:space-between;}
+  .aiblk .aihead b{font-size:12px;color:var(--red);}
+  .aiblk .aitog{font-size:10px;color:var(--gray);cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 7px;white-space:nowrap;}
+  .aiblk .aihowto{font-size:10.5px;color:var(--gray);margin:5px 0 0;line-height:1.55;}
+  .aiblk textarea{min-height:42px;margin-top:6px;}
+  .aiblk .btn.primary{display:block;width:100%;margin:6px 0 0;}
   .own{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap;}
   .own.homu{background:#f6d9df;color:var(--red);}
   .own.hear{background:#e3efdd;color:#4a7a3a;}
@@ -557,6 +564,24 @@ document.getElementById("seg").addEventListener("click",e=>{
   ["a","b"].forEach(k=>{ document.getElementById("doc-"+k).style.display = b.dataset.doc===k?"block":"none"; });
   activeDoc=b.dataset.doc; filterFormByTab();
 });
+// サイドバーで作業中のセクションに合わせて、右プレビューを自動スクロール（Shopifyの編集画面風）
+var LEG_SYNC=[["全体コンセプト","全体コンセプト"],["作品について","作品について"],["コンセプトボックスの構成","コンセプトボックスの構成"],["ポストカード","ポストカード"],["販売方法","販売方法"],["スケジュール","スケジュール"],["提案資料","はじめに"]];
+function scrollPreviewToSection(legendText){
+  var kw=null; for(var i=0;i<LEG_SYNC.length;i++){ if(legendText.indexOf(LEG_SYNC[i][0])>-1){ kw=LEG_SYNC[i][1]; break; } }
+  if(!kw) return;
+  var sheet=document.getElementById(activeDoc==="b"?"pv-b":"pv-a"); if(!sheet) return;
+  var target=null; sheet.querySelectorAll("h3").forEach(function(h){ if(!target && h.textContent.indexOf(kw)>-1) target=h; });
+  if(!target) return;
+  var pane=document.querySelector(".pane-preview"); if(!pane) return;
+  var top=target.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop - 16;
+  pane.scrollTo({top:Math.max(0,top), behavior:"smooth"});
+}
+(function(){
+  var form=document.getElementById("form");
+  function onFocus(e){ var fs=e.target.closest("fieldset"); if(!fs)return; var lg=fs.querySelector("legend"); if(lg) scrollPreviewToSection(lg.textContent); }
+  form.addEventListener("focusin",onFocus);
+  form.addEventListener("click",onFocus);
+})();
 function exportPDF(){
   const active=document.querySelector("#seg button.active").dataset.doc;
   document.querySelectorAll(".doc").forEach(d=>d.classList.remove("printing"));
@@ -690,6 +715,14 @@ function copyText(p, btn, label){
   else { window.prompt("コピーして貼り付けてください", p); }
 }
 function themeReady(){ return !!((data.ip||data.creator||"").trim()) && !!(data.themeName||data.theme||"").trim(); }
+// AIブロックのコンパクトな見出し＋「使い方」トグル（注意書きは既定で隠す）
+function aiHelp(box, title, howtoHTML){
+  var head=el("div","aihead"); head.appendChild(el("b",null,title));
+  var tog=el("button","aitog"); tog.type="button"; tog.textContent="ⓘ 使い方"; head.appendChild(tog);
+  box.appendChild(head);
+  var ht=el("div","aihowto"); ht.innerHTML=howtoHTML; ht.style.display="none"; box.appendChild(ht);
+  tog.onclick=function(){ ht.style.display=ht.style.display==="none"?"":"none"; };
+}
 // 実行先を明示する小さな導線（コピー→どのAIで実行するか）
 function runHint(where, url){
   var w=el("div"); w.style.cssText="display:flex;align-items:center;gap:8px;margin:6px 0 2px;font-size:11px;color:var(--ink,#555);";
@@ -1105,9 +1138,9 @@ function buildForm(){
   fs.appendChild(el("div","note","<b>担当者が考えて埋めるページ。</b>埋めれば、そのままクリエイターへの<b>書き下ろし依頼</b>になります。"));
   fs.appendChild(field("任意の指定・ヒント（正式名称/URL/この季節で 等・任意）","themeKeywords",data,false,"空ならAIにお任せ。例：正式表記 まいにちパン子 / クリスマスで"));
   // ⓪ 市場・ファンリサーチ（証拠ファースト。①テーマ生成の根拠になる）
-  const rsWrap=el("div"); rsWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
-  rsWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🔎 ⓪ 市場・ファンリサーチ（最初にやる）</b><br>証拠ファースト（引用＋出典・多ソース・確信度つき）で調べるプロンプト。①プロンプトをコピー → <b>web検索できるClaude</b>で実行 → ②JSONを下欄に反映。結果は<b>①戦略＋テーマに自動で渡ります</b>。"));
-  const rsBtn=el("button","btn primary"); rsBtn.type="button"; rsBtn.textContent="① リサーチ・プロンプトをコピー"; rsBtn.style.cssText="margin:4px 0;display:block;";
+  const rsWrap=el("div","aiblk");
+  aiHelp(rsWrap,"🔎 ⓪ 市場・ファンリサーチ","証拠ファースト（引用＋出典・多ソース・確信度つき）で調べる。①コピー → web検索できるClaudeで実行 → ②JSONを反映。結果は①戦略＋テーマに自動で渡ります。");
+  const rsBtn=el("button","btn primary"); rsBtn.type="button"; rsBtn.textContent="① リサーチ・プロンプトをコピー";
   rsBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に「案件情報」でIP／キャラ名を入力してください。"); return; } copyText(buildResearchPrompt(), rsBtn, "① リサーチ・プロンプトをコピー"); };
   rsWrap.appendChild(rsBtn); rsWrap.appendChild(runHint("Claude","https://claude.ai/new"));
   const rsTa=el("textarea"); rsTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; rsTa.style.minHeight="56px";
@@ -1121,9 +1154,9 @@ function buildForm(){
   fs.appendChild(rsWrap);
   // ① 戦略ブリーフ（⓪リサーチ→“点で狙う”に絞る。全下流の羅針盤）
   // ① 戦略＋全体テーマ（⓪の証拠から“点で狙う”戦略を立て、そのままテーマに翻訳）
-  const tpWrap=el("div"); tpWrap.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--tint);";
-  tpWrap.appendChild(el("div","hint","<b style=\"color:var(--red)\">🎯 ① 戦略＋全体テーマを作る</b><br>⓪の証拠から、狙う一人・刺す瞬間・コア発想（戦略）を絞り、そのまま全体テーマ（世界観の言葉）まで一気に導きます。①コピー → <b>Claude</b>で実行 → ②JSONを反映。<b>設計シートに反映され、②ボックス生成に自動で渡ります。</b>"));
-  const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="① プロンプトをコピー"; tpBtn.style.cssText="margin:4px 0;display:block;";
+  const tpWrap=el("div","aiblk");
+  aiHelp(tpWrap,"🎯 ① 戦略＋全体テーマを作る","⓪の証拠から、狙う一人・刺す瞬間・コア発想を絞り、そのまま全体テーマ（世界観の言葉）まで導く。①コピー → Claudeで実行 → ②JSONを反映。設計シートに反映され、②ボックス生成に自動で渡ります。");
+  const tpBtn=el("button","btn primary"); tpBtn.type="button"; tpBtn.textContent="① プロンプトをコピー";
   const tjTa=el("textarea"); tjTa.placeholder="② AIが出力したJSON（{ ... }）をここに貼り付け"; tjTa.style.minHeight="56px";
   tpBtn.onclick=function(){ if(!((data.ip||data.creator||"").trim())){ alert("先に上の「案件情報」で IP／キャラ名（またはクリエイター名）を入力してください。"); return; } if(!(data.marketResearch||"").trim()){ if(!confirm("⓪リサーチがまだ反映されていません。証拠なしでも作れますが、精度は落ちます。このまま進めますか？")) return; } copyText(buildStrategyPrompt(), tpBtn, "① プロンプトをコピー"); };
   tpWrap.appendChild(tpBtn); tpWrap.appendChild(runHint("Claude","https://claude.ai/new")); tpWrap.appendChild(tjTa);
@@ -1155,9 +1188,9 @@ function buildForm(){
 
   fs=fset("b","② 設計シート：コンセプトボックスの構成とお題");
   fs.appendChild(el("div","note","<b>役割＝セット内での立ち位置</b>（売り・集めの観点）：顔／入口／ギフト主力／深掘り／シークレット。同じ役割が重ならないよう散らすと、全種そろえたくなります（形態2D/3Dや色分けは“作り方”＝別途、人が判断）。<br>※ 売れるデザインのコツは設計シートPDFにクリエイター向けアドバイスとして載ります。"));
-  const aiBox=el("div"); aiBox.style.cssText="border:1px dashed var(--red);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--tint);";
-  aiBox.appendChild(el("div","hint","<b style=\"color:var(--red)\">🤖 ② 全体テーマからコンセプトボックスを一括生成</b><br>先に<b>①戦略＋テーマ</b>を作っておく → ①プロンプトをコピー → web対応のClaude等で実行 → ②出てきたJSON配列を下欄に貼って反映。ブリーフの軸で通常"+data.itemCount+"種"+(secretCount()?"＋シークレット":"")+"に分かれます。"));
-  const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="① プロンプトをコピー"; cpBtn.style.cssText="margin:6px 0;display:block;";
+  const aiBox=el("div","aiblk");
+  aiHelp(aiBox,"🤖 ② コンセプトボックス一括生成","先に①戦略＋テーマを作る → ①コピー → Claude等で実行 → ②JSON配列を反映。ブリーフの軸で通常"+data.itemCount+"種"+(secretCount()?"＋シークレット":"")+"に分かれます。");
+  const cpBtn=el("button","btn primary"); cpBtn.type="button"; cpBtn.textContent="① プロンプトをコピー";
   const aiTa=el("textarea"); aiTa.placeholder="② AIが出力したJSON配列（[ ... ]）をここに貼り付け"; aiTa.style.minHeight="56px";
   cpBtn.onclick=function(){ if(!themeReady()){ alert("先に上の「全体コンセプト」でテーマを作ってください（IP名＋テーマ名）。\nテーマ・パレット・作風がプロンプトに差し込まれます。"); return; } copyText(buildBoxesPrompt(), cpBtn, "① プロンプトをコピー"); };
   aiBox.appendChild(cpBtn); aiBox.appendChild(runHint("Claude","https://claude.ai/new")); aiBox.appendChild(aiTa);
