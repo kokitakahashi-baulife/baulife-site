@@ -699,7 +699,6 @@ function buildBoxesPrompt(){
     '    "composition": "ポストカードの構図（上のアーキタイプから・他と重複しない）",',
     '    "wax_palette": "ワックスのカラーパレットイメージ（全体パレットから・色名＋イメージ）",',
     '    "thumbnail_hint": "商品サムネイル（EC/SNSのデジタル表示）の方向：無言のモノ（スタンプ/ポストカード/蝋）の見せ方＋主役の【ことば（title）】の置き方（レイアウト・書体の雰囲気・余白）。※言葉が主役になる唯一の場所",',
-    '    "dim": "スタンプの形態（2D または 3D。立体的な彫りが映えるなら3D）",',
     '    "role": "役割（次のいずれかちょうど1つ：'+ROLE_OPTIONS.filter(Boolean).join("／")+'）",',
     '    "secret": false',
     "  }",
@@ -725,7 +724,6 @@ function applyBoxesJson(text){
     put(it,"composition",o.composition);
     put(it,"waxText",o.wax_palette!=null?o.wax_palette:o.waxText);
     put(it,"thumb",o.thumbnail_hint);
-    if(o.dim==="2D"||o.dim==="3D") it.dim=o.dim;
     if(ROLE_OPTIONS.indexOf(String(o.role))>-1) it.role=String(o.role); else put(it,"role",o.role); // 一致すればプルダウン連携
   }
   var idx=0;
