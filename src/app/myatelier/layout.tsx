@@ -8,7 +8,7 @@ import Link from "next/link";
 export const metadata = {
   title: "MyAtelier — 好きなあの子も、うちの子も",
   description:
-    "手持ちの写真が塗り絵になる iPhone / iPad アプリ。塗った時間はそのまま1本の動画になります。写真は端末の外に出ません。",
+    "手持ちの写真が、番号つきの塗り絵になる iPhone / iPad アプリ。塗った時間はそのまま1本の動画になります。写真は端末の外に出ません。",
 };
 
 export default function MyAtelierLayout({
@@ -16,20 +16,31 @@ export default function MyAtelierLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="min-h-screen bg-[#0A0A0D] text-[#EDEDF2]">
-      <header className="px-6 py-4 border-b border-white/10">
-        <Link
-          href="/myatelier"
-          className="text-lg font-bold tracking-[2px]"
-          style={{ fontFamily: "var(--font-en)" }}
-        >
-          MyAtelier
-        </Link>
+      {/* ⚠️ 追従させる。ページが長いので、上に戻る手段が常に要る */}
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0A0A0D]/80 backdrop-blur-xl">
+        <div className="max-w-[1120px] mx-auto px-6 h-14 flex items-center justify-between">
+          <Link
+            href="/myatelier"
+            className="text-[17px] font-bold tracking-[1px]"
+            style={{ fontFamily: "var(--font-en)" }}
+          >
+            MyAtelier
+          </Link>
+          <nav className="flex items-center gap-6 text-[13px] text-[#9A9AA5]">
+            <a href="#how" className="hover:text-white transition-colors">
+              できること
+            </a>
+            <a href="#price" className="hover:text-white transition-colors">
+              料金
+            </a>
+          </nav>
+        </div>
       </header>
 
       {children}
 
       <footer className="border-t border-white/10 px-6 py-10 text-[13px] text-[#8B8B95]">
-        <div className="max-w-[860px] mx-auto flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div className="max-w-[1120px] mx-auto flex flex-wrap items-center gap-x-6 gap-y-3">
           <Link href="/myatelier/privacy" className="hover:text-white transition-colors">
             プライバシーポリシー
           </Link>
@@ -42,7 +53,7 @@ export default function MyAtelierLayout({
           <Link href="/" className="hover:text-white transition-colors">
             BAULIFE
           </Link>
-          <span className="ml-auto">&copy; 2026 BAULIFE Inc.</span>
+          <span className="w-full sm:w-auto sm:ml-auto">&copy; 2026 BAULIFE Inc.</span>
         </div>
       </footer>
     </div>
