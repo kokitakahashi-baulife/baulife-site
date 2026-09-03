@@ -67,16 +67,35 @@ export default function MyAtelier() {
 
         <div className="relative max-w-[1120px] mx-auto px-6 pt-16 pb-24 sm:pt-24 sm:pb-32 grid gap-14 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="max-w-[560px]">
-            <p className="text-[12px] tracking-[3px] text-[#B8B8C2] mb-6">iPhone / iPad</p>
+            {/* ⚠️ アイコンの角丸は **22.37%** がiOSのスクワークルに近い。
+                元画像は正方形で、角丸はiOS側が切り抜く前提 */}
+            <div className="flex items-center gap-4 mb-8">
+              <Image
+                src="/myatelier/appicon.png"
+                alt="MyAtelier のアプリアイコン"
+                width={64}
+                height={64}
+                priority
+                className="rounded-[22.37%] ring-1 ring-white/15"
+              />
+              <div>
+                <p className="text-[15px] font-bold leading-tight" style={{ fontFamily: "var(--font-en)" }}>
+                  MyAtelier
+                </p>
+                <p className="text-[12px] tracking-[2px] text-[#8B8B95] mt-1">iPhone / iPad</p>
+              </div>
+            </div>
+            {/* ⚠️ 詩的な言い回しにしない(2026-09-03 Koki指摘で「好きなあの子も、うちの子も」を廃止)。
+                何のアプリか、見出しだけで分かること */}
             <h1 className="text-[40px] sm:text-[60px] font-bold leading-[1.18] tracking-[-0.01em]">
-              好きなあの子も、
+              あなたの写真が、
               <br />
-              うちの子も。
+              塗り絵になる。
             </h1>
             <p className="mt-7 text-[16px] sm:text-[18px] leading-[1.95] text-[#C6C6D0]">
-              手持ちの写真が、番号つきの塗り絵になる。
+              番号どおりに色を置いていくだけ。
               <br className="hidden sm:block" />
-              塗って、飾れる一枚に。
+              塗った時間は、そのまま1本の動画に。
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <span className="inline-flex items-center rounded-full px-7 py-3.5 text-[15px] font-bold text-white bg-gradient-to-r from-[#EC4899] to-[#A855F7]">

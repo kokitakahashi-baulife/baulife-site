@@ -6,7 +6,7 @@ import Link from "next/link";
 ///    地 #0A0A0D / 差し色 ピンク→紫。サイト本体(白地・#e85d75)とは別物なので、
 ///    ここに本体サイトの色を持ち込まないこと。
 export const metadata = {
-  title: "MyAtelier — 好きなあの子も、うちの子も",
+  title: "MyAtelier — あなたの写真が、塗り絵になる",
   description:
     "手持ちの写真が、番号つきの塗り絵になる iPhone / iPad アプリ。塗った時間はそのまま1本の動画になります。写真は端末の外に出ません。",
 };
