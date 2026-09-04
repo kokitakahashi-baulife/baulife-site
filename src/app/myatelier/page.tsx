@@ -40,6 +40,8 @@ const steps = [
 const catalog = [
   { line: "/myatelier/cafe-line.jpg", color: "/myatelier/cafe-color.jpg", title: "くまのカフェ" },
   { line: "/myatelier/sandwich-line.jpg", color: "/myatelier/sandwich-color.jpg", title: "サンドイッチな朝" },
+  { line: "/myatelier/neko-line.jpg", color: "/myatelier/neko-color.jpg", title: "ねこのひるね" },
+  { line: "/myatelier/yozora-line.jpg", color: "/myatelier/yozora-color.jpg", title: "よぞらのまち" },
 ];
 
 const tools = [
@@ -214,10 +216,10 @@ export default function MyAtelier() {
             <figure key={c.title}>
               <div className="grid grid-cols-2 gap-3">
                 <div className="relative aspect-square rounded-xl overflow-hidden ring-1 ring-white/10 bg-white">
-                  <Image src={c.line} alt={`${c.title}の線画`} fill sizes="25vw" className="object-cover" />
+                  <Image src={c.line} alt={`${c.title}の線画`} fill sizes="(max-width: 640px) 45vw, 25vw" className="object-cover" />
                 </div>
                 <div className="relative aspect-square rounded-xl overflow-hidden ring-1 ring-white/10">
-                  <Image src={c.color} alt={`${c.title}を塗ったもの`} fill sizes="25vw" className="object-cover" />
+                  <Image src={c.color} alt={`${c.title}を塗ったもの`} fill sizes="(max-width: 640px) 45vw, 25vw" className="object-cover" />
                 </div>
               </div>
               <figcaption className="mt-4 text-[15px] font-bold">{c.title}</figcaption>
