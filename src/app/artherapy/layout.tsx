@@ -1,17 +1,17 @@
 import Link from "next/link";
 
-/// MyAtelier の3ページ(LP・プライバシー・規約)で共有する枠。
+/// Artherapy の3ページ(LP・プライバシー・規約)で共有する枠。
 ///
 /// ⚠️ **配色はアプリ本体に合わせている**(Theme.swift の figmaRef)。
 ///    地 #0A0A0D / 差し色 ピンク→紫。サイト本体(白地・#e85d75)とは別物なので、
 ///    ここに本体サイトの色を持ち込まないこと。
 export const metadata = {
-  title: "MyAtelier — あなたの写真が、塗り絵になる",
+  title: "Artherapy — あなたの写真が、塗り絵になる",
   description:
     "手持ちの写真が、番号つきの塗り絵になる iPhone / iPad アプリ。塗った時間はそのまま1本の動画になります。写真は端末の外に出ません。",
 };
 
-export default function MyAtelierLayout({
+export default function ArtherapyLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -20,11 +20,11 @@ export default function MyAtelierLayout({
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0A0A0D]/80 backdrop-blur-xl">
         <div className="max-w-[1120px] mx-auto px-6 h-14 flex items-center justify-between">
           <Link
-            href="/myatelier"
+            href="/artherapy"
             className="text-[17px] font-bold tracking-[1px]"
             style={{ fontFamily: "var(--font-en)" }}
           >
-            MyAtelier
+            Artherapy
           </Link>
           <nav className="flex items-center gap-6 text-[13px] text-[#9A9AA5]">
             <a href="#how" className="hover:text-white transition-colors">
@@ -41,10 +41,10 @@ export default function MyAtelierLayout({
 
       <footer className="border-t border-white/10 px-6 py-10 text-[13px] text-[#8B8B95]">
         <div className="max-w-[1120px] mx-auto flex flex-wrap items-center gap-x-6 gap-y-3">
-          <Link href="/myatelier/privacy" className="hover:text-white transition-colors">
+          <Link href="/artherapy/privacy" className="hover:text-white transition-colors">
             プライバシーポリシー
           </Link>
-          <Link href="/myatelier/terms" className="hover:text-white transition-colors">
+          <Link href="/artherapy/terms" className="hover:text-white transition-colors">
             利用規約
           </Link>
           <a href="mailto:koki.takahashi@baulife.world" className="hover:text-white transition-colors">

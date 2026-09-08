@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOMU コラボ企画書エディター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/tools/baulife-brand.css">
+<style>
+  :root{
+    /* BAULIFEデザインシステムのトークンに再マッピング（アクセント 赤→ブランドピンク） */
+    --ink:var(--bl-ink); --gray:var(--bl-muted); --cream:var(--bl-bg); --paper:var(--bl-surface);
+    --red:var(--bl-brand); --line:var(--bl-line); --tint:var(--bl-brand-tint); --secret:var(--bl-surface-2);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--bl-font-ja);color:var(--ink);background:var(--cream);}
+  .btn,.act{transition:background .15s,border-color .15s,color .15s,transform .12s;}
+  .btn:active,.act:active{transform:translateY(1px) scale(.99);}
+  .toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;
+    padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .toolbar h1{font-size:15px;margin:0 12px 0 0;color:var(--red);font-weight:700;}
+  .toolbar .spacer{flex:1;}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .seg button{border:0;background:transparent;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--gray);}
+  .seg button.active{background:var(--red);color:#fff;}
+  .btn{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:7px 13px;
+    font-size:13px;cursor:pointer;color:var(--ink);}
+  .btn:hover{background:var(--cream);}
+  .btn.primary{background:var(--red);color:#fff;border-color:var(--red);}
+  .app{display:flex;height:calc(100vh - 53px);}
+  .pane-form{width:42%;min-width:360px;overflow-y:auto;padding:18px 20px 80px;border-right:1px solid var(--line);}
+  .pane-preview{flex:1;overflow-y:auto;background:#ece6db;padding:24px;display:flex;justify-content:center;}
+  fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 16px;padding:12px 14px;background:var(--paper);}
+  legend{font-size:13px;font-weight:700;color:var(--red);padding:0 6px;}
+  label.fl{display:block;font-size:12px;color:var(--gray);margin:10px 0 3px;}
+  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:7px;
+    padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
+  textarea{resize:vertical;min-height:52px;}
+  .row{display:flex;gap:10px;}
+  .row>div{flex:1;}
+  .chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:6px 0;}
+  .imgslot{margin-top:6px;border:1.5px dashed var(--line);border-radius:8px;background:#fff;
+    min-height:74px;display:flex;align-items:center;justify-content:center;text-align:center;
+    cursor:pointer;font-size:12px;color:var(--gray);position:relative;overflow:hidden;padding:6px;}
+  .imgslot.drag{border-color:var(--red);background:var(--tint);}
+  .imgslot img{max-width:100%;max-height:120px;border-radius:4px;}
+  .imgslot .rm{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.9);border:1px solid var(--line);
+    border-radius:5px;font-size:11px;padding:1px 6px;cursor:pointer;color:var(--red);}
+  .concept-form{border-left:3px solid var(--red);padding-left:10px;margin:14px 0;}
+  .concept-form.secret{border-left-color:#b98a3c;}
+  .hint{font-size:11px;color:var(--gray);margin:2px 0 0;}
+  .recipe-btn{margin-top:6px;width:100%;border:1px solid var(--line);background:var(--paper);border-radius:7px;
+    padding:6px;font-size:12px;cursor:pointer;color:var(--red);}
+  .recipe-btn:hover{background:var(--tint);}
+  /* レシピ選択モーダル */
+  .rp-overlay{position:fixed;inset:0;background:rgba(40,34,28,.5);z-index:100;display:flex;
+    align-items:center;justify-content:center;padding:24px;}
+  .rp-modal{background:var(--paper);border-radius:14px;max-width:760px;width:100%;max-height:86vh;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);}
+  .rp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);}
+  .rp-head h3{margin:0;font-size:15px;color:var(--red);}
+  .rp-head .x{border:0;background:none;font-size:20px;cursor:pointer;color:var(--gray);line-height:1;}
+  .rp-body{overflow-y:auto;padding:14px 18px;}
+  .rp-search{width:100%;margin-bottom:12px;}
+  .rp-rec{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;margin-bottom:10px;background:#fff;}
+  .rp-rec .rp-name{font-size:13px;font-weight:700;flex:1;min-width:0;}
+  .rp-rec .rp-name small{display:block;font-weight:400;color:var(--gray);font-size:11px;margin-top:3px;line-height:1.4;}
+  .rp-imgs{display:flex;gap:10px;flex:0 0 auto;}
+  .rp-pick{cursor:pointer;text-align:center;border:2px solid transparent;border-radius:8px;padding:3px;background:#f3efe8;}
+  .rp-pick:hover{border-color:var(--red);}
+  .rp-pick img{display:block;width:72px;height:72px;object-fit:cover;border-radius:5px;}
+  .rp-pick span{display:block;font-size:10px;color:var(--gray);margin-top:2px;}
+  .rp-empty{color:var(--gray);font-size:13px;text-align:center;padding:30px 0;}
+
+  /* ---------- preview sheet (A4) ---------- */
+  .sheet{width:210mm;min-height:297mm;background:#fff;padding:16mm 15mm;box-shadow:0 2px 14px rgba(0,0,0,.15);
+    color:var(--ink);font-size:11pt;line-height:1.7;}
+  .sheet .kicker{font-size:9pt;letter-spacing:2px;color:var(--red);}
+  .sheet h2.tt{font-size:24pt;font-weight:700;margin:2px 0 4px;}
+  .sheet .sub{font-size:10pt;color:var(--gray);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px;}
+  .sheet h3{font-size:14pt;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:4px;margin:20px 0 10px;}
+  .sheet h4{font-size:11.5pt;margin:12px 0 6px;}
+  .sheet p{margin:0 0 8px;}
+  .sheet .muted{color:var(--gray);font-size:9.5pt;}
+  .sheet ul{margin:4px 0 10px;padding-left:1.2em;}
+  .sheet .qa{margin:0 0 9px;}
+  .sheet .qa .q{font-weight:700;}
+  .sheet .qa .a{white-space:pre-wrap;}
+  .sheet .qa .a.empty{color:#bdb3a4;font-style:italic;}
+  .pv-img{width:100%;height:100%;object-fit:contain;}
+  .pv-box{border:1px dashed var(--line);border-radius:6px;background:var(--cream);color:#bdb3a4;
+    display:flex;align-items:center;justify-content:center;font-size:9pt;text-align:center;padding:6px;min-height:90px;}
+  .pv-cap{font-size:9pt;color:var(--gray);text-align:center;margin-top:4px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  /* ② 商品化イメージ：形シルエット＋% */
+  .wax-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 12px;margin-top:10px;}
+  .wax-chip{display:inline-flex;flex-direction:column;align-items:center;gap:1px;font-size:9.5pt;color:var(--ink);}
+  .wax-chip b{font-weight:700;font-size:9.5pt;}
+  .wax-chip .wsil{display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
+  .wax-chip .wsil-grp{display:inline-flex;align-items:center;}
+  .wax-chip .wsil-grp .wsil{margin:0 -2px;}
+  /* 画像クリックで拡大（ライトボックス） */
+  .pv-img{cursor:zoom-in;}
+  .lb-overlay{position:fixed;inset:0;background:rgba(20,16,12,.82);z-index:200;display:flex;
+    align-items:center;justify-content:center;padding:30px;cursor:zoom-out;}
+  .lb-overlay img{max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);background:#fff;}
+  @media print{ .pv-img{cursor:default;} }
+  .pcard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0;background:#fdfbf7;break-inside:avoid;}
+  .pcard.secret{background:var(--secret);}
+  .pcard .ph{font-size:12pt;font-weight:700;color:var(--red);margin-bottom:8px;}
+  .sched{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:5px 0;font-size:10.5pt;}
+  .price-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0;}
+  .price-card{border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
+  .price-card .nm{font-weight:700;}
+  .price-card .pr{font-size:15pt;color:var(--red);margin-top:4px;}
+  .price-card .dsc{font-size:9pt;color:var(--gray);}
+
+  /* ---------- list (案件一覧) ---------- */
+  #listScreen{max-width:1040px;margin:0 auto;padding:40px 24px 80px;}
+  .portal-back{display:inline-block;font-size:13px;color:var(--gray);text-decoration:none;margin:0 0 18px;}
+  .portal-back:hover{color:var(--red);}
+  .list-head h1{font-size:20px;color:var(--red);margin:0 0 6px;font-weight:700;}
+  .list-head p{font-size:13px;color:var(--gray);margin:0 0 24px;}
+  .list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .card{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:16px;
+    cursor:pointer;min-height:118px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s;}
+  .card:hover{border-color:var(--red);}
+  .card-del{position:absolute;top:8px;right:8px;border:0;background:transparent;color:#c4b8a6;
+    font-size:11px;cursor:pointer;padding:3px 6px;border-radius:6px;line-height:1;}
+  .card-del:hover{background:#fbe3dd;color:var(--red);}
+  .card .c-name{font-size:15px;font-weight:700;color:var(--ink);}
+  .card .c-theme{font-size:12px;color:var(--gray);flex:1;overflow:hidden;}
+  .card .c-meta{font-size:11px;color:#b3a895;border-top:1px solid var(--line);padding-top:8px;}
+  .card.new{align-items:center;justify-content:center;color:var(--red);font-weight:700;
+    border-style:dashed;font-size:15px;background:transparent;}
+  .save-status{font-size:12px;color:var(--gray);margin-left:6px;white-space:nowrap;}
+  .fname-input{border:1px solid var(--line);border-radius:7px;padding:5px 9px;font-size:13px;
+    font-family:inherit;color:var(--ink);background:#fff;width:220px;max-width:34vw;}
+  #conflictBar{display:none;align-items:center;gap:10px;padding:8px 16px;background:#fbe3dd;
+    border-bottom:1px solid var(--line);font-size:13px;color:var(--red);flex-wrap:wrap;}
+  #conflictBar .msg{flex:1;min-width:200px;}
+  #saveErrorBar{display:none;align-items:center;gap:10px;padding:8px 16px;background:#fdeccd;
+    border-bottom:1px solid #e6c886;font-size:13px;color:#8a5a00;flex-wrap:wrap;}
+  #saveErrorBar .msg{flex:1;min-width:220px;}
+
+  @media print{
+    @page{size:A4;margin:0;}
+    #listScreen,#conflictBar,#saveErrorBar{display:none !important;}
+    .toolbar,.pane-form{display:none !important;}
+    .app{display:block;height:auto;}
+    .pane-preview{display:block;padding:0;background:#fff;overflow:visible;}
+    .sheet{box-shadow:none;width:auto;min-height:auto;}
+    .doc{display:none;}
+    .doc.printing{display:block;}
+    #scaler{zoom:1 !important;width:auto !important;}
+  }
+</style>
+</head>
+<body>
+<div id="listScreen">
+  <div class="list-head">
+    <a class="portal-back" href="/tools">← 社内ポータル</a>
+    <h1>HOMU コラボ企画書エディター</h1>
+    <p>共有ドライブ「株式会社BAULIFE ／ HOMUコラボ企画書」に自動保存されます。カードを選んで開くか、新規作成してください。</p>
+  </div>
+  <div id="listGrid" class="list-grid"></div>
+</div>
+
+<div id="editScreen" style="display:none">
+  <div class="toolbar">
+    <button class="btn" onclick="backToList()">← 一覧</button>
+    <div class="seg" id="seg">
+      <button data-doc="offer" class="active">オファー資料</button>
+      <button data-doc="plan">企画書</button>
+    </div>
+    <input id="fileNameInput" class="fname-input" placeholder="ファイル名（空欄なら自動）" title="共有ドライブ上のファイル名">
+    <span id="saveStatus" class="save-status"></span>
+    <div class="spacer"></div>
+    <button class="btn" onclick="deleteCurrent()">削除</button>
+    <button class="btn" onclick="saveFile()">バックアップDL(.json)</button>
+    <button class="btn primary" onclick="exportPDF()">PDF出力</button>
+  </div>
+
+  <div id="conflictBar">
+    <span class="msg"></span>
+    <button class="btn" onclick="conflictReload()">最新を読み込む</button>
+    <button class="btn primary" onclick="conflictOverwrite()">自分の変更で上書き</button>
+  </div>
+
+  <div id="saveErrorBar">
+    <span class="msg"></span>
+    <button class="btn" onclick="saveFile()">バックアップをダウンロード</button>
+    <button class="btn primary" onclick="reloginTab()">別タブで再ログイン</button>
+  </div>
+
+  <div class="app">
+    <div class="pane-form" id="form"></div>
+    <div class="pane-preview">
+      <div id="scaler" style="width:210mm">
+        <div class="doc" id="doc-offer"><div class="sheet" id="pv-offer"></div></div>
+        <div class="doc" id="doc-plan" style="display:none"><div class="sheet" id="pv-plan"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// スケジュール：契約締結予定日を基準(0日)に、各工程の日数オフセット（編集可）
+const SCHED = [
+  {label:"非独占的ライセンス契約の締結", interval:0},   // 基準日
+  {label:"企画書の提示・合意",           interval:3},   // 前工程から
+  {label:"スタンプヘッド試作品の確認",     interval:11},
+  {label:"アンバサダー展開",             interval:16},
+  {label:"予約販売の告知",               interval:15},
+  {label:"予約販売開始",                 interval:15},
+  {label:"生産開始",                     interval:15},
+  {label:"配送開始",                     interval:15},
+];
+
+const CIRCLED=["①","②","③","④","⑤","⑥"];
+function blankConcept(){return {title:"",genga:"",stamp:"",wax:"",postcard:"",waxColors:null};}
+function defaultData(){
+  return {
+    fileName:"",
+    creator:"", ip:"", staff:"",
+    contractDate:"",
+    boxCount:1,
+    secretEnabled:true, secretRate:"",
+    blindPrice:"", completePrice:"", presentNote:"一部のスタンプヘッド等をフォロワーへのプレゼント企画で配布",
+    sales:{blind:true, complete:true, single:false, assort:false},
+    schedule:SCHED.map(s=>({label:s.label, interval:s.interval})),
+    overall:{core:"", motif:"", fans:""},
+    package:"", packageNote:"このメインビジュアルはポストカードに印刷され、さらにパッケージにも使用されます。（AI生成／任意でクリエイター自主制作可・納期2週間）",
+    concepts:[blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept(),blankConcept()],
+    secret:blankConcept()
+  };
+}
+// 基準日(YYYY-MM-DD)＋日数 → YYYY/MM/DD
+function addDays(isoDate, days){
+  if(!isoDate) return "";
+  const d=new Date(isoDate+"T00:00:00");
+  if(isNaN(d.getTime())) return "";
+  d.setDate(d.getDate()+(parseInt(days,10)||0));
+  return d.getFullYear()+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+("0"+d.getDate()).slice(-2);
+}
+function secretCount(){ return data.secretEnabled?1:0; }
+let data = defaultData();
+
+/* ---------- 共有ドライブ保存 ---------- */
+let currentId=null;
+let baseModified=null;       // 開いた/最後に保存した時点の更新時刻（競合検知用）
+let saveTimer=null, saving=false, dirtyAgain=false;
+let pendingDirty=false;      // 未保存の変更があるか（閉じる前保存の判定）
+let conflictActive=false;    // 競合解決待ち
+let saveFailCount=0;         // 連続保存失敗回数（#5 案内のため）
+let scheduleOpen=false;      // スケジュール日数の調整トグル（既定で閉じる）
+function setStatus(t){ const e=document.getElementById("saveStatus"); if(e) e.textContent=t; }
+function hhmm(d){ return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+function metaOf(){ return { creator:(data.creator||""), theme:((data.overall&&data.overall.core)||"").replace(/\s+/g," ").trim().slice(0,40) }; }
+function fileBase(){
+  const fn=(data.fileName||"").trim();
+  if(fn) return fn;
+  return ((data.creator&&data.creator.trim())||"無題")+"_企画書";
+}
+function setUrl(id){ try{ history.replaceState(null,"",location.pathname+"?id="+encodeURIComponent(id)); }catch(e){} }
+function clearUrl(){ try{ history.replaceState(null,"",location.pathname); }catch(e){} }
+
+/* 入力変更時に各所から呼ばれる → デバウンスして自動保存 */
+function autosave(){
+  if(!currentId || conflictActive) return;
+  pendingDirty=true;
+  setStatus("保存中…");
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){ saveNow(false); },1200);
+}
+async function saveNow(force){
+  if(!currentId) return;
+  if(saving){ dirtyAgain=true; return; }
+  saving=true;
+  try{
+    // #4 競合検知：保存前にドライブの最新更新時刻を確認
+    if(!force && baseModified){
+      try{
+        const mr=await fetch("/api/tools/projects/"+currentId+"?meta=1");
+        if(mr.ok){
+          const mj=await mr.json();
+          const remoteMod=mj.meta&&mj.meta.modifiedTime;
+          if(remoteMod && remoteMod!==baseModified){
+            showConflict(mj.meta);
+            return; // finally で saving を戻す
+          }
+        }
+      }catch(e){ /* 確認に失敗しても保存は続行 */ }
+    }
+    const res=await fetch("/api/tools/projects/"+currentId,{method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:fileBase(),content:data,meta:metaOf()})});
+    if(!res.ok){ const t=await res.text(); const err=new Error(t||("HTTP "+res.status)); err.status=res.status; throw err; }
+    const rj=await res.json().catch(function(){return null;});
+    if(rj&&rj.modifiedTime) baseModified=rj.modifiedTime;
+    pendingDirty=false; saveFailCount=0; hideSaveError();
+    setStatus("保存しました "+hhmm(new Date()));
+  }catch(e){
+    console.error(e); saveFailCount++;
+    // #5 失敗が続く時の明確な案内
+    if(e&&e.status===401){ setStatus("⚠ ログインが切れた可能性"); showSaveError(true); }
+    else if(saveFailCount>=3){ setStatus("⚠ 保存に繰り返し失敗"); showSaveError(false); }
+    else { setStatus("⚠ 保存に失敗。再試行します…"); }
+    setTimeout(function(){ saveNow(force); },4000);
+  }finally{
+    saving=false;
+    if(dirtyAgain && !conflictActive){ dirtyAgain=false; autosave(); }
+  }
+}
+/* ローカルにバックアップDL（任意） */
+function saveFile(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fileBase()+".json"; a.click();
+}
+
+/* ---------- #4 競合バー ---------- */
+function showConflict(meta){
+  conflictActive=true; pendingDirty=true;
+  const who=(meta&&meta.lastModifyingUser&&meta.lastModifyingUser.displayName)||"他の人";
+  const when=fmtTime(meta&&meta.modifiedTime);
+  const bar=document.getElementById("conflictBar");
+  bar.querySelector(".msg").textContent="⚠ "+who+" がこの案件を更新しました（"+when+"）。あなたの未保存の変更があります。";
+  bar.style.display="flex";
+  setStatus("競合のため保存を保留中");
+}
+function hideConflict(){ conflictActive=false; document.getElementById("conflictBar").style.display="none"; }
+async function conflictReload(){
+  // 最新を読み込む（自分の未保存の変更は破棄）
+  try{
+    const res=await fetch("/api/tools/projects/"+currentId);
+    if(!res.ok) throw new Error(await res.text());
+    const j=await res.json();
+    data=Object.assign(defaultData(),(j.content&&typeof j.content==="object"&&!Array.isArray(j.content))?j.content:{});
+    try{ const mr=await fetch("/api/tools/projects/"+currentId+"?meta=1"); if(mr.ok){ const mj=await mr.json(); baseModified=mj.meta&&mj.meta.modifiedTime; } }catch(e){}
+    hideConflict(); buildForm(); render(); fitPreview();
+    pendingDirty=false; setStatus("最新を読み込みました");
+  }catch(e){ alert("読み込みに失敗しました: "+(e.message||e)); }
+}
+async function conflictOverwrite(){
+  // 自分の変更で上書き：現在のドライブ更新時刻に合わせてから強制保存
+  try{ const mr=await fetch("/api/tools/projects/"+currentId+"?meta=1"); if(mr.ok){ const mj=await mr.json(); baseModified=mj.meta&&mj.meta.modifiedTime; } }catch(e){}
+  hideConflict();
+  await saveNow(true);
+}
+
+/* ---------- #5 保存失敗が続く時の案内 ---------- */
+function showSaveError(isAuth){
+  const bar=document.getElementById("saveErrorBar");
+  bar.querySelector(".msg").textContent = isAuth
+    ? "⚠ ログインが切れた可能性があります。「別タブで再ログイン」してください（こちらの保存は自動で再開します）。念のため「バックアップをダウンロード」も推奨。"
+    : "⚠ 保存に繰り返し失敗しています。ネットワーク接続をご確認ください。念のため「バックアップをダウンロード」しておくと安心です（自動で再試行中）。";
+  bar.style.display="flex";
+}
+function hideSaveError(){ const b=document.getElementById("saveErrorBar"); if(b) b.style.display="none"; }
+function reloginTab(){ window.open("/tools/login","_blank","noopener"); }
+
+/* ---------- 一覧・開く・新規・戻る ---------- */
+function fmtTime(iso){ try{ const d=new Date(iso); return (d.getMonth()+1)+"/"+d.getDate()+" "+hhmm(d); }catch(e){ return ""; } }
+async function fetchProjects(){
+  const grid=document.getElementById("listGrid");
+  grid.innerHTML='<div style="color:var(--gray);font-size:13px">読み込み中…</div>';
+  try{
+    const res=await fetch("/api/tools/projects");
+    if(!res.ok) throw new Error(await res.text());
+    const j=await res.json(); renderList(j.files||[]);
+  }catch(e){ console.error(e);
+    grid.innerHTML='<div style="color:var(--red);font-size:13px">一覧の取得に失敗しました。再読み込みしてください。<br>'+esc(String(e.message||e))+'</div>'; }
+}
+function renderList(files){
+  const grid=document.getElementById("listGrid"); grid.innerHTML="";
+  const nw=el("div","card new"); nw.textContent="＋ 新規作成"; nw.onclick=newProject; grid.appendChild(nw);
+  files.forEach(function(f){
+    const ap=f.appProperties||{};
+    const nm=(f.name||"").replace(/\.json$/i,"");
+    const sub=[ap.creator,ap.theme].filter(Boolean).join("／")||"（内容未記入）";
+    const c=el("div","card");
+    c.innerHTML='<div class="c-name">'+esc(nm||"（無題）")+'</div>'+
+      '<div class="c-theme">'+esc(sub)+'</div>'+
+      '<div class="c-meta">更新：'+esc(fmtTime(f.modifiedTime))+
+        (f.lastModifyingUser&&f.lastModifyingUser.displayName?(" ・ "+esc(f.lastModifyingUser.displayName)):"")+'</div>';
+    c.onclick=function(){ openProject(f.id, f.modifiedTime); };
+    const del=el("button","card-del"); del.textContent="削除"; del.title="この案件を削除（ゴミ箱へ）";
+    del.addEventListener("click",function(ev){ ev.stopPropagation(); deleteProject(f.id, nm||ap.creator||""); });
+    c.appendChild(del);
+    grid.appendChild(c);
+  });
+}
+function showEdit(){
+  document.getElementById("listScreen").style.display="none";
+  document.getElementById("editScreen").style.display="block";
+}
+function goList(){
+  currentId=null; baseModified=null; pendingDirty=false; saveFailCount=0; hideConflict(); hideSaveError();
+  clearUrl();
+  const fni=document.getElementById("fileNameInput"); if(fni) fni.value="";
+  document.getElementById("editScreen").style.display="none";
+  document.getElementById("listScreen").style.display="block";
+  fetchProjects();
+}
+async function openProject(id, modifiedTime){
+  setStatus(""); hideConflict(); hideSaveError(); saveFailCount=0;
+  try{
+    const res=await fetch("/api/tools/projects/"+id);
+    if(res.status===422){ const j=await res.json().catch(function(){return {};}); alert(j.error||"このファイルは企画書の形式ではないため開けません。"); goList(); return; }
+    if(!res.ok) throw new Error(await res.text());
+    const j=await res.json();
+    // #2 想定外/壊れた中身でも落とさない
+    const c=(j.content&&typeof j.content==="object"&&!Array.isArray(j.content))?j.content:null;
+    if(c===null){ alert("このファイルは企画書の形式ではない可能性があります。新しい空の企画書として開きます。"); }
+    data=Object.assign(defaultData(), c||{});
+    currentId=id; pendingDirty=false;
+    if(modifiedTime){ baseModified=modifiedTime; }
+    else { baseModified=null; try{ const mr=await fetch("/api/tools/projects/"+id+"?meta=1"); if(mr.ok){ const mj=await mr.json(); baseModified=mj.meta&&mj.meta.modifiedTime; } }catch(e){} }
+    setUrl(id);
+    const fni=document.getElementById("fileNameInput"); if(fni) fni.value=data.fileName||"";
+    showEdit(); buildForm(); render(); fitPreview();
+  }catch(e){ alert("開けませんでした: "+(e.message||e)); goList(); }
+}
+async function newProject(){
+  const fresh=defaultData();
+  try{
+    const res=await fetch("/api/tools/projects",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:"無題_企画書",content:fresh,meta:{creator:"",theme:""}})});
+    if(!res.ok) throw new Error(await res.text());
+    const f=await res.json();
+    data=fresh; currentId=f.id; baseModified=f.modifiedTime||null; pendingDirty=false; saveFailCount=0; hideSaveError();
+    setUrl(f.id);
+    const fni=document.getElementById("fileNameInput"); if(fni) fni.value="";
+    showEdit(); buildForm(); render(); fitPreview(); setStatus("新規作成しました");
+  }catch(e){ alert("新規作成に失敗しました: "+(e.message||e)); }
+}
+async function backToList(){
+  if(currentId && pendingDirty && !conflictActive){ clearTimeout(saveTimer); await saveNow(false); }
+  goList();
+}
+
+/* ---------- 削除（ゴミ箱へ・復元可能） ---------- */
+async function deleteProject(id, label){
+  if(!id) return;
+  const nm=(label&&label.trim())||"この案件";
+  if(!confirm("「"+nm+"」を削除しますか？\n共有ドライブのゴミ箱に移動します（30日以内なら復元できます）。")) return;
+  try{
+    const res=await fetch("/api/tools/projects/"+id,{method:"DELETE"});
+    if(!res.ok) throw new Error(await res.text());
+    if(currentId===id){ goList(); }
+    else { fetchProjects(); }
+  }catch(e){ alert("削除に失敗しました: "+(e.message||e)); }
+}
+function deleteCurrent(){ if(currentId) deleteProject(currentId, (data&&data.creator)||""); }
+
+/* ---------- #3 閉じる前にデータを失わない ---------- */
+window.addEventListener("beforeunload",function(e){
+  if(currentId && (pendingDirty || saving || conflictActive)){
+    e.preventDefault(); e.returnValue="";
+  }
+});
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="hidden" && currentId && pendingDirty && !conflictActive){
+    clearTimeout(saveTimer); saveNow(false);
+  }
+});
+
+function initApp(){
+  const fni=document.getElementById("fileNameInput");
+  if(fni) fni.addEventListener("input",function(){ data.fileName=fni.value; autosave(); });
+  const id=new URLSearchParams(location.search).get("id");
+  if(id){ openProject(id); }
+  else { fetchProjects(); }
+}
+
+/* ---------- doc switch & print ---------- */
+document.getElementById("seg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  [...document.querySelectorAll("#seg button")].forEach(x=>x.classList.toggle("active",x===b));
+  document.getElementById("doc-offer").style.display = b.dataset.doc==="offer"?"block":"none";
+  document.getElementById("doc-plan").style.display  = b.dataset.doc==="plan"?"block":"none";
+});
+function exportPDF(){
+  const active=document.querySelector("#seg button.active").dataset.doc;
+  document.querySelectorAll(".doc").forEach(d=>d.classList.remove("printing"));
+  document.getElementById("doc-"+active).classList.add("printing");
+  window.print();
+}
+
+/* ---------- recipe picker (WAXシミュレーターの保存レシピから画像を選ぶ) ---------- */
+let _recipesCache=null;
+async function loadWaxRecipes(){
+  if(_recipesCache) return _recipesCache;
+  const res=await fetch("/api/tools/wax",{headers:{Accept:"application/json"}});
+  if(!res.ok) throw new Error("wax fetch "+res.status);
+  const data=await res.json();
+  const recs=(Array.isArray(data.products)?data.products:[])
+    .filter(p=>p&&p.recipe&&!p.archived)
+    .sort((a,b)=>(b._t||0)-(a._t||0));
+  _recipesCache=recs; return recs;
+}
+function openRecipePicker(cb){
+  const ov=el("div","rp-overlay");
+  ov.onclick=e=>{ if(e.target===ov) document.body.removeChild(ov); };
+  const modal=el("div","rp-modal");
+  modal.innerHTML='<div class="rp-head"><h3>レシピから選択</h3><button class="x" title="閉じる">×</button></div>'+
+    '<div class="rp-body"><div class="rp-empty">レシピを読み込み中…</div></div>';
+  ov.appendChild(modal); document.body.appendChild(ov);
+  modal.querySelector(".x").onclick=()=>document.body.removeChild(ov);
+  const body=modal.querySelector(".rp-body");
+  loadWaxRecipes().then(recs=>{
+    if(!recs.length){ body.innerHTML='<div class="rp-empty">保存されたレシピがありません。<br>WAXシミュレーターで「★ レシピとして保存」してください。</div>'; return; }
+    const search=el("input","rp-search"); search.type="text"; search.placeholder="レシピ名で検索…";
+    const list=el("div");
+    body.innerHTML=""; body.appendChild(search); body.appendChild(list);
+    function paint(q){
+      q=(q||"").trim().toLowerCase();
+      const shown=recs.filter(r=>!q||(r.name||"").toLowerCase().includes(q));
+      list.innerHTML="";
+      if(!shown.length){ list.appendChild(el("div","rp-empty","該当するレシピがありません。")); return; }
+      shown.forEach(r=>{
+        const row=el("div","rp-rec");
+        const desc=(r.items||[]).map(it=>it.name+" "+Math.round(it.ratio)+"%").join(" / ");
+        const nm=el("div","rp-name"); nm.innerHTML=esc(r.name)+"<small>"+esc(desc)+"</small>"; row.appendChild(nm);
+        const imgs=el("div","rp-imgs");
+        const src=r.thumbBag||r.thumb||"";  // 袋画像を使う（無い場合だけお皿で代用）
+        if(src){
+          const p=el("div","rp-pick"); p.innerHTML='<img src="'+src+'">'+(r.thumbBag?'':'<span>お皿のみ</span>');
+          const colors=(r.items||[]).map(it=>({color:it.color,name:it.name,ratio:it.ratio,type:it.type}));
+          p.onclick=()=>{ document.body.removeChild(ov); cb(src, colors); };
+          imgs.appendChild(p);
+        } else { imgs.appendChild(el("div","hint","画像なし（シミュレーターで保存し直してください）")); }
+        row.appendChild(imgs); list.appendChild(row);
+      });
+    }
+    search.oninput=()=>paint(search.value);
+    paint("");
+  }).catch(err=>{ body.innerHTML='<div class="rp-empty">レシピを読み込めませんでした。<br>'+esc(String(err.message||err))+'</div>'; });
+}
+
+/* ---------- プレビュー画像クリックで拡大（ライトボックス） ---------- */
+document.addEventListener("click",function(e){
+  const img=e.target&&e.target.closest&&e.target.closest(".pv-img");
+  if(!img||!img.src) return;
+  const ov=document.createElement("div"); ov.className="lb-overlay";
+  const big=document.createElement("img"); big.src=img.src; ov.appendChild(big);
+  ov.onclick=()=>{ if(ov.parentNode) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+});
+
+/* ---------- image handling ---------- */
+function pickImage(cb){
+  const i=document.createElement("input"); i.type="file"; i.accept="image/*";
+  i.onchange=()=>{ const f=i.files[0]; if(!f)return; const r=new FileReader();
+    r.onload=()=>cb(r.result); r.readAsDataURL(f); };
+  i.click();
+}
+function imgSlot(label, getVal, setVal){
+  const wrap=document.createElement("div"); wrap.className="imgslot";
+  function paint(){
+    const v=getVal();
+    wrap.innerHTML="";
+    if(v){ const im=document.createElement("img"); im.src=v; wrap.appendChild(im);
+      const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除";
+      rm.onclick=ev=>{ev.stopPropagation(); setVal(""); paint(); render(); autosave();}; wrap.appendChild(rm);
+    } else { wrap.textContent=label+"（クリック / ドラッグ＆ドロップ）"; }
+  }
+  wrap.onclick=()=>pickImage(d=>{setVal(d);paint();render();autosave();});
+  wrap.addEventListener("dragover",e=>{e.preventDefault();wrap.classList.add("drag");});
+  wrap.addEventListener("dragleave",()=>wrap.classList.remove("drag"));
+  wrap.addEventListener("drop",e=>{e.preventDefault();wrap.classList.remove("drag");
+    const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith("image")){const r=new FileReader();
+      r.onload=()=>{setVal(r.result);paint();render();autosave();};r.readAsDataURL(f);}});
+  paint();
+  return wrap;
+}
+
+/* ---------- form builder ---------- */
+function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;}
+function field(label,key,obj,ta,ph){
+  const l=el("label","fl",label); const inp=ta?el("textarea"):el("input");
+  if(!ta)inp.type="text"; inp.value=obj[key]||"";
+  if(ph) inp.placeholder=ph;
+  inp.oninput=()=>{obj[key]=inp.value;render();autosave();};
+  const w=el("div"); w.appendChild(l); w.appendChild(inp); return w;
+}
+function numField(label,key,obj){
+  const l=el("label","fl",label); const inp=el("input"); inp.type="number"; inp.value=obj[key];
+  inp.oninput=()=>{obj[key]=parseInt(inp.value)||0;buildForm();render();autosave();};
+  const w=el("div"); w.appendChild(l); w.appendChild(inp); return w;
+}
+// コンプリートセット単価 ＝ ブラインド単価 × 種類数（自動計算）
+function computeComplete(){
+  const n=parseInt(String(data.blindPrice||"").replace(/[^0-9]/g,""),10);
+  const cnt=parseInt(data.boxCount,10)||0;
+  data.completePrice = (n && cnt) ? String(n*cnt) : "";
+}
+
+function conceptForm(c,title,secret){
+  const box=el("div","concept-form"+(secret?" secret":"")); box.appendChild(el("div","fl",title));
+  if(!secret) box.appendChild(field("商品名","title",c));
+  box.appendChild(el("div","fl","① 使用したい原画"));
+  box.appendChild(imgSlot(secret?"シークレット画像":"使用したい原画",()=>c.genga,v=>c.genga=v));
+  box.appendChild(el("div","fl","② 商品化イメージ"));
+  const g=el("div","row");
+  [["スタンプヘッド","stamp"],["ワックスカラー","wax"],["ポストカード","postcard"]].forEach(([nm,k])=>{
+    const d=el("div"); d.appendChild(el("div","hint",nm));
+    const setter = k==="wax" ? (v=>{ c.wax=v; c.waxColors=null; }) : (v=>c[k]=v); // 手動アップロード時は色チップを消す
+    d.appendChild(imgSlot(nm,()=>c[k],setter));
+    if(k==="wax"){ const b=el("button","recipe-btn","🗂 レシピから選択"); b.type="button";
+      b.onclick=()=>openRecipePicker((img,colors)=>{ c.wax=img; c.waxColors=colors; buildForm(); render(); autosave(); });
+      d.appendChild(b); }
+    g.appendChild(d);
+  });
+  box.appendChild(g);
+  return box;
+}
+
+function buildForm(){
+  const F=document.getElementById("form"); F.innerHTML="";
+
+  let fs=el("fieldset"); fs.appendChild(el("legend",null,"案件情報（共通）"));
+  fs.appendChild(field("クリエイター名","creator",data));
+  fs.appendChild(field("IP / キャラ名","ip",data));
+  fs.appendChild(field("担当","staff",data));
+  F.appendChild(fs);
+
+  // 販売方法・販売するものの定義（オファー資料／企画書 共通）
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"販売方法（オファー資料／企画書 共通）"));
+  fs.appendChild(el("div","hint","コンセプトボックス 種類数（通常）：現在 "+data.boxCount+"種（下の「コンセプト案」で追加・削除できます）"));
+  const secW=el("label","chk"); const secC=el("input"); secC.type="checkbox"; secC.checked=!!data.secretEnabled;
+  secC.onchange=function(){ data.secretEnabled=secC.checked; buildForm(); render(); autosave(); };
+  secW.append(secC, document.createTextNode("シークレットあり")); fs.appendChild(secW);
+  if(data.secretEnabled){
+    const rateW=el("div"); rateW.appendChild(el("label","fl","シークレット当選確率（1/n の n）"));
+    const rateI=el("input"); rateI.type="number"; rateI.min="1"; rateI.placeholder="例）10"; rateI.value=data.secretRate||"";
+    rateI.oninput=function(){ data.secretRate=rateI.value; render(); autosave(); };
+    rateW.appendChild(rateI); rateW.appendChild(el("div","hint","当選確率 1/n（例：10 なら 1/10）"));
+    fs.appendChild(rateW);
+  }
+  [["blind","ブラインドボックス"],["complete","コンプリートセット（全種・被りなし）"],["single","単品販売"],["assort","アソートボックス販売"]].forEach(function(p){
+    const w=el("label","chk"); const c=el("input"); c.type="checkbox"; c.checked=!!data.sales[p[0]];
+    c.onchange=function(){ data.sales[p[0]]=c.checked; render(); autosave(); };
+    w.append(c, document.createTextNode(p[1])); fs.appendChild(w);
+  });
+  const blindDiv=el("div"); blindDiv.appendChild(el("label","fl","ブラインドBOX 単価"));
+  const blindInp=el("input"); blindInp.type="text"; blindInp.value=data.blindPrice||"";
+  const compDiv=el("div"); compDiv.appendChild(el("label","fl","コンプリートセット 単価（自動計算）"));
+  const compInp=el("input"); compInp.type="text"; compInp.readOnly=true;
+  compInp.style.background="#f1ede4"; compInp.style.color="var(--gray)";
+  function refreshComplete(){ computeComplete(); compInp.value=data.completePrice||""; }
+  blindInp.oninput=function(){ data.blindPrice=blindInp.value; refreshComplete(); render(); autosave(); };
+  refreshComplete();
+  blindDiv.appendChild(blindInp);
+  compDiv.appendChild(compInp); compDiv.appendChild(el("div","hint","＝ ブラインド単価 × 種類数（通常）"));
+  const priceRow=el("div","row"); priceRow.append(blindDiv,compDiv); fs.appendChild(priceRow);
+  fs.appendChild(field("プレゼント企画メモ","presentNote",data));
+  F.appendChild(fs);
+
+  // スケジュール（契約締結予定日から自動計算・日数編集可）
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"オファー資料：スケジュール（自動計算）"));
+  const cdW=el("div"); cdW.appendChild(el("label","fl","契約締結予定日（基準日）"));
+  const cdInp=el("input"); cdInp.type="date"; cdInp.value=data.contractDate||"";
+  const dateSpans=[];
+  function refreshSchedule(){ let cum=0; data.schedule.forEach(function(s,i){ cum+=parseInt(s.interval,10)||0; if(dateSpans[i]) dateSpans[i].textContent = addDays(data.contractDate,cum) || "（基準日を入力）"; }); }
+  cdInp.oninput=function(){ data.contractDate=cdInp.value; refreshSchedule(); render(); autosave(); };
+  cdW.appendChild(cdInp); fs.appendChild(cdW);
+  // 日数調整：基本は全案件で共通なので既定で閉じる
+  const toggle=el("button","btn"); toggle.type="button"; toggle.style.cssText="margin:10px 0 4px;font-size:12px;";
+  const editWrap=el("div");
+  function syncToggle(){ toggle.textContent=(scheduleOpen?"▾":"▸")+" 各工程の日数を調整（基本は全案件で共通）"; editWrap.style.display=scheduleOpen?"block":"none"; }
+  toggle.onclick=function(){ scheduleOpen=!scheduleOpen; syncToggle(); };
+  fs.appendChild(toggle);
+  editWrap.appendChild(el("div","hint","各工程に「前の工程から何日後か」を入力します（変えると日付が自動更新）。"));
+  data.schedule.forEach(function(s,i){
+    const row=el("div"); row.style.cssText="display:flex;align-items:center;gap:8px;margin:8px 0;";
+    const lab=el("div"); lab.style.cssText="flex:1;font-size:12px;color:var(--ink);"; lab.textContent=s.label;
+    const dateSpan=el("span","hint"); dateSpan.style.cssText="min-width:96px;text-align:right;color:var(--gray);"; dateSpans[i]=dateSpan;
+    if(i===0){
+      const base=el("span","hint"); base.textContent="基準日";
+      row.append(lab,base,dateSpan);
+    } else {
+      const dInp=el("input"); dInp.type="number"; dInp.value=s.interval; dInp.style.width="64px"; dInp.title="前の工程からの日数";
+      dInp.oninput=function(){ s.interval=parseInt(dInp.value,10)||0; refreshSchedule(); render(); autosave(); };
+      const unit=el("span","hint"); unit.textContent="日後（前工程から）";
+      row.append(lab,dInp,unit,dateSpan);
+    }
+    editWrap.appendChild(row);
+  });
+  refreshSchedule(); syncToggle();
+  fs.appendChild(editWrap);
+  F.appendChild(fs);
+
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：今回のコラボで大切にしたいこと"));
+  const cnote=el("div");
+  cnote.style.cssText="background:#f3efe7;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.7;margin-bottom:10px;";
+  cnote.innerHTML="企画担当が考え・調べて埋めます。<b>クリエイターさんも読む内容</b>なので、敬意のある前向きな言葉で書いてください。";
+  fs.appendChild(cnote);
+  fs.appendChild(field("① 作品の核・大切にしたい魅力","core",data.overall,true,"ファンが一番好きな所＝作品世界の核。SNSの反応や本人との会話から。例：やわらかな色づかいと、静かな物語性。"));
+  fs.appendChild(field("② 封蝋スタンプで活かしたいモチーフ・表現","motif",data.overall,true,"どのモチーフ・表現を封蝋スタンプで活かすか（シルエットで映える／単色でも伝わる など）。“活かしたい点”として前向きに。"));
+  fs.appendChild(field("③ ファンが反応・期待していること","fans",data.overall,true,"SNSのコメントや反応から、ファンが何に惹かれ、何を求めているか。例：『この場面をグッズに』という声が多い。"));
+  F.appendChild(fs);
+
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：本コラボのメインビジュアル"));
+  fs.appendChild(el("div","hint","このメインビジュアルがポストカードに印刷され、さらにパッケージにも使われます。"));
+  fs.appendChild(imgSlot("メインビジュアル画像",()=>data.package,v=>data.package=v));
+  fs.appendChild(field("補足メモ","packageNote",data,true));
+  F.appendChild(fs);
+
+  fs=el("fieldset"); fs.appendChild(el("legend",null,"企画書：コンセプト案（ブラインドボックスの中身）"));
+  for(let i=0;i<data.boxCount;i++){
+    const block=conceptForm(data.concepts[i],"ブラインドボックス"+CIRCLED[i]);
+    if(data.boxCount>1){
+      const rm=el("button","btn"); rm.type="button"; rm.textContent="このブラインドボックスを削除";
+      rm.style.cssText="font-size:11px;margin-top:6px;";
+      (function(idx){ rm.onclick=function(){ data.concepts.splice(idx,1); data.concepts.push(blankConcept()); data.boxCount--; buildForm(); render(); autosave(); }; })(i);
+      block.appendChild(rm);
+    }
+    fs.appendChild(block);
+  }
+  if(data.boxCount<6){
+    const add=el("button","btn primary"); add.type="button"; add.textContent="＋ ブラインドボックスを追加";
+    add.style.cssText="margin-top:10px;";
+    add.onclick=function(){ if(data.boxCount<6){ data.boxCount++; buildForm(); render(); autosave(); } };
+    fs.appendChild(add);
+  }
+  if(data.secretEnabled) fs.appendChild(conceptForm(data.secret,"シークレット枠",true));
+  F.appendChild(fs);
+}
+
+/* ---------- preview render ---------- */
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function pvImg(v,cap,h){ h=h||118;
+  const inner = v ? `<img class="pv-img" src="${v}">` : `<div class="pv-box" style="height:100%">${cap}</div>`;
+  return `<div style="height:${h}px">${inner}</div><div class="pv-cap">${cap}</div>`;
+}
+function ans(v){ return v? `<span class="a">${esc(v)}</span>` : `<span class="a empty">（未記入）</span>`; }
+
+// 販売するものの定義（オファー資料・企画書 共通の表示）
+function renderSalesDef(){
+  const total=data.boxCount, sc=secretCount();
+  let blindDesc = "全"+(total+sc)+"種"+(sc? "（通常"+total+"種＋シークレット"+sc+"種）":"")+"・1箱共通価格";
+  if(sc && data.secretRate) blindDesc += "／シークレット当選確率 1/"+esc(data.secretRate);
+  const modes=[];
+  if(data.sales.blind)    modes.push({nm:"ブラインドボックス", dsc:blindDesc, pr:data.blindPrice});
+  if(data.sales.complete) modes.push({nm:"コンプリートセット", dsc:"全"+total+"種・"+total+"点セット（被りなし）", pr:data.completePrice});
+  if(data.sales.single)   modes.push({nm:"単品販売", dsc:"コンセプトセットを1点から購入できる", pr:""});
+  if(data.sales.assort)   modes.push({nm:"アソートボックス販売", dsc:"複数のコンセプトをまとめた詰め合わせ", pr:""});
+  const cards = modes.length
+    ? '<div class="price-cards">'+modes.map(function(m){ return '<div class="price-card"><div class="nm">'+esc(m.nm)+'</div><div class="dsc">'+m.dsc+'</div>'+(m.pr?'<div class="pr">¥'+esc(m.pr)+'</div>':'')+'</div>'; }).join('')+'</div>'
+    : '<p class="muted">（販売方法を選択してください）</p>';
+  return cards
+    + '<p>必要なコンセプトボックスは <b>'+(total+sc)+'種</b>'+(sc?'（通常'+total+'種＋シークレット'+sc+'種）':'')+'。</p>'
+    + '<p class="muted">※ '+esc(data.presentNote)+'</p>';
+}
+
+function renderOffer(){
+  const total=data.boxCount, sc=secretCount();
+  let cum=0;
+  const schedHtml=data.schedule.map(function(s,i){ cum+=parseInt(s.interval,10)||0; const note=i===0?"（基準日）":("（前工程＋"+s.interval+"日）"); return '<div class="sched"><span>'+esc(s.label)+note+'</span><span class="muted">'+(esc(addDays(data.contractDate,cum))||"____/__/__")+'</span></div>'; }).join("");
+  const ipx=data.ip?("（IP："+esc(data.ip)+"）"):"";
+  document.getElementById("pv-offer").innerHTML=`
+    <div class="kicker">HOMU × CREATOR COLLABORATION</div>
+    <h2 class="tt">コラボレーション オファー</h2>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"} 様${ipx} ／ 担当：${esc(data.staff)||"____"}</div>
+
+    <h3>1. HOMUのコラボで作る商品＝「コンセプトボックス」</h3>
+    <p>HOMUのコラボ商品は、クリエイターさんの世界観を一つのテーマに落とし込んだ「コンセプトボックス」が単位です。1つのコンセプトボックスには、スタンプヘッド・コラボワックス・ポストカード（背景台紙）がセットで入ります。</p>
+    <p>今回のコラボでは、このコンセプトボックスを <b>${total}種${sc?("＋シークレット"+sc+"種"):""}</b> つくることを前提に進めます。</p>
+
+    <h3>2. 販売方法</h3>
+    ${renderSalesDef()}
+
+    <h3>3. スケジュール</h3>
+    ${schedHtml}
+    <p class="muted" style="margin-top:8px">※ 上記の日付はあくまで目安・概算です。実際の日程は状況により前後します。</p>
+  `;
+}
+function conceptPV(c,title,secret){
+  return `<div class="pcard${secret?" secret":""}">
+    <div class="ph">${title}${secret?'（中身は非公開／レア枠）':'：'+(esc(c.title)||"________（商品名未記入）")}</div>
+    <h4>① 使用したい原画</h4>
+    <div style="width:46%">${pvImg(c.genga, secret?"シークレット":"使用したい原画")}</div>
+    <h4>② 商品化イメージ</h4>
+    <div class="grid3">
+      <div>${pvImg(c.stamp,"スタンプヘッド",215)}</div>
+      <div>${pvImg(c.wax,"ワックスカラー",215)}${waxChips(c.waxColors)}</div>
+      <div>${pvImg(c.postcard,"ポストカード",215)}</div>
+    </div>
+  </div>`;
+}
+// 型→形状（八角/星/花/絵柄入り）
+function typeShape(t){ t=t||''; if(t.indexOf('八角')===0)return'octa'; if(t.indexOf('星')===0)return'star'; if(t==='アジサイ')return'blossom'; if(t==='絵柄入り')return'emaki'; return''; /*型不明=丸*/ }
+// 形状シルエットSVG（その色で塗る）
+function shapeSil(shape,color,size){ size=size||30; var f='fill="'+esc(color||'#ccc')+'"', inner='';
+  if(shape==='octa') inner='<polygon points="8,2 16,2 22,8 22,16 16,22 8,22 2,16 2,8" '+f+'/>';
+  else if(shape==='star') inner='<polygon points="12,1.5 14.7,8.8 22.5,9 16.3,13.9 18.6,21.5 12,16.8 5.4,21.5 7.7,13.9 1.5,9 9.3,8.8" '+f+'/>';
+  else if(shape==='blossom') inner='<g '+f+'><circle cx="12" cy="5.2" r="4.3"/><circle cx="18.6" cy="10" r="4.3"/><circle cx="16.1" cy="17.8" r="4.3"/><circle cx="7.9" cy="17.8" r="4.3"/><circle cx="5.4" cy="10" r="4.3"/><circle cx="12" cy="12" r="4.2"/></g>';
+  else if(shape==='butterfly') inner='<g '+f+'><ellipse cx="6.8" cy="8" rx="5.6" ry="4.6"/><ellipse cx="17.2" cy="8" rx="5.6" ry="4.6"/><ellipse cx="7.8" cy="16.2" rx="4.6" ry="4"/><ellipse cx="16.2" cy="16.2" rx="4.6" ry="4"/><rect x="11.2" y="5.5" width="1.6" height="13.5" rx="0.8"/></g>';
+  else if(shape==='fan') inner='<path d="M12 20.5 L5 9 A 8 8 0 0 1 19 9 Z" '+f+'/>';
+  else inner='<circle cx="12" cy="12" r="9.5" '+f+'/>'; // 型不明は丸（八角と誤認させない）
+  return '<svg class="wsil" viewBox="0 0 24 24" width="'+size+'" height="'+size+'">'+inner+'</svg>';
+}
+function waxChips(colors){
+  if(!colors||!colors.length) return '';
+  return '<div class="wax-chips">'+colors.map(function(c){
+    var sh=typeShape(c.type), icon;
+    if(sh==='emaki') icon='<span class="wsil-grp">'+shapeSil('butterfly',c.color,20)+shapeSil('fan',c.color,20)+shapeSil('blossom',c.color,20)+'</span>';
+    else icon=shapeSil(sh,c.color,30);
+    return '<span class="wax-chip">'+icon+'<b>'+(c.ratio!=null?Math.round(c.ratio)+'%':'')+'</b></span>';
+  }).join('')+'</div>';
+}
+function renderPlan(){
+  const total=data.boxCount;
+  const ipx=data.ip?("（IP："+esc(data.ip)+"）"):"";
+  let concepts=""; for(let i=0;i<total;i++) concepts+=conceptPV(data.concepts[i],"ブラインドボックス"+CIRCLED[i],false);
+  if(data.secretEnabled) concepts+=conceptPV(data.secret,"シークレット",true);
+  document.getElementById("pv-plan").innerHTML=`
+    <div class="kicker">HOMU × CREATOR COLLABORATION</div>
+    <h2 class="tt">コラボ企画書</h2>
+    <div class="sub">${esc(data.creator)||"〈クリエイター名〉"}${ipx} × HOMU</div>
+
+    <h3>1. 今回のコラボで販売するものを定義する</h3>
+    ${renderSalesDef()}
+
+    <h3>2. 今回のコラボで大切にしたいこと</h3>
+    <div class="qa"><div class="q">作品の核・大切にしたい魅力</div>${ans(data.overall.core)}</div>
+    <div class="qa"><div class="q">封蝋スタンプで活かしたいモチーフ・表現</div>${ans(data.overall.motif)}</div>
+    <div class="qa"><div class="q">ファンの皆さんが求めていること</div>${ans(data.overall.fans)}</div>
+
+    <h3>3. 本コラボのメインビジュアル</h3>
+    <p>このメインビジュアル画像が<b>ポストカードに印刷</b>され、さらに<b>パッケージにも使用</b>されます。</p>
+    <div style="width:60%">${pvImg(data.package,"メインビジュアル（ポストカード・パッケージに使用）")}</div>
+    <p class="muted">${esc(data.packageNote)}</p>
+
+    <h3>4. コンセプト案</h3>
+    ${concepts}
+    <p class="muted" style="border-top:1px solid var(--line);padding-top:8px;margin-top:14px">※ 本企画書は提案であり、確定ではありません。</p>
+  `;
+}
+function render(){ renderOffer(); renderPlan(); }
+
+function fitPreview(){
+  const pane=document.querySelector(".pane-preview");
+  const avail=pane.clientWidth-48;
+  const sheetPx=794; // 210mm @96dpi
+  document.getElementById("scaler").style.zoom=Math.min(1, Math.max(0.3, avail/sheetPx));
+}
+window.addEventListener("resize",fitPreview);
+
+initApp();
+</script>
+</body>
+</html>

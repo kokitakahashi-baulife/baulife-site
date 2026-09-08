@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-/// MyAtelier の紹介ページ。
+/// Artherapy の紹介ページ。
 ///
 /// ⚠️ **見出しの中心は「写真が絵になる」の3幕**(2026-09-03)。競合(Color Pop)は
 ///    既製の塗り絵カタログが主役なので、全面に1枚の作品を敷く作りになっている。
@@ -16,21 +16,21 @@ import Link from "next/link";
 const steps = [
   {
     n: "01",
-    src: "/myatelier/donny-photo.jpg",
+    src: "/artherapy/donny-photo.jpg",
     alt: "元になった犬の写真",
     title: "あなたの写真",
     body: "うちの子でも、家族でも、旅先の1枚でも。",
   },
   {
     n: "02",
-    src: "/myatelier/donny-progress.jpg",
+    src: "/artherapy/donny-progress.jpg",
     alt: "線に沿って色を置いていく途中の画布",
     title: "線に沿って、色を置く",
     body: "写真は端末の中だけで下絵になります。あとは番号どおりに埋めていくだけ。",
   },
   {
     n: "03",
-    src: "/myatelier/donny-painted.jpg",
+    src: "/artherapy/donny-painted.jpg",
     alt: "塗り上がった絵",
     title: "絵になって、戻ってくる",
     body: "輪郭も表情も、写真のまま。飾れる一枚になります。",
@@ -38,10 +38,10 @@ const steps = [
 ];
 
 const catalog = [
-  { line: "/myatelier/cafe-line.jpg", color: "/myatelier/cafe-color.jpg", title: "くまのカフェ" },
-  { line: "/myatelier/sandwich-line.jpg", color: "/myatelier/sandwich-color.jpg", title: "サンドイッチな朝" },
-  { line: "/myatelier/neko-line.jpg", color: "/myatelier/neko-color.jpg", title: "ねこのひるね" },
-  { line: "/myatelier/yozora-line.jpg", color: "/myatelier/yozora-color.jpg", title: "よぞらのまち" },
+  { line: "/artherapy/cafe-line.jpg", color: "/artherapy/cafe-color.jpg", title: "くまのカフェ" },
+  { line: "/artherapy/sandwich-line.jpg", color: "/artherapy/sandwich-color.jpg", title: "サンドイッチな朝" },
+  { line: "/artherapy/neko-line.jpg", color: "/artherapy/neko-color.jpg", title: "ねこのひるね" },
+  { line: "/artherapy/yozora-line.jpg", color: "/artherapy/yozora-color.jpg", title: "よぞらのまち" },
 ];
 
 const tools = [
@@ -51,7 +51,7 @@ const tools = [
   { title: "迷ったら電球", body: "次に塗る場所まで画面が寄って、その面が光ります。回数の制限はありません。" },
 ];
 
-export default function MyAtelier() {
+export default function Artherapy() {
   return (
     <main>
       {/* ───────── ヒーロー ───────── */}
@@ -73,8 +73,8 @@ export default function MyAtelier() {
                 元画像は正方形で、角丸はiOS側が切り抜く前提 */}
             <div className="flex items-center gap-4 mb-8">
               <Image
-                src="/myatelier/appicon.png"
-                alt="MyAtelier のアプリアイコン"
+                src="/artherapy/appicon.png"
+                alt="Artherapy のアプリアイコン"
                 width={64}
                 height={64}
                 priority
@@ -82,7 +82,7 @@ export default function MyAtelier() {
               />
               <div>
                 <p className="text-[15px] font-bold leading-tight" style={{ fontFamily: "var(--font-en)" }}>
-                  MyAtelier
+                  Artherapy
                 </p>
                 <p className="text-[12px] tracking-[2px] text-[#8B8B95] mt-1">iPhone / iPad</p>
               </div>
@@ -118,7 +118,7 @@ export default function MyAtelier() {
           <div className="relative w-[80%] max-w-[420px] mx-auto lg:w-[420px] lg:mx-0 justify-self-center lg:justify-self-end">
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden ring-1 ring-white/10 rotate-[-5deg] translate-x-[-6%] opacity-70">
               <Image
-                src="/myatelier/donny-photo.jpg"
+                src="/artherapy/donny-photo.jpg"
                 alt=""
                 fill
                 priority
@@ -128,7 +128,7 @@ export default function MyAtelier() {
             </div>
             <div className="absolute inset-0 top-[9%] left-[10%] aspect-[3/4] rounded-2xl overflow-hidden ring-1 ring-white/15 rotate-[3deg] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
               <Image
-                src="/myatelier/donny-painted.jpg"
+                src="/artherapy/donny-painted.jpg"
                 alt="写真から作った塗り絵を塗り上げたもの"
                 fill
                 priority
@@ -190,7 +190,7 @@ export default function MyAtelier() {
           </div>
           <div className="relative aspect-square rounded-3xl overflow-hidden ring-1 ring-white/10">
             <Image
-              src="/myatelier/atelier.jpg"
+              src="/artherapy/atelier.jpg"
               alt="絵の道具が並んだ机"
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
@@ -256,7 +256,7 @@ export default function MyAtelier() {
           <p className="text-[16px] leading-[1.95] text-[#9A9AA5] max-w-[600px] mx-auto">
             塗り絵への変換は、すべてあなたの iPhone / iPad の中で行われます。私たちのサーバーへ送っていません。
             アクセス解析ツールも入っていません。詳しくは
-            <Link href="/myatelier/privacy" className="text-[#EC4899] hover:underline mx-1">
+            <Link href="/artherapy/privacy" className="text-[#EC4899] hover:underline mx-1">
               プライバシーポリシー
             </Link>
             に、実際にアプリが何をしているかをそのまま書いています。
@@ -294,7 +294,7 @@ export default function MyAtelier() {
         <p className="mt-7 text-[13px] leading-[1.95] text-[#8B8B95] max-w-[640px]">
           料金と期間はアプリ内および App Store の画面に表示されます。自動更新され、解約は iPhone の
           「設定 → Apple ID → サブスクリプション」から行えます。詳しくは
-          <Link href="/myatelier/terms" className="text-[#EC4899] hover:underline mx-1">
+          <Link href="/artherapy/terms" className="text-[#EC4899] hover:underline mx-1">
             利用規約
           </Link>
           をご覧ください。

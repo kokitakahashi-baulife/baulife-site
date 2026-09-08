@@ -1,21 +1,21 @@
 export const metadata = {
-  title: "利用規約 — MyAtelier",
+  title: "利用規約 — Artherapy",
 };
 
 /// ⚠️ **正本は アプリ側の docs/terms.md**。片方だけ直すと必ずずれる。
 ///    文面を変えるときは両方を同じ内容にすること。
-export default function MyAtelierTerms() {
+export default function ArtherapyTerms() {
   return (
     <main className="max-w-[720px] mx-auto px-6 py-14 pb-24">
       <h1 className="text-[28px] font-bold mb-2">利用規約</h1>
       <p className="text-sm text-[#8B8B95] mb-10">
-        MyAtelier（マイアトリエ）／ 最終更新日: 2026年9月3日
+        Artherapy（アーセラピー）／ 最終更新日: 2026年9月3日
       </p>
 
       <div className="space-y-5 text-[15px] text-[#B8B8C2] leading-[1.95] [&_h2]:text-[18px] [&_h2]:font-bold [&_h2]:text-[#EDEDF2] [&_h2]:mt-10 [&_h2]:mb-3 [&_ul]:pl-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_strong]:text-[#EDEDF2] [&_strong]:font-bold">
         <h2>1. この規約について</h2>
         <p>
-          この規約は、株式会社BAULIFE（以下「当社」）が提供するアプリ <strong>MyAtelier</strong>（以下「本アプリ」）の利用条件を定めるものです。本アプリをご利用いただいた時点で、この規約に同意いただいたものとします。
+          この規約は、株式会社BAULIFE（以下「当社」）が提供するアプリ <strong>Artherapy</strong>（以下「本アプリ」）の利用条件を定めるものです。本アプリをご利用いただいた時点で、この規約に同意いただいたものとします。
         </p>
         <p>読みやすさを優先して書いています。分かりにくい箇所があれば、お問い合わせください。</p>
 
