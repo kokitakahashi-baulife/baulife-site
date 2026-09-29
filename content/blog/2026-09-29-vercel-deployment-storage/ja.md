@@ -16,6 +16,14 @@ numbers:
 
 ![Before：pushのたびにビルドして30日保管／After：pushは自由、ビルドは1日1回](/images/blog/2026-09-29-vercel-deployment-storage/flow.png)
 
+## まず結論（この3つで直ります）
+
+1. Vercel の **Project Settings → Build and Deployment → Ignored Build Step** に、「最新のコミットメッセージに `[deploy]` がなければ `exit 0`（＝ビルドしない）」スクリプトを設定する
+2. **1日1回だけ** `[deploy]` 付きの空コミットを送る（GitHub Actions の定期実行など。変更がない日は送らない）
+3. 同じ画面の **Deployment Retention Policy** を「本番1週間・それ以外1日」に短くする
+
+コードと設定の中身は、下の「やったこと」にそのまま貼れる形で載せています。
+
 ## なぜ膨らんでいたのか
 
 Vercelは、GitHubにpushするたびに本番のビルドとデプロイを自動で行います。便利な反面、このサイトでは

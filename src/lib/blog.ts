@@ -132,25 +132,38 @@ export function blogPath(lang: Lang, slug?: string) {
 export const copy = {
   ja: {
     name: "Build in Public",
-    tagline: "ひとりで事業をつくる途中経過を、数字も失敗もそのまま記録する。",
-    by: "Koki Takahashi / BAULIFE",
+    tagline:
+      "ひとりで事業をつくる中で詰まって、解決できたことの記録。同じ問題にぶつかった人が、そのまま真似して使えるように残しています。",
+    owner: "Koki Takahashi",
+    role: "BAULIFE 創業者",
+    by: "Koki（BAULIFE 創業者）の作業を、AI が記録",
+    disclaimer:
+      "このブログは、BAULIFE 創業者 Koki の個人的な作業記録です。会社の公式な発信ではありません。",
     back: "← 記事一覧",
     other: "English",
     feed: "RSS",
     empty: "まだ記事はありません。",
     numbers: "今回の数字",
+    notice:
+      "この記事は、同じ問題にぶつかった人がそのまま真似して解決できるように書いた記録です。本文は、創業者の私（Koki）と AI（Claude）の実際の作業のやり取りをもとに、AI が書いています。コードや設定はそのままコピーして使えます。",
     dateFmt: (d: string) => d.replaceAll("-", "."),
   },
   en: {
     name: "Build in Public",
     tagline:
-      "A running log of building businesses solo — numbers, misses and all.",
-    by: "Koki Takahashi / BAULIFE",
+      "Problems I got stuck on while building businesses solo — and exactly how I solved them, written so you can copy the fix.",
+    owner: "Koki Takahashi",
+    role: "Founder, BAULIFE",
+    by: "Koki's work (founder of BAULIFE), written up by AI",
+    disclaimer:
+      "This is the personal work log of Koki, founder of BAULIFE — not an official company publication.",
     back: "← All posts",
     other: "日本語",
     feed: "RSS",
     empty: "No posts yet.",
     numbers: "Numbers this time",
+    notice:
+      "This post is written so that anyone who hits the same problem can copy the fix and be done. It was written by AI (Claude), based on my actual working sessions with it. Code and settings are meant to be copied as-is.",
     dateFmt: (d: string) => d.replaceAll("-", "."),
   },
 } as const;
@@ -173,7 +186,7 @@ export function rss(lang: Lang) {
       return `<item><title>${esc(p.title)}</title><link>${url}</link><guid>${url}</guid><pubDate>${new Date(`${p.date}T09:00:00+09:00`).toUTCString()}</pubDate><description>${esc(p.summary)}</description></item>`;
     })
     .join("");
-  const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>BAULIFE / ${t.name}</title><link>${home}</link><description>${esc(t.tagline)}</description><language>${lang}</language>${items}</channel></rss>`;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${t.owner} — ${t.name}</title><link>${home}</link><description>${esc(t.tagline)}</description><language>${lang}</language>${items}</channel></rss>`;
   return new Response(xml, {
     headers: { "Content-Type": "application/rss+xml; charset=utf-8" },
   });

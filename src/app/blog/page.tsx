@@ -3,7 +3,7 @@ import { BlogIndex } from "@/components/blog/BlogViews";
 import { copy, getPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
-  title: `${copy.ja.name} — BAULIFE`,
+  title: `${copy.ja.name} — ${copy.ja.owner}`,
   description: copy.ja.tagline,
   alternates: {
     languages: { en: "/en/blog" },

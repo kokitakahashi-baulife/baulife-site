@@ -16,6 +16,14 @@ I wanted a setup that stays inside the free plan without babysitting. Nine days 
 
 ![Before: every push builds and is kept 30 days. After: push freely, build once a day](/images/blog/2026-09-29-vercel-deployment-storage/flow_en.png)
 
+## TL;DR — three changes fix it
+
+1. In Vercel, set **Project Settings → Build and Deployment → Ignored Build Step** to a script that runs `exit 0` (skip the build) unless the latest commit message contains `[deploy]`
+2. Send an empty `[deploy]` commit **once a day** (e.g. a scheduled GitHub Actions job — and skip it on days with no changes)
+3. On the same page, shorten **Deployment Retention Policy** to 1 week for production and 1 day for everything else
+
+The exact code and settings are below, ready to paste.
+
 ## Why it ballooned
 
 Vercel builds and deploys to production on every push to GitHub. That's great until your repo gets

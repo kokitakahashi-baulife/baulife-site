@@ -1,6 +1,5 @@
 import Link from "next/link";
-import Footer from "@/components/Footer";
-import { blogPath, copy, type Lang, type Post } from "@/lib/blog";
+import { SITE_URL, blogPath, copy, type Lang, type Post } from "@/lib/blog";
 
 // /blog（日本語）と /en/blog（英語）で共有する見た目。
 // ページ側は記事を読んで渡すだけにして、見た目はここに寄せる。
@@ -15,7 +14,7 @@ function Header({ lang, otherHref }: { lang: Lang; otherHref: string }) {
           className="flex items-baseline gap-2 text-[#1a1a1a]"
           style={{ fontFamily: "var(--font-en)" }}
         >
-          <span className="text-[15px] font-bold tracking-[3px]">BAULIFE</span>
+          <span className="text-[15px] font-bold tracking-[0.5px]">{t.owner}</span>
           <span className="text-[13px] text-[#999]">/ {t.name}</span>
         </Link>
         <nav className="flex items-center gap-5 text-[13px] text-[#666]">
@@ -35,6 +34,21 @@ function Header({ lang, otherHref }: { lang: Lang; otherHref: string }) {
         </nav>
       </div>
     </header>
+  );
+}
+
+function BlogFooter({ lang }: { lang: Lang }) {
+  const t = copy[lang];
+  return (
+    <footer className="border-t border-[#eee] bg-white px-5 sm:px-6 py-8 text-center text-[12px] leading-[1.9] text-[#999]">
+      <p>{t.disclaimer}</p>
+      <p className="mt-1">
+        {t.role}{lang === "ja" ? "：" : ": "}
+        <a href="/" className="text-[#777] underline underline-offset-2 hover:text-[#1a1a1a]">
+          baulife.world
+        </a>
+      </p>
+    </footer>
   );
 }
 
@@ -102,9 +116,32 @@ export function BlogIndex({ lang, posts }: { lang: Lang; posts: Post[] }) {
         )}
       </main>
       <div className="h-16" />
-      <Footer />
+      <BlogFooter lang={lang} />
     </div>
   );
+}
+
+// 検索エンジンや AI が「誰が・いつ・何語で書いた技術記事か」を読めるように
+function articleJsonLd(post: Post) {
+  const url = SITE_URL + blogPath(post.lang, post.slug);
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: post.title,
+    description: post.summary,
+    datePublished: post.date,
+    inLanguage: post.lang,
+    url,
+    mainEntityOfPage: url,
+    keywords: post.tags.join(", "),
+    // 会社の公式記事ではなく、創業者個人の記録として出す
+    author: {
+      "@type": "Person",
+      name: "Koki Takahashi",
+      jobTitle: "Founder",
+      worksFor: { "@type": "Organization", name: "BAULIFE", url: SITE_URL },
+    },
+  }).replaceAll("<", "\\u003c");
 }
 
 export function BlogPost({ post }: { post: Post }) {
@@ -119,6 +156,10 @@ export function BlogPost({ post }: { post: Post }) {
       <Header lang={post.lang} otherHref={otherHref} />
       <main className="max-w-[720px] mx-auto px-5 sm:px-6">
         <article className="pt-12 sm:pt-16 pb-16">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: articleJsonLd(post) }}
+          />
           <Meta post={post} />
           <h1 className="mt-3 text-[26px] sm:text-[32px] font-bold leading-[1.45] tracking-[-0.2px]">
             {post.title}
@@ -128,6 +169,10 @@ export function BlogPost({ post }: { post: Post }) {
               {post.summary}
             </p>
           )}
+
+          <aside className="mt-6 rounded-xl border border-[#f0d4da] bg-[#fff7f8] px-4 py-3.5 text-[13px] leading-[1.85] text-[#8a3a4c]">
+            {t.notice}
+          </aside>
 
           {post.numbers.length > 0 && (
             <section
@@ -187,7 +232,7 @@ export function BlogPost({ post }: { post: Post }) {
           </div>
         </article>
       </main>
-      <Footer />
+      <BlogFooter lang={post.lang} />
     </div>
   );
 }
