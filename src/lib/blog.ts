@@ -145,7 +145,7 @@ export const copy = {
     empty: "まだ記事はありません。",
     numbers: "今回の数字",
     notice:
-      "この記事は、同じ問題にぶつかった人がそのまま真似して解決できるように書いた記録です。本文は、創業者の私（Koki）と AI（Claude）の実際の作業のやり取りをもとに、AI が書いています。コードや設定はそのままコピーして使えます。",
+      "この記事は、創業者の私（Koki）と AI（Claude）の実際の作業のやり取りをもとに、AI が書いた記録です。同じ問題で困ったら、この記事の URL をお使いの AI に渡してください。AI が参考例として読み、あなたの環境に合わせて同じ対処を進められるように書いています。",
     dateFmt: (d: string) => d.replaceAll("-", "."),
   },
   en: {
@@ -163,7 +163,7 @@ export const copy = {
     empty: "No posts yet.",
     numbers: "Numbers this time",
     notice:
-      "This post is written so that anyone who hits the same problem can copy the fix and be done. It was written by AI (Claude), based on my actual working sessions with it. Code and settings are meant to be copied as-is.",
+      "This post was written by AI (Claude), based on my actual working sessions with it. If you hit the same problem, hand this URL to your own AI assistant — it's written so the AI can use it as a reference case and apply the same fix to your setup.",
     dateFmt: (d: string) => d.replaceAll("-", "."),
   },
 } as const;

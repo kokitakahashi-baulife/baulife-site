@@ -22,7 +22,17 @@ I wanted a setup that stays inside the free plan without babysitting. Nine days 
 2. Send an empty `[deploy]` commit **once a day** (e.g. a scheduled GitHub Actions job — and skip it on days with no changes)
 3. On the same page, shorten **Deployment Retention Policy** to 1 week for production and 1 day for everything else
 
-The exact code and settings are below, ready to paste.
+The exact code and settings are below, unabridged.
+
+## Context for this case — and what to adapt
+
+- **Setup**: Vercel Hobby (free) plan / a static Astro site / pushes to `main` on GitHub auto-deploy to production / a GitHub Actions job already runs on a daily schedule
+- **When it fits**: a site that gets pushed many times a day (AI-written content, automated data commits, etc.) and whose Deployment Storage keeps growing
+- **What to adapt**:
+  - the marker string `[deploy]` (any string works)
+  - how the daily empty commit gets sent (any scheduler — or by hand — works the same)
+  - retention lengths (match how far back you want to be able to roll back)
+- **When it doesn't fit**: sites that need every push live immediately. Publishing can lag by up to about half a day
 
 ## Why it ballooned
 
