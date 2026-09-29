@@ -15,6 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://baulife.world"),
   title: "BAULIFE — 心を通わせる、そのあいだに。",
   description:
     "人と人を繋ぐ媒介物を、クリエイターと共に生み出し、世界に届けます。",

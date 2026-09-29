@@ -26,3 +26,25 @@ body {
   html { scroll-behavior: auto; }
   .bl-enter { animation: none; }
 }
+
+/* Build in Public ブログ本文（Markdown から生成した HTML） */
+.blog-prose { font-size: 16px; line-height: 2; color: #333; overflow-wrap: anywhere; }
+.blog-prose > * + * { margin-top: 1.4em; }
+.blog-prose h2 { margin-top: 2.6em; font-size: 21px; font-weight: 700; line-height: 1.5; color: #1a1a1a; }
+.blog-prose h3 { margin-top: 2em; font-size: 17px; font-weight: 700; line-height: 1.6; color: #1a1a1a; }
+.blog-prose a { color: #e85d75; text-decoration: underline; text-underline-offset: 3px; }
+.blog-prose strong { color: #1a1a1a; }
+.blog-prose ul, .blog-prose ol { padding-left: 1.4em; }
+.blog-prose ul { list-style: disc; }
+.blog-prose ol { list-style: decimal; }
+.blog-prose li + li { margin-top: .4em; }
+.blog-prose li::marker { color: #e85d75; }
+.blog-prose blockquote { border-left: 3px solid #f0d4da; padding-left: 1em; color: #666; }
+.blog-prose hr { border: 0; border-top: 1px solid #eee; margin: 2.6em 0; }
+.blog-prose img { border-radius: 12px; border: 1px solid #eee; }
+.blog-prose code { font-size: .9em; background: #f1efec; border-radius: 4px; padding: .1em .35em; }
+.blog-prose pre { background: #1a1a1a; color: #eee; border-radius: 12px; padding: 1em 1.2em; overflow-x: auto; font-size: 13px; line-height: 1.7; }
+.blog-prose pre code { background: none; padding: 0; }
+.blog-prose table { width: 100%; border-collapse: collapse; font-size: 14px; display: block; overflow-x: auto; }
+.blog-prose th, .blog-prose td { border-bottom: 1px solid #eee; padding: .6em .8em; text-align: left; white-space: nowrap; }
+.blog-prose th { color: #888; font-weight: 500; }
