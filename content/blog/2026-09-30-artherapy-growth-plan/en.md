@@ -29,7 +29,7 @@ This is how I plan to grow **Artherapy**, an adult coloring app for iPhone, with
 
 ## My first assumption: "It's free, so I can steal the big apps' users"
 
-On features alone, I figured Artherapy could pull users straight from the big coloring apps like Happy Color. Working through it with AI, two reasons said no:
+On features alone, I figured Artherapy could pull users straight from the big coloring apps. Working through it with AI, two reasons said no:
 
 - **The big apps are already free.** "Free" is their weapon, not my differentiator
 - **Nobody comparison-shops for a coloring app.** It's a habit app: people keep using whatever they installed and rarely go looking for a better one

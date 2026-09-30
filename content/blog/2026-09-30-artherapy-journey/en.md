@@ -31,9 +31,7 @@ numbers:
 
 ## 1. From kit research to an app (Aug 13)
 
-I was researching made-to-order paint-by-number kits built from customers' photos. My physical-products brand (HOMU, wax seal stamps) could grow the same way — if only it could get customers:
-
-> "I've shown you this before, but if HOMU could just get customers, it could grow like this without carrying costs."
+I was looking at another company's made-to-order paint-by-number kits built from customers' photos, and sensed some synergy with another business of mine.
 
 While talking it through with my team, "a version you color on a screen" merged with "turn the whole coloring session into a timelapse video," and it became an app that same day:
 
@@ -47,7 +45,7 @@ The research showed physical kits work financially but carry inventory and logis
 
 The first rule: don't redraw the photo with generative AI.
 
-> "Looking at services like this, I don't think they regenerate the photo. If you do, the facial expression shifts a little, right?"
+Looking at other companies' products, I noticed they didn't seem to redraw the photo — because redrawing shifts the facial expression a little.
 
 For an app where you color your family and pets, a changed expression is fatal. So the core became classic image processing — reduce the colors and split the photo into regions. Coloring had to feel like painting with a brush, not just tapping to fill:
 
