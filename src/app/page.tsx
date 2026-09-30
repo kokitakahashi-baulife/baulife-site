@@ -14,9 +14,9 @@ const zen = Zen_Kaku_Gothic_New({
 });
 
 export const metadata: Metadata = {
-  title: "BAULIFE — 事業を、つくって育てて、届ける。",
+  title: "BAULIFE — 試して、変わり続ける。AIエージェント時代の新規事業スタジオ",
   description:
-    "BAULIFEは、シーリングスタンプ・スマホゲーム・塗り絵アプリ・犬のしつけメディアを自社で立ち上げて運営する新規事業スタジオです。企業の新規事業やAI活用、個人の物販のブランド化もお手伝いしています。",
+    "BAULIFEは、来たるAIエージェント時代を見据えて、新しい事業をつくり続ける新規事業スタジオです。AI活用や新規事業の顧問・コンサルティングのご相談も受け付けています。",
 };
 
 export default function Page() {

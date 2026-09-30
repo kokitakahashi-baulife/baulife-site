@@ -5,7 +5,7 @@ export type Media =
   | { kind: "image"; src: string; alt: string }
   | { kind: "video"; src: string; poster: string; label: string }
   | { kind: "pan"; src: string; alt: string } // 静止画をゆっくり動かして見せる
-  | { kind: "dogs"; items: { src: string; caption: string }[] };
+  | { kind: "dogs"; items: { src: string; caption: string }[] }; // 線画は再圧縮せずそのまま出す
 
 export type Work = {
   id: string;
@@ -64,14 +64,47 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
     media: {
       kind: "dogs",
       items: [
-        { src: "/home/dog-down.jpg", caption: "down" },
-        { src: "/home/dog-highfive.jpg", caption: "high five" },
-        { src: "/home/dog-come.jpg", caption: "come" },
-        { src: "/home/dog-place.jpg", caption: "place" },
+        { src: "/home/dog-down.webp", caption: "down" },
+        { src: "/home/dog-high-five.webp", caption: "high five" },
+        { src: "/home/dog-come.webp", caption: "come" },
+        { src: "/home/dog-place.webp", caption: "place" },
       ],
     },
   },
 };
+
+// 事業のまとまり。トップではこの順・この組み合わせで並ぶ
+export type Category = {
+  id: string;
+  label: string; // 英語の小さな見出し
+  title: string;
+  lead: string;
+  works: Work[];
+};
+
+export const categories: Category[] = [
+  {
+    id: "sealing",
+    label: "Sealing Stamp",
+    title: "シーリングスタンプ事業",
+    lead: "封蝋を押す楽しさを、手に取れる道具と、スマホで遊べるゲームの両方から届けています。",
+    works: [works.homu, works.sealcraft],
+  },
+  {
+    id: "retreat",
+    label: "Home Retreat",
+    title: "HOME RETREAT事業",
+    lead: "家にいながら、気持ちを落ち着かせる時間をつくる。自宅でできるリトリート体験を届けています。",
+    works: [works.artherapy],
+  },
+  {
+    id: "others",
+    label: "Others",
+    title: "ほかの事業",
+    lead: "犬と暮らす人に向けて、しつけのコマンドを一つずつ、わかりやすく届けるメディアです。",
+    works: [works.baudog],
+  },
+];
 
 // HOMUの物撮り(白地に並べる)
 export const homuObjects = [
@@ -83,8 +116,8 @@ export const homuObjects = [
 
 // お問い合わせの用件。value は /api/contact にも送られ、メール件名に入る
 export const inquiryTypes = {
-  biz: "新規事業のご相談",
-  ai: "AI活用のご相談",
+  biz: "新規事業の顧問・コンサルのご相談",
+  ai: "AI活用の顧問・コンサルのご相談",
   brand: "物販のブランド化のご相談",
   other: "取材・各事業・その他",
 } as const;
@@ -95,14 +128,14 @@ export const services: { type: InquiryType; who: string; title: string; body: st
   {
     type: "biz",
     who: "For Business",
-    title: "新規事業の立ち上げ支援",
-    body: "アイデアの検証から、最初の商品・アプリ・サイトを世に出すところまで一緒に進めます。",
+    title: "新規事業の顧問・コンサルティング",
+    body: "アイデアの検証から、最初の商品・アプリ・サイトを世に出すところまで、自社で試してきたやり方でご一緒します。",
   },
   {
     type: "ai",
     who: "For Business",
-    title: "AI活用の支援",
-    body: "業務のどこをAIに任せられるかを洗い出し、実際に動く仕組みを作ります。",
+    title: "AI活用の顧問・コンサルティング",
+    body: "業務のどこをAIに任せられるかを洗い出し、実際に動く仕組みまで作ります。",
   },
   {
     type: "brand",

@@ -193,28 +193,72 @@ a.work:hover .ph video {
   gap: 4px 14px;
 }
 
+/* 事業のまとまり(シーリングスタンプ / HOME RETREAT / ほか) */
+.cat + .cat {
+  margin-top: 220px;
+}
+.catHead {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+  margin-bottom: 72px;
+}
+.catHead .mono {
+  grid-column: 1 / 4;
+  padding-top: 14px;
+}
+.catHead h2,
+.catHead .lead {
+  grid-column: 4 / 10;
+}
+.catHead h2,
+.catSide h2 {
+  font-family: var(--ja);
+  font-weight: 400;
+  font-size: clamp(26px, 2.8vw, 40px);
+  line-height: 1.6;
+}
+.lead {
+  font-family: var(--ja);
+  font-size: 14px;
+  color: #4a4a47;
+  line-height: 2.1;
+  margin-top: 16px;
+  max-width: 520px;
+}
+.catSide {
+  grid-column: 1 / 6;
+  align-self: center;
+}
+.catSide .mono {
+  display: block;
+  margin-bottom: 20px;
+}
+.wDog ~ .catSide {
+  grid-column: 8 / 13;
+}
+
 .wHomu {
   grid-column: 1 / 8;
 }
 .wHomu .ph {
   aspect-ratio: 1 / 1;
 }
-.wArt {
+.wSeal {
   grid-column: 9 / 13;
   align-self: end;
-}
-.wArt .ph {
-  aspect-ratio: 1 / 1;
-}
-.wSeal {
-  grid-column: 1 / 6;
 }
 .wSeal .ph {
   aspect-ratio: 3 / 4;
 }
-.wDog {
+.wArt {
   grid-column: 7 / 13;
-  margin-top: 200px;
+}
+.wArt .ph {
+  aspect-ratio: 1 / 1;
+}
+.wDog {
+  grid-column: 1 / 7;
 }
 .wDog .ph {
   aspect-ratio: 1 / 1;
@@ -651,9 +695,26 @@ a.work:hover .ph video {
   .wSeal,
   .wDog,
   .objects,
-  .seller {
+  .seller,
+  .catSide,
+  .wDog ~ .catSide {
     grid-column: 1 / 13;
     margin-top: 0;
+  }
+  .cat + .cat {
+    margin-top: 140px;
+  }
+  .catHead {
+    display: block;
+    margin-bottom: 48px;
+  }
+  .catHead .mono {
+    display: block;
+    padding: 0 0 16px;
+  }
+  /* スマホでは説明を先に、作品を後に */
+  .wDog {
+    order: 2;
   }
   .objects {
     grid-template-columns: 1fr 1fr;

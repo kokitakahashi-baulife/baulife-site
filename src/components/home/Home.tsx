@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { homuObjects, services, works, type Work } from "@/data/home";
+import { categories, homuObjects, services, type Category, type Work } from "@/data/home";
 import type { PostMeta } from "@/lib/blog";
 import { ContactForm, InquiryLink, LoopVideo, RevealObserver } from "./client";
 import s from "./home.module.css";
@@ -34,7 +34,7 @@ function Media({ work, sizes }: { work: Work; sizes: string }) {
           <div className={s.dogs}>
             {m.items.map((d) => (
               <figure key={d.src}>
-                <Image src={d.src} alt="" width={480} height={480} sizes="20vw" />
+                <Image src={d.src} alt="" width={480} height={480} unoptimized />
                 <figcaption>{d.caption}</figcaption>
               </figure>
             ))}
@@ -76,7 +76,18 @@ function WorkCard({ work, className, sizes }: { work: Work; className: string; s
   );
 }
 
+function CategoryHead({ c, side }: { c: Category; side?: boolean }) {
+  return (
+    <div className={`${side ? s.catSide : s.catHead} ${s.rv}`} {...rv}>
+      <p className={s.mono}>{c.label}</p>
+      <h2 id={`cat-${c.id}`}>{c.title}</h2>
+      <p className={s.lead}>{c.lead}</p>
+    </div>
+  );
+}
+
 export default function Home({ posts }: { posts: PostMeta[] }) {
+  const [sealing, retreat, others] = categories;
   return (
     <div className={s.root}>
       <RevealObserver />
@@ -97,56 +108,69 @@ export default function Home({ posts }: { posts: PostMeta[] }) {
       <main id="top">
         <div className={s.hero}>
           <div className={s.wrap}>
-            <p className={s.mono}>BAULIFE Inc. — New Business Studio, Tokyo</p>
+            <p className={s.mono}>BAULIFE Inc. — New Venture Studio for the Agentic Era, Tokyo</p>
             <h1>
-              <span className={s.nw}>事業を、つくって</span>
-              <span className={s.nw}>育てて、届ける。</span>
+              <span className={s.nw}>試して、</span>
+              <span className={s.nw}>変わり続ける。</span>
             </h1>
-            <p className={s.en}>We build our own businesses, and help you build yours.</p>
+            <p className={s.en}>A venture studio built for the age of AI agents.</p>
             <p className={s.range}>
-              シーリングスタンプから、スマホゲーム、塗り絵アプリ、犬のしつけまで。BAULIFEは、事業を自社で立ち上げて運営する新規事業スタジオです。その経験を生かして、企業の新規事業やAI活用、個人の物販のブランド化もお手伝いしています。
+              BAULIFEは、来たるAIエージェント時代を見据えた新規事業スタジオです。アプリ・物販・メディアの事業を自分たちでつくり、うまくいったやり方も、うまくいかなかったことも次に生かしながら、事業の形を変え続けています。AI活用や新規事業の顧問・コンサルティングのご相談も受け付けています。
             </p>
           </div>
         </div>
 
         <div className={s.wrap} id="works">
-          <div className={s.works}>
-            <WorkCard work={works.homu} className={s.wHomu} sizes="(max-width: 900px) 100vw, 58vw" />
-            <WorkCard work={works.artherapy} className={s.wArt} sizes="(max-width: 900px) 100vw, 33vw" />
+          {/* シーリングスタンプ事業：HOMU と SEALCRAFT、その下に物撮りとブランド化の窓口 */}
+          <section className={s.cat} aria-labelledby="cat-sealing">
+            <CategoryHead c={sealing} />
+            <div className={s.works}>
+              <WorkCard work={sealing.works[0]} className={s.wHomu} sizes="(max-width: 900px) 100vw, 58vw" />
+              <WorkCard work={sealing.works[1]} className={s.wSeal} sizes="(max-width: 900px) 100vw, 33vw" />
 
-            <div className={`${s.objects} ${s.rv}`} {...rv}>
-              {homuObjects.map((o) => (
-                <figure key={o.src}>
-                  <div className={s.ph}>
-                    <Image src={o.src} alt={o.alt} fill sizes="(max-width: 900px) 50vw, 25vw" />
-                  </div>
-                  <figcaption>{o.caption}</figcaption>
-                </figure>
-              ))}
+              <div className={`${s.objects} ${s.rv}`} {...rv}>
+                {homuObjects.map((o) => (
+                  <figure key={o.src}>
+                    <div className={s.ph}>
+                      <Image src={o.src} alt={o.alt} fill sizes="(max-width: 900px) 50vw, 25vw" />
+                    </div>
+                    <figcaption>{o.caption}</figcaption>
+                  </figure>
+                ))}
+              </div>
+
+              <InquiryLink type="brand" className={`${s.seller} ${s.rv}`} {...rv}>
+                <div>
+                  <span className={s.mono}>For Sellers</span>
+                  <h4>
+                    個人の物販を、
+                    <br />
+                    ブランドに育てませんか。
+                  </h4>
+                </div>
+                <div>
+                  <p>
+                    HOMUを立ち上げて育ててきた経験をもとに、商品づくり・見せ方・売り方をご一緒に考えます。個人で物販をしている方からのご相談をお受けしています。
+                  </p>
+                  <span className={s.link}>
+                    ブランド化の相談をする <span aria-hidden="true">→</span>
+                  </span>
+                </div>
+              </InquiryLink>
             </div>
+          </section>
 
-            <InquiryLink type="brand" className={`${s.seller} ${s.rv}`} {...rv}>
-              <div>
-                <span className={s.mono}>For Sellers</span>
-                <h4>
-                  個人の物販を、
-                  <br />
-                  ブランドに育てませんか。
-                </h4>
-              </div>
-              <div>
-                <p>
-                  HOMUを立ち上げて育ててきた経験をもとに、商品づくり・見せ方・売り方をご一緒に考えます。個人で物販をしている方からのご相談をお受けしています。
-                </p>
-                <span className={s.link}>
-                  ブランド化の相談をする <span aria-hidden="true">→</span>
-                </span>
-              </div>
-            </InquiryLink>
+          {/* HOME RETREAT事業：左に説明、右に Artherapy */}
+          <section className={`${s.cat} ${s.works}`} aria-labelledby="cat-retreat">
+            <CategoryHead c={retreat} side />
+            <WorkCard work={retreat.works[0]} className={s.wArt} sizes="(max-width: 900px) 100vw, 50vw" />
+          </section>
 
-            <WorkCard work={works.sealcraft} className={s.wSeal} sizes="(max-width: 900px) 100vw, 40vw" />
-            <WorkCard work={works.baudog} className={s.wDog} sizes="(max-width: 900px) 100vw, 50vw" />
-          </div>
+          {/* ほかの事業：左に BAUDOG、右に説明（左右を入れ替えてリズムを出す） */}
+          <section className={`${s.cat} ${s.works}`} aria-labelledby="cat-others">
+            <WorkCard work={others.works[0]} className={s.wDog} sizes="(max-width: 900px) 100vw, 50vw" />
+            <CategoryHead c={others} side />
+          </section>
         </div>
 
         <div className={s.dark} id="about">
@@ -154,12 +178,12 @@ export default function Home({ posts }: { posts: PostMeta[] }) {
             <div className={`${s.msg} ${s.rv}`} {...rv}>
               <p className={s.mono}>About</p>
               <h2>
-                自分たちで事業をつくる。
+                AIと一緒に、作って、試す。
                 <br />
-                その経験で、誰かの事業を手伝う。
+                試したことだけを、お渡しする。
               </h2>
               <p>
-                BAULIFEは、物販・ゲーム・アプリ・メディアの事業を、企画から開発・販売・運営まで自社で手がけています。日々の運営にはAIを組み込み、少人数でも多くの事業を回せる形を試し続けています。そこで得たことを、新しい事業に取り組む企業や個人の方にお渡ししています。
+                BAULIFEでは、アプリの開発も、商品の企画と販売も、メディアの記事づくりも、AIを組み込んだ形で回しています。AIが変われば、仕事のやり方も変える。その試行錯誤から得たことを、AI活用や新規事業に取り組む企業、ブランドを育てたい個人の方にお渡ししています。
               </p>
             </div>
             <div className={`${s.svc} ${s.rv}`} {...rv}>
@@ -234,9 +258,9 @@ export default function Home({ posts }: { posts: PostMeta[] }) {
                   <tr>
                     <th>事業内容</th>
                     <td>
-                      新規事業の開発・運営（物販 / ゲーム / アプリ / メディア）
+                      AI駆動のアプリ開発・物販・メディア運営
                       <br />
-                      新規事業・AI活用・ブランド化の支援
+                      AI活用・新規事業の顧問・コンサルティング／物販のブランド化の支援
                     </td>
                   </tr>
                 </tbody>

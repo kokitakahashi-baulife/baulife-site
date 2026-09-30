@@ -91,7 +91,7 @@ export function InquiryLink({
 }
 
 const doors: { type: InquiryType; who: string; label: string }[] = [
-  { type: "biz", who: "For Business", label: "新規事業・AI活用のご相談" },
+  { type: "biz", who: "For Business", label: "AI活用・新規事業のご相談" },
   { type: "brand", who: "For Sellers", label: "物販のブランド化のご相談" },
   { type: "other", who: "Others", label: "取材・各事業・その他" },
 ];
