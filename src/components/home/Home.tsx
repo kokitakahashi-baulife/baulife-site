@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { categories, homuObjects, services, type Category, type Work } from "@/data/home";
+import { homuObjects, services, works, type Work } from "@/data/home";
 import type { PostMeta } from "@/lib/blog";
 import { ContactForm, InquiryLink, LoopVideo, RevealObserver } from "./client";
 import s from "./home.module.css";
@@ -76,18 +76,7 @@ function WorkCard({ work, className, sizes }: { work: Work; className: string; s
   );
 }
 
-function CategoryHead({ c, side }: { c: Category; side?: boolean }) {
-  return (
-    <div className={`${side ? s.catSide : s.catHead} ${s.rv}`} {...rv}>
-      <p className={s.mono}>{c.label}</p>
-      <h2 id={`cat-${c.id}`}>{c.title}</h2>
-      <p className={s.lead}>{c.lead}</p>
-    </div>
-  );
-}
-
 export default function Home({ posts }: { posts: PostMeta[] }) {
-  const [sealing, retreat, others] = categories;
   return (
     <div className={s.root}>
       <RevealObserver />
@@ -121,56 +110,45 @@ export default function Home({ posts }: { posts: PostMeta[] }) {
         </div>
 
         <div className={s.wrap} id="works">
-          {/* シーリングスタンプ事業：HOMU と SEALCRAFT、その下に物撮りとブランド化の窓口 */}
-          <section className={s.cat} aria-labelledby="cat-sealing">
-            <CategoryHead c={sealing} />
-            <div className={s.works}>
-              <WorkCard work={sealing.works[0]} className={s.wHomu} sizes="(max-width: 900px) 100vw, 58vw" />
-              <WorkCard work={sealing.works[1]} className={s.wSeal} sizes="(max-width: 900px) 100vw, 33vw" />
+          <div className={`${s.head} ${s.rv}`} {...rv}>
+            <p className={s.mono}>Works</p>
+            <h2>事業一覧</h2>
+          </div>
+          <div className={s.works}>
+            {[works.homu, works.sealcraft, works.artherapy, works.baudog].map((w) => (
+              <WorkCard key={w.id} work={w} className={s.wEq} sizes="(max-width: 900px) 100vw, 50vw" />
+            ))}
 
-              <div className={`${s.objects} ${s.rv}`} {...rv}>
-                {homuObjects.map((o) => (
-                  <figure key={o.src}>
-                    <div className={s.ph}>
-                      <Image src={o.src} alt={o.alt} fill sizes="(max-width: 900px) 50vw, 25vw" />
-                    </div>
-                    <figcaption>{o.caption}</figcaption>
-                  </figure>
-                ))}
-              </div>
-
-              <InquiryLink type="brand" className={`${s.seller} ${s.rv}`} {...rv}>
-                <div>
-                  <span className={s.mono}>For Sellers</span>
-                  <h4>
-                    個人の物販を、
-                    <br />
-                    ブランドに育てませんか。
-                  </h4>
-                </div>
-                <div>
-                  <p>
-                    HOMUを立ち上げて育ててきた経験をもとに、商品づくり・見せ方・売り方をご一緒に考えます。個人で物販をしている方からのご相談をお受けしています。
-                  </p>
-                  <span className={s.link}>
-                    ブランド化の相談をする <span aria-hidden="true">→</span>
-                  </span>
-                </div>
-              </InquiryLink>
+            <div className={`${s.objects} ${s.rv}`} {...rv}>
+              {homuObjects.map((o) => (
+                <figure key={o.src}>
+                  <div className={s.ph}>
+                    <Image src={o.src} alt={o.alt} fill sizes="(max-width: 900px) 50vw, 25vw" />
+                  </div>
+                  <figcaption>{o.caption}</figcaption>
+                </figure>
+              ))}
             </div>
-          </section>
 
-          {/* HOME RETREAT事業：左に説明、右に Artherapy */}
-          <section className={`${s.cat} ${s.works}`} aria-labelledby="cat-retreat">
-            <CategoryHead c={retreat} side />
-            <WorkCard work={retreat.works[0]} className={s.wArt} sizes="(max-width: 900px) 100vw, 50vw" />
-          </section>
-
-          {/* ほかの事業：左に BAUDOG、右に説明（左右を入れ替えてリズムを出す） */}
-          <section className={`${s.cat} ${s.works}`} aria-labelledby="cat-others">
-            <WorkCard work={others.works[0]} className={s.wDog} sizes="(max-width: 900px) 100vw, 50vw" />
-            <CategoryHead c={others} side />
-          </section>
+            <InquiryLink type="brand" className={`${s.seller} ${s.rv}`} {...rv}>
+              <div>
+                <span className={s.mono}>For Sellers</span>
+                <h4>
+                  個人の物販を、
+                  <br />
+                  ブランドに育てませんか。
+                </h4>
+              </div>
+              <div>
+                <p>
+                  HOMUを立ち上げて育ててきた経験をもとに、商品づくり・見せ方・売り方をご一緒に考えます。個人で物販をしている方からのご相談をお受けしています。
+                </p>
+                <span className={s.link}>
+                  ブランド化の相談をする <span aria-hidden="true">→</span>
+                </span>
+              </div>
+            </InquiryLink>
+          </div>
         </div>
 
         <div className={s.dark} id="about">

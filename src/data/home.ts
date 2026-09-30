@@ -73,39 +73,6 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
   },
 };
 
-// 事業のまとまり。トップではこの順・この組み合わせで並ぶ
-export type Category = {
-  id: string;
-  label: string; // 英語の小さな見出し
-  title: string;
-  lead: string;
-  works: Work[];
-};
-
-export const categories: Category[] = [
-  {
-    id: "sealing",
-    label: "Sealing Stamp",
-    title: "シーリングスタンプ事業",
-    lead: "封蝋を押す楽しさを、手に取れる道具と、スマホで遊べるゲームの両方から届けています。",
-    works: [works.homu, works.sealcraft],
-  },
-  {
-    id: "retreat",
-    label: "Home Retreat",
-    title: "HOME RETREAT事業",
-    lead: "家にいながら、気持ちを落ち着かせる時間をつくる。自宅でできるリトリート体験を届けています。",
-    works: [works.artherapy],
-  },
-  {
-    id: "others",
-    label: "Others",
-    title: "ほかの事業",
-    lead: "犬と暮らす人に向けて、しつけのコマンドを一つずつ、わかりやすく届けるメディアです。",
-    works: [works.baudog],
-  },
-];
-
 // HOMUの物撮り(白地に並べる)
 export const homuObjects = [
   { src: "/home/homu-ufo.jpg", alt: "3Dスタンプヘッド「さらわれる牛さん」の封蝋", caption: "abducted cow" },
