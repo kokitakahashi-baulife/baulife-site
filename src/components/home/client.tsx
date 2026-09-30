@@ -18,7 +18,7 @@ export function RevealObserver() {
             io.unobserve(e.target);
           }
         }),
-      { rootMargin: "0px 0px -8% 0px" }
+      { rootMargin: "0px 0px -4% 0px" }
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -26,17 +26,34 @@ export function RevealObserver() {
   return null;
 }
 
-// 音なしのループ動画。動きを減らす設定の人にはポスター画像だけを見せる
+// 音なしのループ動画。動きを減らす設定の人にはポスター画像だけを見せる。
+// 画面の切り替えなどで止まっても、見えている間は再生し直す
 export function LoopVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      v.removeAttribute("autoplay");
       v.pause();
       return;
     }
-    v.play().catch(() => {});
+    let visible = false;
+    const resume = () => {
+      if (visible && v.paused && document.visibilityState === "visible") v.play().catch(() => {});
+    };
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      resume();
+    });
+    io.observe(v);
+    v.addEventListener("pause", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      io.disconnect();
+      v.removeEventListener("pause", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
   }, []);
   return (
     <video
@@ -45,6 +62,7 @@ export function LoopVideo({ src, poster, label }: { src: string; poster: string;
       poster={poster}
       muted
       loop
+      autoPlay
       playsInline
       preload="metadata"
       aria-label={label}
