@@ -16,9 +16,9 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://baulife.world"),
-  title: "BAULIFE — 心を通わせる、そのあいだに。",
+  title: "BAULIFE — 新規事業スタジオ",
   description:
-    "人と人を繋ぐ媒介物を、クリエイターと共に生み出し、世界に届けます。",
+    "BAULIFEは、事業を自社で立ち上げて運営する新規事業スタジオです。企業の新規事業やAI活用、個人の物販のブランド化もお手伝いしています。",
 };
 
 export default function RootLayout({

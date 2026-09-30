@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { inquiryTypes, type InquiryType } from "@/data/home";
 
 // お問い合わせの届け先（2名へ送信）
 const RECIPIENTS = [
@@ -11,6 +12,7 @@ const FROM = process.env.RESEND_FROM || "BAULIFE お問い合わせ <recruit@bau
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type ContactBody = {
+  type?: string; // ご用件（トップページのフォームから。無ければ「その他」扱い）
   name?: string;
   company?: string; // 会社名・団体名（任意）
   email?: string;
@@ -38,6 +40,8 @@ export async function POST(request: Request) {
   const company = (body.company || "").trim();
   const email = (body.email || "").trim();
   const message = (body.message || "").trim();
+  const typeLabel =
+    body.type && Object.hasOwn(inquiryTypes, body.type) ? inquiryTypes[body.type as InquiryType] : inquiryTypes.other;
 
   const missing: string[] = [];
   if (!name) missing.push("お名前");
@@ -75,6 +79,8 @@ export async function POST(request: Request) {
   const lines = [
     "BAULIFE公式サイトのお問い合わせフォームから新しいメッセージが届きました。",
     "",
+    `■ ご用件\n${typeLabel}`,
+    "",
     `■ お名前\n${name}`,
     "",
     `■ 会社名・団体名\n${company || "（未記入）"}`,
@@ -89,7 +95,7 @@ export async function POST(request: Request) {
       from: FROM,
       to: RECIPIENTS,
       replyTo: email,
-      subject: `【BAULIFEお問い合わせ】${name} さん`,
+      subject: `【BAULIFEお問い合わせ・${typeLabel}】${name} さん`,
       text: lines.join("\n"),
     });
 

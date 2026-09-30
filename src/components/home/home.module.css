@@ -1,0 +1,750 @@
+/* トップページ専用。quantum(白地の物撮り・黒一面のメッセージ)と
+   Takram(写真＋名前＋分野のグリッド)の間を狙った、細い文字と広い余白のデザイン */
+
+.root {
+  --white: #ffffff;
+  --ink: #1a1a1a;
+  --sub: #7c7c78;
+  --rule: #e4e4e1;
+  --tile: #f2f2f0;
+  --dot: #a3283a;
+  --latin: var(--font-geist), sans-serif;
+  --mono: var(--font-geist-mono), ui-monospace, monospace;
+  --ja: var(--font-zen), "Hiragino Kaku Gothic ProN", sans-serif;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--latin), var(--ja);
+  font-weight: 400;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+}
+.root img,
+.root video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.root a {
+  color: inherit;
+  text-decoration: none;
+}
+.root :focus-visible {
+  outline: 1.5px solid var(--ink);
+  outline-offset: 4px;
+}
+.wrap {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.nw {
+  white-space: nowrap;
+}
+.mono {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--sub);
+}
+.link {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 3px;
+}
+.link:hover {
+  color: var(--sub);
+  border-color: var(--sub);
+}
+
+/* header — quantum: 小文字ロゴ・最小限のナビ */
+.header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.header .wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 68px;
+}
+.logo {
+  font-family: var(--latin);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.nav {
+  display: flex;
+  gap: 36px;
+  font-size: 13px;
+}
+.nav a:hover {
+  opacity: 0.6;
+}
+
+/* hero */
+.hero {
+  padding: 200px 0 120px;
+}
+.hero .mono {
+  margin-bottom: 40px;
+}
+.hero h1 {
+  font-family: var(--ja);
+  font-weight: 400;
+  font-size: clamp(32px, 4.6vw, 64px);
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+.en {
+  font-family: var(--latin);
+  font-weight: 300;
+  font-size: clamp(18px, 1.7vw, 24px);
+  letter-spacing: -0.005em;
+  color: var(--sub);
+  margin-top: 20px;
+}
+.range {
+  margin-top: 56px;
+  max-width: 600px;
+  font-family: var(--ja);
+  font-size: 15px;
+  color: #4a4a47;
+  line-height: 2.1;
+}
+
+/* works — Takram: 写真＋名前＋分野のグリッド / quantum: 白地の物撮り＋ハッシュタグ */
+.works {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+  row-gap: 96px;
+}
+.work {
+  display: block;
+}
+.ph {
+  position: relative;
+  overflow: hidden;
+  background: var(--tile);
+}
+.ph img,
+.ph video {
+  transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+a.work:hover .ph img,
+a.work:hover .ph video {
+  transform: scale(1.025);
+}
+.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-top: 18px;
+}
+.meta h3 {
+  font-family: var(--latin);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.kind {
+  font-family: var(--ja);
+  font-size: 13px;
+  color: var(--sub);
+  margin-top: 2px;
+}
+.st {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--sub);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.st::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+.stDev::before {
+  background: #9a9a96;
+}
+.tags {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--sub);
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.wHomu {
+  grid-column: 1 / 8;
+}
+.wHomu .ph {
+  aspect-ratio: 1 / 1;
+}
+.wArt {
+  grid-column: 9 / 13;
+  align-self: end;
+}
+.wArt .ph {
+  aspect-ratio: 1 / 1;
+}
+.wSeal {
+  grid-column: 1 / 6;
+}
+.wSeal .ph {
+  aspect-ratio: 3 / 4;
+}
+.wDog {
+  grid-column: 7 / 13;
+  margin-top: 200px;
+}
+.wDog .ph {
+  aspect-ratio: 1 / 1;
+}
+
+/* HOMUの物撮り（quantum風：白地に物を並べる） */
+.objects {
+  grid-column: 1 / 13;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
+}
+.objects .ph {
+  aspect-ratio: 1;
+}
+.objects figcaption {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--sub);
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* 物販ブランド化の窓口（HOMUのすぐ近く） */
+.seller {
+  grid-column: 1 / 13;
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 28px;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+  padding: 40px 0;
+}
+.seller .mono {
+  display: block;
+  margin-bottom: 10px;
+}
+.seller h4 {
+  font-family: var(--ja);
+  font-weight: 400;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.6;
+}
+.seller p {
+  font-family: var(--ja);
+  font-size: 14px;
+  color: #4a4a47;
+  max-width: 520px;
+}
+.seller .link {
+  margin-top: 24px;
+}
+
+/* SEALCRAFT：マップをゆっくり見渡す */
+.pan img {
+  transform-origin: 50% 40%;
+  animation: pan 22s ease-in-out infinite alternate;
+}
+@keyframes pan {
+  from {
+    transform: scale(1.25) translate(6%, 6%);
+  }
+  to {
+    transform: scale(1.25) translate(-6%, -5%);
+  }
+}
+
+/* BAUDOG：コマンドのイラスト */
+.dogs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+  background: #faf8f3;
+}
+.dogs figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.root .dogs img {
+  width: 62%;
+  height: auto;
+  mix-blend-mode: multiply;
+}
+.dogs figcaption {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--sub);
+  margin-top: 4px;
+}
+
+.section {
+  padding: 200px 0 0;
+}
+.head {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+  margin-bottom: 72px;
+  align-items: end;
+}
+.head .mono {
+  grid-column: 1 / 4;
+}
+.head h2 {
+  grid-column: 4 / 10;
+  font-family: var(--ja);
+  font-weight: 400;
+  font-size: clamp(26px, 2.8vw, 40px);
+  line-height: 1.6;
+}
+
+/* about + services — quantum: 黒一面のメッセージ */
+.dark {
+  background: #111;
+  color: #ededea;
+  margin-top: 200px;
+  padding: 180px 0;
+}
+.dark .mono {
+  color: #8c8c88;
+}
+.msg {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+}
+.msg .mono {
+  grid-column: 1 / 4;
+}
+.msg h2 {
+  grid-column: 4 / 12;
+  font-family: var(--ja);
+  font-weight: 400;
+  font-size: clamp(26px, 3vw, 44px);
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+}
+.msg p {
+  grid-column: 4 / 10;
+  font-family: var(--ja);
+  font-size: 15px;
+  line-height: 2.2;
+  color: #b9b9b4;
+  margin-top: 48px;
+}
+.svc {
+  margin-top: 140px;
+  border-top: 1px solid #3a3a38;
+}
+.svc a {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+  padding: 40px 0;
+  border-bottom: 1px solid #3a3a38;
+  align-items: baseline;
+  transition: padding 0.4s;
+}
+.svc a:hover {
+  padding-left: 12px;
+}
+.who {
+  grid-column: 1 / 4;
+}
+.svc h3 {
+  grid-column: 4 / 8;
+  font-family: var(--ja);
+  font-weight: 400;
+  font-size: clamp(20px, 2vw, 26px);
+}
+.svc p {
+  grid-column: 8 / 12;
+  font-family: var(--ja);
+  font-size: 14px;
+  color: #b9b9b4;
+  line-height: 2;
+}
+.arr {
+  grid-column: 12 / 13;
+  justify-self: end;
+  font-family: var(--latin);
+  font-weight: 300;
+  font-size: 22px;
+}
+
+/* journal — quantum: latest journal */
+.list {
+  border-top: 1px solid var(--ink);
+}
+.list a {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
+}
+.list time {
+  grid-column: 1 / 4;
+}
+.list .title {
+  grid-column: 4 / 11;
+  font-family: var(--ja);
+  font-size: 16px;
+}
+.list .tagCol {
+  grid-column: 11 / 13;
+  justify-self: end;
+}
+.list a:hover .title {
+  color: var(--sub);
+}
+.more {
+  margin-top: 40px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* company */
+.co {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+}
+.co table {
+  grid-column: 4 / 11;
+  border-collapse: collapse;
+  font-family: var(--ja);
+  font-size: 14px;
+}
+.co th,
+.co td {
+  text-align: left;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  font-weight: 400;
+}
+.co tr:first-child th,
+.co tr:first-child td {
+  border-top: 1px solid var(--ink);
+}
+.co th {
+  width: 140px;
+  color: var(--sub);
+}
+
+/* contact — Takram風の大きな行 */
+.doors {
+  border-top: 1px solid var(--ink);
+}
+.door {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+  align-items: baseline;
+  width: 100%;
+  padding: 36px 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.door .mono {
+  grid-column: 1 / 4;
+}
+.door strong {
+  grid-column: 4 / 10;
+  font-family: var(--ja);
+  font-weight: 400;
+  font-size: clamp(22px, 2.4vw, 34px);
+  line-height: 1.5;
+}
+.door .arr {
+  font-size: 26px;
+  transition: transform 0.3s;
+}
+.door:hover .arr,
+.door[aria-pressed="true"] .arr {
+  transform: translateX(6px);
+}
+.door[aria-pressed="true"] strong {
+  text-decoration: underline;
+  text-underline-offset: 8px;
+  text-decoration-thickness: 1px;
+}
+.form {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 28px;
+  row-gap: 28px;
+  margin-top: 80px;
+}
+.form > * {
+  grid-column: 4 / 11;
+}
+.form label {
+  font-family: var(--ja);
+  font-size: 13px;
+  color: var(--sub);
+  display: grid;
+  gap: 6px;
+}
+.form input,
+.form select,
+.form textarea {
+  font: inherit;
+  font-family: var(--ja);
+  font-size: 16px;
+  color: var(--ink);
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid #c9c9c5;
+  background: transparent;
+  border-radius: 0;
+  appearance: none;
+}
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+  outline: 0;
+  border-bottom-color: var(--ink);
+}
+.form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+.honeypot {
+  position: absolute;
+  left: -9999px;
+}
+.send {
+  justify-self: start;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  font: inherit;
+  font-family: var(--ja);
+  font-size: 15px;
+  padding: 0 0 4px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.send:hover {
+  color: var(--sub);
+}
+.send:disabled {
+  color: var(--sub);
+  cursor: default;
+}
+.error {
+  font-family: var(--ja);
+  font-size: 14px;
+  color: var(--dot);
+}
+.done {
+  grid-column: 4 / 11;
+  margin-top: 80px;
+  border-top: 1px solid var(--ink);
+  padding-top: 32px;
+  font-family: var(--ja);
+}
+.done strong {
+  display: block;
+  font-weight: 400;
+  font-size: clamp(22px, 2.4vw, 30px);
+}
+.done p {
+  color: var(--sub);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.footer {
+  margin-top: 200px;
+  border-top: 1px solid var(--rule);
+  padding: 40px 0 48px;
+}
+.footer .wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.footer nav {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  font-family: var(--ja);
+  font-size: 12px;
+  color: var(--sub);
+}
+.footer nav a:hover {
+  color: var(--ink);
+}
+
+/* スクロールで現れる */
+.rv {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 1.1s, transform 1.1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.rv[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 900px) {
+  .wrap {
+    padding: 0 20px;
+  }
+  .nav a:not(:last-child) {
+    display: none;
+  }
+  .hero {
+    padding: 140px 0 80px;
+  }
+  .works {
+    row-gap: 72px;
+  }
+  .wHomu,
+  .wArt,
+  .wSeal,
+  .wDog,
+  .objects,
+  .seller {
+    grid-column: 1 / 13;
+    margin-top: 0;
+  }
+  .objects {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .seller {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .section {
+    padding-top: 140px;
+  }
+  .head,
+  .msg,
+  .co {
+    display: block;
+  }
+  .head .mono,
+  .msg .mono {
+    display: block;
+    margin-bottom: 20px;
+  }
+  .dark {
+    margin-top: 140px;
+    padding: 120px 0;
+  }
+  .svc {
+    margin-top: 96px;
+  }
+  .svc a {
+    grid-template-columns: 1fr auto;
+    row-gap: 6px;
+  }
+  .svc .who,
+  .svc h3,
+  .svc p {
+    grid-column: 1 / 2;
+  }
+  .svc .arr {
+    grid-column: 2 / 3;
+    grid-row: 1 / 4;
+    align-self: center;
+  }
+  .list a {
+    grid-template-columns: 1fr auto;
+  }
+  .list time {
+    grid-column: 1 / 3;
+  }
+  .list .title {
+    grid-column: 1 / 2;
+  }
+  .list .tagCol {
+    grid-column: 2 / 3;
+  }
+  .co table {
+    width: 100%;
+  }
+  .door {
+    grid-template-columns: 1fr auto;
+    row-gap: 6px;
+  }
+  .door .mono,
+  .door strong {
+    grid-column: 1 / 2;
+  }
+  .door .arr {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+  .form > *,
+  .done {
+    grid-column: 1 / 13;
+  }
+  .row {
+    grid-template-columns: 1fr;
+  }
+  .footer {
+    margin-top: 140px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root {
+    transition: none !important;
+    animation: none !important;
+  }
+  .rv {
+    opacity: 1;
+    transform: none;
+  }
+}
