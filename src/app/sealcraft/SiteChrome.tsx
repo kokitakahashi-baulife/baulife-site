@@ -2,7 +2,7 @@ import Link from "next/link";
 import { COPY, LANGS, base, type Lang } from "./copy";
 import { CONTACT_URL } from "./legal";
 
-/// SealCraft のページの上下(見出しの帯・言語の切り替え・足もとのリンク)。4言語で同じ作り。
+/// Sealcraft のページの上下(見出しの帯・言語の切り替え・足もとのリンク)。4言語で同じ作り。
 /// ⚠️ 配色はアプリ本体に合わせている(Theme.swift: 生成りの紙・封蝋の赤・こげ茶の線)。サイト本体・Artherapy の色を持ち込まない。
 /// ⚠️ 問い合わせ先は HOMU のお問い合わせページ(2026-09-28 Koki確定。アプリの Content/legal.json と同じ)。
 export default function SiteChrome({ lang, path = "", children }: { lang: Lang; path?: "" | "/privacy" | "/terms"; children: React.ReactNode }) {
@@ -13,7 +13,7 @@ export default function SiteChrome({ lang, path = "", children }: { lang: Lang; 
       <header className="sticky top-0 z-50 border-b border-[#4A3426]/10 bg-[#F7EFE2]/85 backdrop-blur-xl">
         <div className="max-w-[1120px] mx-auto px-6 h-14 flex items-center justify-between gap-4">
           <Link href={home} className="text-[17px] font-bold tracking-[1px]" style={{ fontFamily: "var(--font-en)" }}>
-            SealCraft
+            Sealcraft
           </Link>
           <nav className="flex items-center gap-5 text-[13px] text-[#7A6150]">
             <a href={`${home}#play`} className="hidden sm:inline hover:text-[#B4382F] transition-colors">

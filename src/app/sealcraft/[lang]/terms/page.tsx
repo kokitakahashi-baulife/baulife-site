@@ -11,7 +11,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const lang = toLang((await params).lang);
-  return lang ? { title: `${COPY[lang].legal.terms} — SealCraft` } : {};
+  return lang ? { title: `${COPY[lang].legal.terms} — Sealcraft` } : {};
 }
 
 export default async function Page({ params }: { params: Promise<{ lang: string }> }) {

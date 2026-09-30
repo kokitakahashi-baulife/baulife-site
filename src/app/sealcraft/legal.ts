@@ -1,4 +1,4 @@
-/// SealCraft のプライバシーポリシーと利用規約の文面(4言語)。
+/// Sealcraft のプライバシーポリシーと利用規約の文面(4言語)。
 ///
 /// ⚠️ **正本はアプリ側の `ios/Sealcraft/Content/legal.json`**(アプリの設定画面に出す文と同じ)。
 ///    訳はアプリの `Content/i18n_<言語>.json` から作る。片方だけ直すと必ずずれる。
@@ -14,7 +14,7 @@ export const LEGAL: Record<Lang, LegalText> = {
     "operator": "株式会社BAULIFE（HOMU）",
     "updated": "2026年9月30日",
     "privacy": [
-      "SealCraft（以下「本アプリ」）は、株式会社BAULIFE（以下「当社」）が提供するゲームです。本アプリでの情報の扱いを以下のとおり定めます。",
+      "Sealcraft（以下「本アプリ」）は、株式会社BAULIFE（以下「当社」）が提供するゲームです。本アプリでの情報の扱いを以下のとおり定めます。",
       "■ 集める情報\n本アプリは、氏名・メールアドレス・住所・電話番号・位置情報など、あなたを直接特定する情報を集めません。ログインや、メールアドレスでの登録もありません。",
       "■ 端末の中だけに保存する情報\nゲームの進み具合（盤面・コイン・物語・コレクション・コラージュ作品・設定）は、お使いの端末の中にだけ保存します。当社のサーバーには送りません。アプリを削除すると消えます。",
       "■ フレンド機能で当社のサーバーに置く情報\nフレンド機能を使う（IDをつくる）と、次の情報を当社のサーバーに置きます。\n・ユーザーID（自動でつくる8文字の番号）と、本人の確認に使う合言葉（元に戻せない形に変えて保存）\n・フレンドに見える名前と、着ているリリの衣装\n・フレンドと申請、ブロックの一覧\n・フレンドに送ったコラージュ（相手が受け取るとサーバーから消えます。受け取られなくても30日で消えます）\n・通報の内容\n・IDをつくったときの接続元の IP アドレス（短い時間の回数の制限のためだけに、元に戻せない形に変えて1時間まで保存）\nこれらは、フレンド機能を動かすためと、不正や迷惑な行為を防ぐためだけに使います。広告や、ほかの目的には使いません。サーバーは Cloudflare, Inc. のサービスを使っています。",
@@ -28,7 +28,7 @@ export const LEGAL: Record<Lang, LegalText> = {
       "■ お問い合わせ\n下のお問い合わせ窓口からご連絡ください。"
     ],
     "terms": [
-      "この利用規約（以下「本規約」）は、株式会社BAULIFE（以下「当社」）が提供する SealCraft（以下「本アプリ」）の利用の条件です。本アプリを使うと、本規約に同意したものとします。",
+      "この利用規約（以下「本規約」）は、株式会社BAULIFE（以下「当社」）が提供する Sealcraft（以下「本アプリ」）の利用の条件です。本アプリを使うと、本規約に同意したものとします。",
       "■ アプリ内の品\n宝石・ガチャ券・コイン・ガチャから出た品などは、本アプリの中だけで使えるものです。現金や、ほかのサービスの品、HOMU の商品と交換することはできません。ほかの人に譲ることもできません。",
       "■ 購入\n宝石・はじめての贈り物・毎日のガチャ券の購入は、Apple の App Store を通して行います。宝石に有効期限はありません。法律で定められた場合を除き、購入後の払い戻しはできません。未成年の方は、保護者の方の同意を得てから購入してください。",
       "■ 毎日のガチャ券\n毎日のガチャ券は、一度買うと、毎日もらえるガチャ券がずっと1枚ふえます。設定の「購入の復元」で、同じ Apple ID の端末に戻せます。",
@@ -46,7 +46,7 @@ export const LEGAL: Record<Lang, LegalText> = {
     "operator": "BAULIFE Inc. (HOMU)",
     "updated": "September 30, 2026",
     "privacy": [
-      "SealCraft (the \"App\") is a game provided by BAULIFE Inc. (the \"Company\"). This policy sets out how information is handled in the App.",
+      "Sealcraft (the \"App\") is a game provided by BAULIFE Inc. (the \"Company\"). This policy sets out how information is handled in the App.",
       "■ Information We Collect\nThe App does not collect information that directly identifies you, such as your name, email address, postal address, phone number, or location. There is no login and no registration by email address.",
       "■ Information Stored Only on Your Device\nYour game progress (board, coins, story, collections, collage works, and settings) is stored only on your device. It is not sent to the Company's servers. It is erased when you delete the App.",
       "■ Information Stored on the Company's Servers for the Friends Feature\nWhen you use the Friends feature (by creating an ID), the following information is stored on the Company's servers.\n・Your user ID (an 8-character code generated automatically) and a passphrase used to verify that it is you (stored in an irreversibly transformed form)\n・The name shown to your Friends, and the outfit Lili is wearing\n・Your lists of Friends, requests, and blocks\n・Collages you send to Friends (deleted from the server once the recipient receives them; deleted after 30 days even if not received)\n・The content of reports\n・The IP address you connected from when creating your ID (stored in an irreversibly transformed form for up to one hour, solely to limit the number of attempts within a short period)\nThis information is used solely to operate the Friends feature and to prevent fraud and disruptive behavior. It is not used for advertising or any other purpose. Our servers use services provided by Cloudflare, Inc.",
@@ -60,7 +60,7 @@ export const LEGAL: Record<Lang, LegalText> = {
       "■ Contact\nPlease contact us through the inquiry form below."
     ],
     "terms": [
-      "These Terms of Use (the \"Terms\") set out the conditions for using SealCraft (the \"App\"), provided by BAULIFE Inc. (the \"Company\"). By using the App, you are deemed to have agreed to these Terms.",
+      "These Terms of Use (the \"Terms\") set out the conditions for using Sealcraft (the \"App\"), provided by BAULIFE Inc. (the \"Company\"). By using the App, you are deemed to have agreed to these Terms.",
       "■ In-App Items\nGems, gacha tickets, coins, items obtained from the Gacha, and similar items can be used only within the App. They cannot be exchanged for cash, items from other services, or HOMU products. They also cannot be transferred to other people.",
       "■ Purchases\nPurchases of gems, the First Gift, and the Daily Gacha Ticket are made through Apple's App Store. Gems have no expiration date. Except where required by law, purchases are non-refundable. If you are a minor, please obtain the consent of a parent or guardian before making a purchase.",
       "■ Daily Gacha Ticket\nOnce purchased, the Daily Gacha Ticket permanently increases the number of gacha tickets you receive each day by one. You can restore it to devices using the same Apple ID with \"Restore Purchases\" in Settings.",
@@ -78,7 +78,7 @@ export const LEGAL: Record<Lang, LegalText> = {
     "operator": "株式會社BAULIFE（HOMU）",
     "updated": "2026年9月30日",
     "privacy": [
-      "SealCraft（以下稱「本應用程式」）是由株式會社BAULIFE（以下稱「本公司」）提供的遊戲。本公司就本應用程式中資訊的處理方式，訂定如下。",
+      "Sealcraft（以下稱「本應用程式」）是由株式會社BAULIFE（以下稱「本公司」）提供的遊戲。本公司就本應用程式中資訊的處理方式，訂定如下。",
       "■ 蒐集的資訊\n本應用程式不會蒐集姓名、電子郵件地址、住址、電話號碼、位置資訊等可直接識別您身分的資訊。本應用程式也沒有登入功能，亦無須以電子郵件地址註冊。",
       "■ 僅儲存於裝置內的資訊\n遊戲進度（盤面、金幣、故事、收藏、拼貼作品、設定）僅儲存於您所使用的裝置內，不會傳送至本公司的伺服器。刪除本應用程式後，這些資料將會消失。",
       "■ 為好友功能而存放於本公司伺服器的資訊\n使用好友功能（建立ID）時，下列資訊將存放於本公司的伺服器。\n・使用者ID（自動產生的8位字元編號），以及用於確認本人身分的通關密語（轉換為無法還原的形式後儲存）\n・好友可見的名稱，以及莉莉所穿的服裝\n・好友、申請及封鎖的清單\n・傳送給好友的拼貼（對方收取後即從伺服器刪除；即使未被收取，也會在30天後刪除）\n・檢舉的內容\n・建立ID時連線來源的 IP 位址（僅為限制短時間內的操作次數，轉換為無法還原的形式後最多保存1小時）\n上述資訊僅用於運作好友功能，以及防止不當或擾人的行為，不會用於廣告或其他任何目的。伺服器使用 Cloudflare, Inc. 的服務。",
@@ -92,7 +92,7 @@ export const LEGAL: Record<Lang, LegalText> = {
       "■ 聯絡我們\n請透過下方的聯絡窗口與我們聯繫。"
     ],
     "terms": [
-      "本使用條款（以下稱「本條款」）為使用株式會社BAULIFE（以下稱「本公司」）所提供之 SealCraft（以下稱「本應用程式」）的條件。使用本應用程式，即視為您已同意本條款。",
+      "本使用條款（以下稱「本條款」）為使用株式會社BAULIFE（以下稱「本公司」）所提供之 Sealcraft（以下稱「本應用程式」）的條件。使用本應用程式，即視為您已同意本條款。",
       "■ 應用程式內物品\n寶石、扭蛋券、金幣、從扭蛋獲得的物品等，僅能在本應用程式內使用，無法兌換為現金、其他服務的物品或 HOMU 的商品，也無法轉讓給他人。",
       "■ 購買\n寶石、首次禮物、每日扭蛋券的購買，透過 Apple 的 App Store 進行。寶石沒有使用期限。除法律另有規定外，購買後恕不退款。未成年人請於取得監護人同意後再行購買。",
       "■ 每日扭蛋券\n每日扭蛋券一經購買，每天可獲得的扭蛋券將永久增加1張。可透過設定中的「恢復購買」，恢復至使用相同 Apple ID 的裝置。",
@@ -110,7 +110,7 @@ export const LEGAL: Record<Lang, LegalText> = {
     "operator": "주식회사 BAULIFE(HOMU)",
     "updated": "2026년 9월 30일",
     "privacy": [
-      "SealCraft(이하 '본 앱')는 주식회사 BAULIFE(이하 '당사')가 제공하는 게임입니다. 본 앱에서의 정보 취급에 관하여 다음과 같이 정합니다.",
+      "Sealcraft(이하 '본 앱')는 주식회사 BAULIFE(이하 '당사')가 제공하는 게임입니다. 본 앱에서의 정보 취급에 관하여 다음과 같이 정합니다.",
       "■ 수집하는 정보\n본 앱은 이름, 이메일 주소, 주소, 전화번호, 위치 정보 등 귀하를 직접 식별할 수 있는 정보를 수집하지 않습니다. 로그인이나 이메일 주소를 통한 가입도 없습니다.",
       "■ 기기에만 저장되는 정보\n게임 진행 상황(보드, 코인, 스토리, 컬렉션, 콜라주 작품, 설정)은 사용 중인 기기에만 저장됩니다. 당사의 서버로는 전송하지 않습니다. 앱을 삭제하면 사라집니다.",
       "■ 친구 기능을 위해 당사 서버에 보관하는 정보\n친구 기능을 사용하면(ID를 만들면) 다음 정보를 당사 서버에 보관합니다.\n・사용자 ID(자동으로 생성되는 8자리 번호)와 본인 확인에 사용하는 암호(원래대로 되돌릴 수 없는 형태로 변환하여 저장)\n・친구에게 보이는 이름과 릴리가 입고 있는 의상\n・친구, 신청, 차단 목록\n・친구에게 보낸 콜라주(상대가 받으면 서버에서 삭제됩니다. 받지 않더라도 30일 후 삭제됩니다)\n・신고 내용\n・ID를 만들 때 접속한 IP 주소(짧은 시간 내 횟수 제한만을 위해, 원래대로 되돌릴 수 없는 형태로 변환하여 최대 1시간 저장)\n이 정보는 친구 기능의 운영과 부정행위 및 민폐 행위 방지만을 위해 사용합니다. 광고나 그 밖의 목적으로는 사용하지 않습니다. 서버는 Cloudflare, Inc.의 서비스를 이용하고 있습니다.",
@@ -124,7 +124,7 @@ export const LEGAL: Record<Lang, LegalText> = {
       "■ 문의\n아래 문의 창구로 연락해 주십시오."
     ],
     "terms": [
-      "이 이용약관(이하 '본 약관')은 주식회사 BAULIFE(이하 '당사')가 제공하는 SealCraft(이하 '본 앱')의 이용 조건입니다. 본 앱을 이용하면 본 약관에 동의한 것으로 간주합니다.",
+      "이 이용약관(이하 '본 약관')은 주식회사 BAULIFE(이하 '당사')가 제공하는 Sealcraft(이하 '본 앱')의 이용 조건입니다. 본 앱을 이용하면 본 약관에 동의한 것으로 간주합니다.",
       "■ 앱 내 아이템\n보석, 뽑기권, 코인, 뽑기에서 얻은 아이템 등은 본 앱 안에서만 사용할 수 있습니다. 현금이나 다른 서비스의 아이템, HOMU 상품과 교환할 수 없습니다. 다른 사람에게 양도할 수도 없습니다.",
       "■ 구매\n보석, 첫 선물, 매일 뽑기권의 구매는 Apple의 App Store를 통해 이루어집니다. 보석에는 유효 기간이 없습니다. 법률로 정해진 경우를 제외하고, 구매 후에는 환불할 수 없습니다. 미성년자는 보호자의 동의를 얻은 후 구매해 주십시오.",
       "■ 매일 뽑기권\n매일 뽑기권은 한 번 구매하면 매일 받는 뽑기권이 영구적으로 1장 늘어납니다. 설정의 '구매 복원'으로 같은 Apple ID를 사용하는 기기에 복원할 수 있습니다.",

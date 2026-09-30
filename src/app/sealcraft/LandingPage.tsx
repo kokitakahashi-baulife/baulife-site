@@ -2,7 +2,7 @@ import Image from "next/image";
 import SiteChrome from "./SiteChrome";
 import { COPY, base, screen, type Lang } from "./copy";
 
-/// SealCraft の紹介ページの本体(4言語で同じ作り)。文は copy.ts。
+/// Sealcraft の紹介ページの本体(4言語で同じ作り)。文は copy.ts。
 /// ⚠️ 画面の写真に日付(今月のガチャの期限など)が写ったものは使わない。すぐ古くなる。
 
 const SEALS = ["seal_rabbit", "seal_tulip", "seal_polarbear", "seal_cameo", "seal_crown", "seal_stamplover"];
@@ -46,7 +46,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 <Image src="/sealcraft/appicon.png" alt={c.appIconAlt} width={64} height={64} priority className="rounded-[22.37%] ring-1 ring-[#4A3426]/10" />
                 <div>
                   <p className="text-[15px] font-bold leading-tight" style={{ fontFamily: "var(--font-en)" }}>
-                    SealCraft
+                    Sealcraft
                   </p>
                   <p className="text-[12px] tracking-[2px] text-[#7A6150] mt-1">{c.platform}</p>
                 </div>

@@ -1,4 +1,4 @@
-/// SealCraft の紹介ページの文(4言語)。日本語が正本。
+/// Sealcraft の紹介ページの文(4言語)。日本語が正本。
 ///
 /// ⚠️ **見出しは「何のゲームか」がそれだけで分かる言葉**(2026-09-30 Koki: 「手紙に封蝋を押す、ほのぼのマージ」)。
 ///    アプリの App Store のサブタイトルと同じ。詩的な言い回しにしない。
@@ -58,13 +58,13 @@ type Copy = {
 
 export const COPY: Record<Lang, Copy> = {
   ja: {
-    metaTitle: "SealCraft — 手紙に封蝋を押す、ほのぼのマージ",
+    metaTitle: "Sealcraft — 手紙に封蝋を押す、ほのぼのマージ",
     metaDescription:
       "坂の途中の封蝋工房で、見習いのリリと手紙のお手伝い。重ねて作った材料で金型を仕上げ、ワックスを溶かして、自分の指で垂らして押す。世界にひとつの封蝋を集めるマージゲーム。",
     nav: { play: "あそびかた", price: "料金" },
     footer: { privacy: "プライバシーポリシー", terms: "利用規約", contact: "お問い合わせ" },
     platform: "iPhone",
-    appIconAlt: "SealCraft のアプリアイコン",
+    appIconAlt: "Sealcraft のアプリアイコン",
     heroTitle: ["手紙に封蝋を押す、", "ほのぼのマージ。"],
     heroLead: ["坂の途中の封蝋工房で、見習いのリリと手紙のお手伝い。", "自分の指で垂らして押した封蝋は、世界にひとつだけ。"],
     comingSoon: "App Store で近日公開",
@@ -97,16 +97,16 @@ export const COPY: Record<Lang, Copy> = {
       "ログインやメールアドレスの登録はありません。進み具合は端末の中だけに保存します。フレンド機能を使うときだけ、ID・名前・送った作品を、届けるためにサーバーに置きます（設定からいつでも消せます）。",
     ],
     privacyLink: ["くわしくは", "プライバシーポリシー", "をご覧ください。"],
-    legal: { privacy: "プライバシーポリシー", terms: "利用規約", contactLabel: "お問い合わせ窓口", appName: "SealCraft（シールクラフト）", updated: "最終更新日" },
+    legal: { privacy: "プライバシーポリシー", terms: "利用規約", contactLabel: "お問い合わせ窓口", appName: "Sealcraft（シールクラフト）", updated: "最終更新日" },
   },
   en: {
-    metaTitle: "SealCraft — Cozy merge & wax seal letters",
+    metaTitle: "Sealcraft — Cozy merge & wax seal letters",
     metaDescription:
       "In a little wax seal workshop on a hillside, help the apprentice Lili with the townspeople's letters. Merge materials, melt the wax, pour it with your finger and press a seal that's yours alone.",
     nav: { play: "How to play", price: "Price" },
     footer: { privacy: "Privacy Policy", terms: "Terms of Use", contact: "Contact" },
     platform: "iPhone",
-    appIconAlt: "SealCraft app icon",
+    appIconAlt: "Sealcraft app icon",
     heroTitle: ["Press wax seals on letters.", "A cozy merge game."],
     heroLead: ["In a little wax seal workshop on a hillside, help the apprentice Lili with the town's letters.", "Every seal you pour and press by hand is one of a kind."],
     comingSoon: "Coming soon on the App Store",
@@ -139,16 +139,16 @@ export const COPY: Record<Lang, Copy> = {
       "There is no login or email sign-up. Your progress is saved only on your device. Only when you use the friends feature are your ID, name and the collages you send kept on our server to deliver them (you can delete them anytime in Settings).",
     ],
     privacyLink: ["For details, see the", "Privacy Policy", "."],
-    legal: { privacy: "Privacy Policy", terms: "Terms of Use", contactLabel: "Contact", appName: "SealCraft", updated: "Last updated" },
+    legal: { privacy: "Privacy Policy", terms: "Terms of Use", contactLabel: "Contact", appName: "Sealcraft", updated: "Last updated" },
   },
   "zh-hant": {
-    metaTitle: "SealCraft — 在信上蓋封蠟的療癒合成遊戲",
+    metaTitle: "Sealcraft — 在信上蓋封蠟的療癒合成遊戲",
     metaDescription:
       "在坡道上的小小封蠟工房，和見習生莉莉一起幫忙小鎮居民寄信。合成材料完成印章頭，熔化蠟，用手指倒下並蓋印。收集世界上獨一無二的封蠟吧。",
     nav: { play: "玩法", price: "費用" },
     footer: { privacy: "隱私權政策", terms: "使用條款", contact: "聯絡我們" },
     platform: "iPhone",
-    appIconAlt: "SealCraft 的 App 圖示",
+    appIconAlt: "Sealcraft 的 App 圖示",
     heroTitle: ["在信上蓋封蠟，", "療癒的合成遊戲。"],
     heroLead: ["在坡道上的封蠟工房，和見習生莉莉一起幫忙大家寄信。", "親手倒下、蓋印的封蠟，世界上只有一個。"],
     comingSoon: "即將在 App Store 推出",
@@ -181,16 +181,16 @@ export const COPY: Record<Lang, Copy> = {
       "不需要登入或註冊電子郵件。遊戲進度只保存在你的裝置中。只有在使用好友功能時，才會為了傳送而把ID、名稱和寄出的作品放在伺服器上（隨時可在設定中刪除）。",
     ],
     privacyLink: ["詳情請參閱", "隱私權政策", "。"],
-    legal: { privacy: "隱私權政策", terms: "使用條款", contactLabel: "聯絡窗口", appName: "SealCraft", updated: "最後更新" },
+    legal: { privacy: "隱私權政策", terms: "使用條款", contactLabel: "聯絡窗口", appName: "Sealcraft", updated: "最後更新" },
   },
   ko: {
-    metaTitle: "SealCraft — 편지에 봉랍을 찍는 힐링 머지",
+    metaTitle: "Sealcraft — 편지에 봉랍을 찍는 힐링 머지",
     metaDescription:
       "언덕길의 작은 봉랍 공방에서 견습생 릴리와 함께 마을 사람들의 편지를 도와요. 재료를 합쳐 스탬프 헤드를 만들고, 왁스를 녹여 손가락으로 붓고 찍어요.",
     nav: { play: "플레이 방법", price: "요금" },
     footer: { privacy: "개인정보 처리방침", terms: "이용약관", contact: "문의" },
     platform: "iPhone",
-    appIconAlt: "SealCraft 앱 아이콘",
+    appIconAlt: "Sealcraft 앱 아이콘",
     heroTitle: ["편지에 봉랍을 찍는,", "힐링 머지 게임."],
     heroLead: ["언덕길의 봉랍 공방에서 견습생 릴리와 함께 편지를 도와요.", "내 손으로 붓고 찍은 봉랍은 세상에 하나뿐이에요."],
     comingSoon: "App Store 출시 예정",
@@ -223,6 +223,6 @@ export const COPY: Record<Lang, Copy> = {
       "로그인이나 이메일 등록은 없어요. 진행 상황은 기기 안에만 저장돼요. 친구 기능을 쓸 때만 ID, 이름, 보낸 작품을 전달하기 위해 서버에 둬요(설정에서 언제든 삭제할 수 있어요).",
     ],
     privacyLink: ["자세한 내용은", "개인정보 처리방침", "을 확인해 주세요."],
-    legal: { privacy: "개인정보 처리방침", terms: "이용약관", contactLabel: "문의 창구", appName: "SealCraft", updated: "최종 업데이트" },
+    legal: { privacy: "개인정보 처리방침", terms: "이용약관", contactLabel: "문의 창구", appName: "Sealcraft", updated: "최종 업데이트" },
   },
 };
