@@ -1,10 +1,8 @@
 import LegalDoc from "../LegalDoc";
-import { TERMS } from "../legal";
+import { COPY } from "../copy";
 
-export const metadata = {
-  title: "利用規約 — SealCraft",
-};
+export const metadata = { title: `${COPY.ja.legal.terms} — SealCraft` };
 
 export default function SealcraftTerms() {
-  return <LegalDoc title="利用規約" paragraphs={TERMS} />;
+  return <LegalDoc lang="ja" kind="terms" />;
 }

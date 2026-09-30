@@ -1,10 +1,8 @@
 import LegalDoc from "../LegalDoc";
-import { PRIVACY } from "../legal";
+import { COPY } from "../copy";
 
-export const metadata = {
-  title: "プライバシーポリシー — SealCraft",
-};
+export const metadata = { title: `${COPY.ja.legal.privacy} — SealCraft` };
 
 export default function SealcraftPrivacy() {
-  return <LegalDoc title="プライバシーポリシー" paragraphs={PRIVACY} />;
+  return <LegalDoc lang="ja" kind="privacy" />;
 }
