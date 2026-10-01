@@ -60,7 +60,7 @@ export const COPY: Record<Lang, Copy> = {
   ja: {
     metaTitle: "Sealcraft — 手紙に封蝋を押す、ほのぼのマージ",
     metaDescription:
-      "坂の途中の封蝋工房で、見習いのリリと手紙のお手伝い。重ねて作った材料で金型を仕上げ、ワックスを溶かして、自分の指で垂らして押す。世界にひとつの封蝋を集めるマージゲーム。",
+      "坂の途中の封蝋工房で、見習いのリリと手紙のお手伝い。重ねて作った材料でスタンプヘッドを仕上げ、ワックスを溶かして、自分の指で垂らして押す。世界にひとつの封蝋を集めるマージゲーム。",
     nav: { play: "あそびかた", price: "料金" },
     footer: { privacy: "プライバシーポリシー", terms: "利用規約", contact: "お問い合わせ" },
     platform: "iPhone",
@@ -71,22 +71,22 @@ export const COPY: Record<Lang, Copy> = {
     seePlay: "あそびかたを見る",
     homeAlt: "封蝋工房のホーム画面",
     liliAlt: "見習いの封蝋師リリ",
-    playHeading: ["町の人の手紙に、", "封をする。"],
+    playHeading: ["町の人の手紙に、", "封蝋を押す。"],
     playLead: "工房には、誰かに手紙を送りたい人がやってきます。想いを聞いて、材料を作って、封蝋を押すまでを、ぜんぶ自分の手で。",
     steps: [
-      { alt: "作業台の盤面。同じ品を重ねて合体させる", title: "重ねて、材料を作る", body: "同じ品を重ねると、ひとつ上の品に。依頼主の想いに合う題材を届けると、真鍮の金型ができあがります。" },
+      { alt: "作業台の盤面。同じ品を重ねて合体させる", title: "重ねて、材料を作る", body: "同じ品を重ねると、ひとつ上の品に。依頼主の想いに合う題材を届けると、真鍮のスタンプヘッドができあがります。" },
       { alt: "スプーンの中で溶けた3色のワックスを混ぜ棒で混ぜる", title: "溶かして、混ぜる", body: "好きな色のワックスを4粒、スプーンで溶かします。少しだけ混ぜればマーブルに、ぐるぐる回せばひとつの色に。" },
-      { alt: "手紙の上で、金型の形を指でなぞってワックスを垂らす", title: "指でなぞって、押す", body: "手紙の上を指でなぞって垂らし、金型を押す。道具を育てるほど、まるくきれいな封蝋になります。" },
+      { alt: "手紙の上で、スタンプヘッドの形を指でなぞってワックスを垂らす", title: "指でなぞって、押す", body: "手紙の上を指でなぞって垂らし、スタンプヘッドを押す。道具を育てるほど、まるくきれいな封蝋になります。" },
     ],
     sealsHeading: ["同じ封蝋は、", "二つとできない。"],
-    sealsLead: ["色の選び方、混ぜ方、垂らし方で、仕上がりは毎回ちがいます。押した封蝋はコレクションに残ります。金型の図柄は、封蝋スタンプの店", "HOMU", "のデザインです。"],
+    sealsLead: ["色の選び方、混ぜ方、垂らし方で、仕上がりは毎回ちがいます。押した封蝋はコレクションに残ります。スタンプヘッドの図柄は、封蝋スタンプの店", "HOMU", "のデザインです。"],
     sealAlts: ["うさぎの封蝋", "チューリップの封蝋", "しろくまの封蝋", "カメオの封蝋", "王冠の封蝋", "シーリングスタンプの封蝋"],
     moreHeading: ["のんびり、", "毎日すこしずつ。"],
     moreLead: "争いも、急かされる期限もありません。やさしい物語と一緒に、自分のペースで。",
-    benchAlt: "封蝋を押す作業台。炉・スプーン・手紙・色の粒",
+    benchAlt: "封蝋を押す作業台。炉・スプーン・手紙・色のワックス",
     more: [
       { title: "工房と町をよみがえらせる", body: "設備を建てると、作業台に新しい材料の元が届きます。章ごとに、町の新しい場所へ。" },
-      { title: "フレンドとコラージュを送り合う", body: "押した封蝋とシールをポストカードに貼って、IDでつながったフレンドに送れます。文章は送れないので、気楽に。" },
+      { title: "フレンドとポストカードを送り合う", body: "押した封蝋とシールをポストカードに貼って、IDでつながったフレンドに送れます。文章は送れないので、気楽に。" },
       { title: "毎日の腕だめし", body: "決まった回数で注文をそろえる、1日1面のマージパズル。エネルギーは使いません。" },
       { title: "月替わりのガチャ", body: "1日1回は無料。リリの衣装やシールが毎月替わります。確率はガチャの画面に出ています。" },
     ],
@@ -128,7 +128,7 @@ export const COPY: Record<Lang, Copy> = {
     benchAlt: "The sealing bench with the melting stove, spoon, letter and colored beads",
     more: [
       { title: "Bring the workshop and town back to life", body: "Build facilities and new material generators arrive on your workbench. Each chapter takes you to a new place in town." },
-      { title: "Send collages to friends", body: "Put your seals and stickers on a postcard and send it to friends you connect with by ID. No text messages, so it's always relaxed." },
+      { title: "Send postcards to friends", body: "Put your seals and stickers on a postcard and send it to friends you connect with by ID. No text messages, so it's always relaxed." },
       { title: "Daily Puzzle", body: "A merge puzzle a day: fill the orders within a set number of taps. It doesn't use energy." },
       { title: "Monthly gacha", body: "One free draw a day. Lili's outfits and stickers change every month. The odds are shown on the gacha screen." },
     ],
@@ -136,7 +136,7 @@ export const COPY: Record<Lang, Copy> = {
     price: [
       "The download is free. In the app you can buy gems, the Welcome Gift and the Daily Gacha Ticket. Paying shortens waits or adds cosmetic items, but you can play the whole story without paying.",
       "You can check the items and odds on the gacha screen before you draw.",
-      "There is no login or email sign-up. Your progress is saved only on your device. Only when you use the friends feature are your ID, name and the collages you send kept on our server to deliver them (you can delete them anytime in Settings).",
+      "There is no login or email sign-up. Your progress is saved only on your device. Only when you use the friends feature are your ID, name and the postcards you send kept on our server to deliver them (you can delete them anytime in Settings).",
     ],
     privacyLink: ["For details, see the", "Privacy Policy", "."],
     legal: { privacy: "Privacy Policy", terms: "Terms of Use", contactLabel: "Contact", appName: "Sealcraft", updated: "Last updated" },
@@ -170,7 +170,7 @@ export const COPY: Record<Lang, Copy> = {
     benchAlt: "蓋封蠟的工作台，有熔爐、蠟勺、信和彩色蠟粒",
     more: [
       { title: "讓工房與小鎮重現生機", body: "建造設施後，工作台會送來新的材料產生器。每一章都會前往小鎮的新地方。" },
-      { title: "和好友互寄拼貼", body: "把封蠟和貼紙貼在明信片上，寄給用ID連結的好友。無法傳送文字，輕鬆自在。" },
+      { title: "和好友互寄明信片", body: "把封蠟和貼紙貼在明信片上，寄給用ID連結的好友。無法傳送文字，輕鬆自在。" },
       { title: "每日挑戰", body: "在限定次數內湊齊訂單，每天一關的合成益智遊戲。不消耗能量。" },
       { title: "每月更換的扭蛋", body: "每天1次免費。莉莉的服裝和貼紙每個月都會更換。機率顯示在扭蛋畫面上。" },
     ],
@@ -212,7 +212,7 @@ export const COPY: Record<Lang, Copy> = {
     benchAlt: "화로, 스푼, 편지, 색 알갱이가 놓인 봉랍 작업대",
     more: [
       { title: "공방과 마을을 되살려요", body: "설비를 지으면 작업대에 새로운 재료 생성기가 도착해요. 장마다 마을의 새로운 장소로." },
-      { title: "친구와 콜라주를 주고받아요", body: "봉랍과 스티커를 엽서에 붙여 ID로 연결된 친구에게 보낼 수 있어요. 글은 보낼 수 없어서 부담 없어요." },
+      { title: "친구와 엽서를 주고받아요", body: "봉랍과 스티커를 엽서에 붙여 ID로 연결된 친구에게 보낼 수 있어요. 글은 보낼 수 없어서 부담 없어요." },
       { title: "오늘의 퍼즐", body: "정해진 횟수 안에 주문을 채우는 하루 한 판 머지 퍼즐. 에너지를 쓰지 않아요." },
       { title: "매달 바뀌는 뽑기", body: "하루 1회 무료. 릴리의 의상과 스티커가 매달 바뀌어요. 확률은 뽑기 화면에 나와 있어요." },
     ],
