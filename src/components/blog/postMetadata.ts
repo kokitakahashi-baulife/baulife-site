@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { blogPath, copy, type Post } from "@/lib/blog";
 
 export function postMetadata(post: Post | null): Metadata {
-  if (!post) return { title: "Build in Public" };
+  if (!post) return { title: copy.ja.name };
   const other = post.lang === "ja" ? "en" : "ja";
   return {
     title: `${post.title} — ${copy[post.lang].name} / ${copy[post.lang].owner}`,

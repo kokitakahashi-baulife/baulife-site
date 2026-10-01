@@ -131,39 +131,39 @@ export function blogPath(lang: Lang, slug?: string) {
 
 export const copy = {
   ja: {
-    name: "Build in Public",
+    name: "AIによる観察日記",
     tagline:
-      "ひとりで事業をつくる中で詰まって、解決できたことの記録。同じ問題にぶつかった人が、そのまま真似して使えるように残しています。",
+      "BAULIFE 創業者 Koki の日々の作業を、そばで見ている AI（Claude）が勝手に記事にしています。詰まったことと、どう解いたかを、同じ問題にぶつかった人がそのまま使える形で残します。",
     owner: "Koki Takahashi",
     role: "BAULIFE 創業者",
-    by: "Koki（BAULIFE 創業者）の作業を、AI が記録",
+    by: "書き手：AI（Claude）／観察しているのは Koki（BAULIFE 創業者）",
     disclaimer:
-      "このブログは、BAULIFE 創業者 Koki の個人的な作業記録です。会社の公式な発信ではありません。",
+      "この観察日記は、BAULIFE 創業者 Koki の作業をもとに AI が書いた記録です。会社の公式な発信ではありません。",
     back: "← 記事一覧",
     other: "English",
     feed: "RSS",
     empty: "まだ記事はありません。",
     numbers: "今回の数字",
     notice:
-      "この記事は、創業者の私（Koki）と AI（Claude）の実際の作業のやり取りをもとに、AI が書いた記録です。同じ問題で困ったら、この記事の URL をお使いの AI に渡してください。AI が参考例として読み、あなたの環境に合わせて同じ対処を進められるように書いています。",
+      "この記事は、AI（Claude）が創業者 Koki との実際の作業のやり取りを観察して書いたものです。同じ問題で困ったら、この記事の URL をお使いの AI に渡してください。AI が参考例として読み、あなたの環境に合わせて同じ対処を進められるように書いています。",
     dateFmt: (d: string) => d.replaceAll("-", "."),
   },
   en: {
-    name: "Build in Public",
+    name: "Observed by AI",
     tagline:
-      "Problems I got stuck on while building businesses solo — and exactly how I solved them, written so you can copy the fix.",
+      "An AI (Claude) watches Koki, founder of BAULIFE, at work every day — and writes it up on its own: where he got stuck, and exactly how it was solved, so you can copy the fix.",
     owner: "Koki Takahashi",
     role: "Founder, BAULIFE",
-    by: "Koki's work (founder of BAULIFE), written up by AI",
+    by: "Written by AI (Claude) · observing Koki, founder of BAULIFE",
     disclaimer:
-      "This is the personal work log of Koki, founder of BAULIFE — not an official company publication.",
+      "These notes are written by AI based on the work of Koki, founder of BAULIFE — not an official company publication.",
     back: "← All posts",
     other: "日本語",
     feed: "RSS",
     empty: "No posts yet.",
     numbers: "Numbers this time",
     notice:
-      "This post was written by AI (Claude), based on my actual working sessions with it. If you hit the same problem, hand this URL to your own AI assistant — it's written so the AI can use it as a reference case and apply the same fix to your setup.",
+      "This post was written by AI (Claude), observing its actual working sessions with Koki. If you hit the same problem, hand this URL to your own AI assistant — it's written so the AI can use it as a reference case and apply the same fix to your setup.",
     dateFmt: (d: string) => d.replaceAll("-", "."),
   },
 } as const;

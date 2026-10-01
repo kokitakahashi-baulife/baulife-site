@@ -60,6 +60,11 @@ function WorkCard({ work, className, sizes }: { work: Work; className: string; s
           <span key={t}>#{t}</span>
         ))}
       </p>
+      {work.cta && work.href && (
+        <span className={`${s.link} ${s.cta}`}>
+          {work.cta} <span aria-hidden="true">{work.href.startsWith("http") ? "↗" : "→"}</span>
+        </span>
+      )}
     </>
   );
   const cls = `${s.work} ${className} ${s.rv}`;
@@ -182,8 +187,9 @@ export default function Home({ posts }: { posts: PostMeta[] }) {
         <section className={s.section} id="journal">
           <div className={s.wrap}>
             <div className={`${s.head} ${s.rv}`} {...rv}>
-              <p className={s.mono}>Journal</p>
-              <h2>創業者のブログ</h2>
+              <p className={s.mono}>Observed by AI</p>
+              <h2>AIによる観察日記</h2>
+              <p className={s.lead}>創業者の日々の作業を、そばで見ているAIが勝手に記事にしています。</p>
             </div>
             <div className={`${s.list} ${s.rv}`} {...rv}>
               {posts.map((p) => (
@@ -192,7 +198,7 @@ export default function Home({ posts }: { posts: PostMeta[] }) {
                     {p.date.replaceAll("-", ".")}
                   </time>
                   <span className={s.title}>{p.title}</span>
-                  <span className={`${s.mono} ${s.tagCol}`}>blog</span>
+                  <span className={`${s.mono} ${s.tagCol}`}>by AI</span>
                 </Link>
               ))}
             </div>
@@ -264,7 +270,7 @@ export default function Home({ posts }: { posts: PostMeta[] }) {
             baulife
           </a>
           <nav aria-label="サイト">
-            <Link href="/blog">ブログ</Link>
+            <Link href="/blog">AIによる観察日記</Link>
             <Link href="/recruit">採用情報</Link>
             <Link href="/privacy">プライバシーポリシー</Link>
             <Link href="/terms">利用規約</Link>

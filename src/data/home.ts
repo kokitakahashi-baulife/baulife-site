@@ -15,6 +15,7 @@ export type Work = {
   tags: string[];
   href?: string;
   nameFont?: string; // ブランドのロゴと同じ書体で名前を出すとき
+  cta?: string; // カードの下に出す行き先の案内
   media: Media;
 };
 
@@ -27,6 +28,7 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
     status: "販売中",
     tags: ["物販", "D2C", "商品企画", "クリエイターコラボ"],
     href: "https://homu.baulife.world/",
+    cta: "オンラインストアへ",
     media: {
       kind: "video",
       src: "/home/homu.mp4",
@@ -41,6 +43,7 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
     status: "近日公開",
     tags: ["アプリ", "iOS", "セルフケア"],
     href: "/artherapy",
+    cta: "紹介ページへ",
     media: {
       kind: "video",
       src: "/home/art.mp4",
@@ -51,6 +54,8 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
   sealcraft: {
     id: "sealcraft",
     name: "Sealcraft",
+    href: "/sealcraft",
+    cta: "紹介ページへ",
     kind: "シーリングスタンプのスマホゲーム",
     status: "開発中",
     tags: ["ゲーム", "iOS"],
@@ -63,6 +68,7 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
     status: "公開中",
     tags: ["メディア", "SEO", "ペット"],
     href: "https://baudog.world/",
+    cta: "サイトへ",
     media: {
       kind: "dogs",
       items: [

@@ -307,6 +307,14 @@ a.work:hover .ph video {
   font-size: clamp(26px, 2.8vw, 40px);
   line-height: 1.6;
 }
+.head .lead {
+  grid-column: 4 / 11;
+  font-family: var(--ja);
+  font-size: 14px;
+  color: #4a4a47;
+  line-height: 2;
+  margin-top: 10px;
+}
 
 /* about + services — quantum: 黒一面のメッセージ */
 .dark {
@@ -723,4 +731,10 @@ a.work:hover .ph video {
     opacity: 1;
     transform: none;
   }
+}
+
+/* 事業カードの行き先の案内 */
+.cta {
+  margin-top: 16px;
+  font-size: 13px;
 }
