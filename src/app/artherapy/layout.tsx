@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { APP_STORE_URL } from "./links";
+import Chrome from "./Chrome";
 
 /// Artherapy の3ページ(LP・プライバシー・規約)で共有する枠。
 ///
@@ -17,51 +16,7 @@ export default function ArtherapyLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="min-h-screen bg-[#F6F6F8] text-[#2A2630]">
-      {/* ⚠️ 追従させる。ページが長いので、上に戻る手段が常に要る */}
-      <header className="sticky top-0 z-50 border-b border-black/[0.06] bg-[#F6F6F8]/85 backdrop-blur-xl">
-        <div className="max-w-[1120px] mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/artherapy" className="flex items-baseline gap-2">
-            <span className="text-[11px] text-[#6E6875] tracking-[2px]">大人の塗り絵</span>
-            <span className="text-[17px] font-bold tracking-[0.5px]" style={{ fontFamily: "var(--font-en)" }}>
-              Artherapy
-            </span>
-          </Link>
-          <nav className="flex items-center gap-6 text-[13px] text-[#6E6875]">
-            <a href="#features" className="hidden sm:inline hover:text-[#2A2630] transition-colors">
-              できること
-            </a>
-            <a href="#price" className="hidden sm:inline hover:text-[#2A2630] transition-colors">
-              料金
-            </a>
-            <a
-              href={APP_STORE_URL}
-              className="rounded-full px-4 py-1.5 text-[13px] font-bold text-white bg-[#E0559E] hover:opacity-90 transition-opacity"
-            >
-              App Store
-            </a>
-          </nav>
-        </div>
-      </header>
-
-      {children}
-
-      <footer className="border-t border-black/[0.06] px-6 py-10 text-[13px] text-[#6E6875]">
-        <div className="max-w-[1120px] mx-auto flex flex-wrap items-center gap-x-6 gap-y-3">
-          <Link href="/artherapy/privacy" className="hover:text-[#2A2630] transition-colors">
-            プライバシーポリシー
-          </Link>
-          <Link href="/artherapy/terms" className="hover:text-[#2A2630] transition-colors">
-            利用規約
-          </Link>
-          <a href="mailto:koki.takahashi@baulife.world" className="hover:text-[#2A2630] transition-colors">
-            お問い合わせ
-          </a>
-          <Link href="/" className="hover:text-[#2A2630] transition-colors">
-            BAULIFE
-          </Link>
-          <span className="w-full sm:w-auto sm:ml-auto">&copy; 2026 BAULIFE Inc.</span>
-        </div>
-      </footer>
+      <Chrome>{children}</Chrome>
     </div>
   );
 }

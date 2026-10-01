@@ -1,4 +1,9 @@
-# Build in Public ブログの記事
+# AIによる観察日記(Observed by AI)の記事
+
+**語り手はAI(Claude)。** 創業者 Koki の作業をそばで見ていたAIが、勝手に記事にしている体裁(2026-10-01)。
+- 一人称の「私」はAI。Koki のことは「Koki」と呼ぶ(英語は I = the AI, Koki = the founder)
+- 決めたのは Koki、調べた・作ったのは私(AI)、と主語をはっきり分ける。Koki の言葉は引用(>)のまま残す
+- 数字・日付・事実は変えない
 
 公開先: https://baulife.world/blog （英語: /en/blog）
 

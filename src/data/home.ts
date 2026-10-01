@@ -33,14 +33,14 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
       kind: "video",
       src: "/home/homu-brand.mp4",
       poster: "/home/homu-brand-poster.jpg",
-      label: "HOMUの定期便を開封し、ワックスを溶かしてスタンプを押し、封蝋ができあがるまで",
+      label: "HOMUの事業紹介。3Dスタンプヘッド、クリエイターとのコラボ、ポストカードとワックス、定期便",
     },
   },
   artherapy: {
     id: "artherapy",
     name: "Artherapy",
     kind: "大人の塗り絵アプリ",
-    status: "近日公開",
+    status: "公開中",
     tags: ["アプリ", "iOS", "セルフケア"],
     href: "/artherapy",
     cta: "紹介ページへ",
@@ -48,7 +48,7 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
       kind: "video",
       src: "/home/artherapy.mp4",
       poster: "/home/artherapy-poster.jpg",
-      label: "夜空の街の線画が、Artherapyで塗り上がっていく様子",
+      label: "Artherapyの紹介動画。リネンの机のスマホで、くまのカフェの塗り絵が色づいていく",
     },
   },
   sealcraft: {
@@ -119,3 +119,52 @@ export const services: { type: InquiryType; who: string; title: string; body: st
     body: "個人の物販を、選ばれ続けるブランドに育てるための商品づくりと見せ方をご一緒します。",
   },
 ];
+
+// ───────── 英語版(/en) ─────────
+// 日本語が正本。日本語を変えたら、ここの英語も合わせて直す。
+export type HomeLang = "ja" | "en";
+
+const WORKS_EN: Record<keyof typeof works, { kind: string; status: string; tags: string[]; cta: string; label?: string }> = {
+  homu: { kind: "Wax sealing stamp shop", status: "On sale", tags: ["Retail", "D2C", "Product design", "Creator collabs"], cta: "Visit the store", label: "About HOMU: 3D stamp heads, creator collaborations, postcards and wax, and the monthly subscription" },
+  artherapy: { kind: "Coloring app for adults", status: "Available", tags: ["App", "iOS", "Self-care"], cta: "Learn more", label: "Artherapy: a bear café coloring page filling in with color on a phone" },
+  sealcraft: { kind: "Wax seal merge game", status: "In development", tags: ["Game", "iOS"], cta: "Learn more", label: "Sealcraft trailer" },
+  baudog: { kind: "Dog training commands, explained one by one", status: "Live", tags: ["Media", "SEO", "Pets"], cta: "Visit the site" },
+};
+
+/** 言語に合わせた事業カード。status の判定(開発中かどうか)は devStatus を見る */
+export function worksFor(lang: HomeLang): (Work & { devStatus: boolean })[] {
+  return [works.homu, works.sealcraft, works.artherapy, works.baudog].map((w) => {
+    const dev = w.status === "開発中";
+    if (lang === "ja") return { ...w, devStatus: dev };
+    const e = WORKS_EN[w.id as keyof typeof works];
+    const media = w.media.kind === "video" && e.label ? { ...w.media, label: e.label } : w.media;
+    const href = w.href === "/artherapy" ? "/artherapy/en" : w.href === "/sealcraft" ? "/sealcraft/en" : w.href;
+    return { ...w, kind: e.kind, status: e.status as Work["status"], tags: e.tags, cta: e.cta, href, media, devStatus: dev };
+  });
+}
+
+const HOMU_OBJECTS_EN = ["Wax seal from the 3D stamp head “Abducted Cow”", "Wax seal from the 3D stamp head “OCEAN FRIENDS”", "Limited MIX wax, Pop Pink", "Bouquet wax seal"];
+export function homuObjectsFor(lang: HomeLang) {
+  return lang === "ja" ? homuObjects : homuObjects.map((o, i) => ({ ...o, alt: HOMU_OBJECTS_EN[i] }));
+}
+
+/** 画面に出す用件の名前(送る値は inquiryTypes の日本語のまま。メール件名は日本語でそろえる) */
+export const inquiryLabels: Record<HomeLang, Record<InquiryType, string>> = {
+  ja: { ...inquiryTypes },
+  en: {
+    biz: "Advisory for new businesses",
+    ai: "Advisory on using AI",
+    brand: "Turning your shop into a brand",
+    other: "Press, our products, or anything else",
+  },
+};
+
+const SERVICES_EN: Record<InquiryType, { title: string; body: string } | undefined> = {
+  biz: { title: "New business advisory & consulting", body: "From testing an idea to shipping the first product, app or site — we work alongside you using the methods we've tried on our own businesses." },
+  ai: { title: "AI adoption advisory & consulting", body: "We map out which parts of your work AI can take over, and build systems that actually run." },
+  brand: { title: "Brand building for independent sellers", body: "Product development and presentation that turn an individual shop into a brand people keep choosing." },
+  other: undefined,
+};
+export function servicesFor(lang: HomeLang) {
+  return lang === "ja" ? services : services.map((sv) => ({ ...sv, ...SERVICES_EN[sv.type]! }));
+}

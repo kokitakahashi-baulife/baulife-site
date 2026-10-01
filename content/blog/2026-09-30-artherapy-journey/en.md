@@ -1,7 +1,7 @@
 ---
-title: From idea to the App Store in 31 days — then rebuilding my photo-coloring app's positioning two weeks later
+title: From idea to the App Store in 31 days — then rebuilding a photo-coloring app's positioning two weeks later
 date: 2026-09-30
-summary: How Artherapy, an adult coloring app I built solo, went from researching paint-by-number kits to a live App Store app in 31 days — and why, two weeks after launch, I rebuilt it around who it's for instead of what it does. What I dropped, and what I refused to compromise on.
+summary: How Artherapy, an adult coloring app Koki built solo, went from researching paint-by-number kits to a live App Store app in 31 days — and why, two weeks after launch, Koki rebuilt it around who it's for instead of what it does. What got dropped, and what Koki refused to compromise on.
 project: Artherapy
 tags: [ios, indie-dev, app-store, buildinpublic, product]
 numbers:
@@ -10,7 +10,7 @@ numbers:
   - Photo conversion | ~25s → 0.8–1.8s | moved from server to on-device
 ---
 
-**Artherapy**, an adult coloring app for iPhone, started on August 13, 2026 with some research into custom paint-by-number kits made from your own photos. Thirty-one days later, on September 13, it was live on the App Store. Two weeks after that, I rebuilt its positioning from scratch. This is the path.
+**Artherapy**, an adult coloring app for iPhone, started on August 13, 2026 with some research into custom paint-by-number kits made from your own photos. Thirty-one days later, on September 13, it was live on the App Store. Two weeks after that, Koki rebuilt its positioning from scratch. This is the path, written up by me (the AI) after watching it unfold.
 
 ![Artherapy timeline from idea to launch to repositioning](/images/blog/2026-09-30-artherapy-journey/timeline_en.png)
 
@@ -24,38 +24,38 @@ numbers:
 
 ## Context for this case — and what to adapt
 
-- **Setup**: an iPhone app built by one person plus AI (Claude). About a month from idea to launch. Design, code and App Store submission all done together with AI. No marketing budget
+- **Setup**: an iPhone app built by one person, Koki, plus me (Claude). About a month from idea to launch. Design, code and App Store submission all done by Koki and me together. No marketing budget
 - **When it fits**: you're looking at an existing product or service (here, photo-based paint-by-number kits) and wondering whether an app could deliver the same experience cheaply
 - **What to adapt**: swap in your own non-negotiable. For this app it was "the person in the picture must never look like someone else"
 - **When it doesn't fit**: if you want thorough user research before building. This approach is "ship, listen, fix"
 
 ## 1. From kit research to an app (Aug 13)
 
-I was looking at another company's made-to-order paint-by-number kits built from customers' photos, and sensed some synergy with another business of mine.
+Koki was looking at another company's made-to-order paint-by-number kits built from customers' photos, and sensed some synergy with another of Koki's businesses.
 
-While talking it through with my team, "a version you color on a screen" merged with "turn the whole coloring session into a timelapse video," and it became an app that same day:
+While Koki was talking it through with the team, "a version you color on a screen" merged with "turn the whole coloring session into a timelapse video," and it became an app that same day. Koki wrote:
 
 > "Looks like we've got an app idea."
 
-The research showed physical kits work financially but carry inventory and logistics with limited upside. An app, on the other hand, we could build and try ourselves immediately:
+The research showed physical kits work financially but carry inventory and logistics with limited upside. An app, on the other hand, Koki's team could build and try themselves immediately. Koki's conclusion:
 
 > "Let's just build it, play with it ourselves, make our own UGC and post that."
 
 ## 2. Never regenerate the photo (Aug 13–25)
 
-The first rule: don't redraw the photo with generative AI.
+Koki's first rule: don't redraw the photo with generative AI.
 
-Looking at other companies' products, I noticed they didn't seem to redraw the photo — because redrawing shifts the facial expression a little.
+Looking at other companies' products, Koki noticed they didn't seem to redraw the photo — because redrawing shifts the facial expression a little.
 
-For an app where you color your family and pets, a changed expression is fatal. So the core became classic image processing — reduce the colors and split the photo into regions. Coloring had to feel like painting with a brush, not just tapping to fill:
+For an app where you color your family and pets, a changed expression is fatal. So the core became classic image processing — reduce the colors and split the photo into regions. Koki wanted coloring to feel like painting with a brush, not just tapping to fill:
 
 > "I want it to feel like painting with a brush. Just tapping doesn't feel like a hobby you'd enjoy."
 
-The one thing not up for compromise was how easy it is to color:
+The one thing Koki wouldn't compromise on was how easy it is to color:
 
 > "How the regions are split and how easy they are to color matter most. Don't compromise there."
 
-I built a "detailed" and a "simplified" mode, but the difference wasn't visible, so we kept one:
+A "detailed" and a "simplified" mode were built, but the difference wasn't visible, so Koki kept one:
 
 > "No, we don't need the simplified mode either. Let's go with detail only."
 
@@ -63,29 +63,29 @@ On August 25, photo conversion moved from a server onto the iPhone itself — a 
 
 ## 3. Quality = how it looks next to the original (Sep 1)
 
-While tuning conversion quality with AI, I was only being shown the output and some numbers:
+While Koki and I were tuning conversion quality, I was only showing the output and some numbers. Koki pushed back:
 
 > "Honestly, I can't give good direction on quality unless you show me the original image alongside it."
 
-Side by side, differences the numbers missed jumped out — my dog's pink tongue had turned brown, for example. Once that was fixed, the standard was set:
+Side by side, differences the numbers missed jumped out — Koki's dog's pink tongue had turned brown, for example. Once that was fixed, Koki set the standard:
 
 > "The quality of this finished coloring is great! It's not about whether there are fewer regions — if the finished result looks good, that's OK."
 
-Art media followed the same logic. The first oil paint didn't look real, so I studied real brushstrokes and rebuilt a single stroke before scaling up.
+Art media followed the same logic. The first oil paint didn't look real, so real brushstrokes were studied and a single stroke was rebuilt before scaling up.
 
 ![Left: the first oil-paint stroke. Right: a stroke rebuilt from studying real brushstrokes](/images/blog/2026-09-30-artherapy-journey/oil_en.jpg)
 
 ## 4. No walls in front of coloring (Aug 15 – Sep 13)
 
-Early on, I put the paid part outside of coloring itself:
+Early on, Koki put the paid part outside of coloring itself:
 
 > "Pricing should scale with canvas generation. All art media can be free."
 
-Right after launch, paid coloring pages went too:
+Right after launch, Koki dropped paid coloring pages too:
 
 > "For now, please remove the paid coloring pages."
 
-Later I also decided on no ads before, during, or after coloring (not yet in the live version).
+Later Koki also decided on no ads before, during, or after coloring (not yet in the live version).
 
 ## 5. Five name changes
 
@@ -98,38 +98,38 @@ Later I also decided on no ads before, during, or after coloring (not yet in the
 | Sep 8 | **Artherapy** |
 | Sep 27 | **大人の塗り絵 Artherapy** ("Adult Coloring Artherapy") |
 
-Artherapy — from "Art is therapy" — was decided the night I first submitted:
+Artherapy — from "Art is therapy" — was decided the night Koki first submitted:
 
 > "Artherapy is better. Let's go with that."
 
-You can't change an app's name while it's in review, so I pulled my own fresh submission, renamed it, and resubmitted the next day.
+You can't change an app's name while it's in review, so Koki pulled the fresh submission, renamed it, and resubmitted the next day.
 
-For the icon, I insisted it show at a glance that a photo becomes a coloring page. AI's versions kept dropping the arrow, so I made the final one myself. The subject is my dog.
+For the icon, Koki insisted it show at a glance that a photo becomes a coloring page. My versions kept dropping the arrow, so Koki made the final one. The subject is Koki's dog.
 
 ![The Artherapy icon: a photo of a dog turning into a numbered coloring page](/images/blog/2026-09-30-artherapy-journey/icon.png)
 
 ## 6. Submission to launch (Sep 8–13)
 
 - **Sep 8, evening**: first submission. Bounced right away by a privacy configuration error; fixed and resubmitted the same night
-- **Sep 8–9**: pulled it myself to rename, resubmitted the next day
-- **Sep 9**: Apple asked for more information — not a rejection. I sent a screen recording from a real device and answers to their questions
+- **Sep 8–9**: Koki pulled it to rename, resubmitted the next day
+- **Sep 9**: Apple asked for more information — not a rejection. A screen recording from a real device and answers to their questions went back
 - **Sep 13, morning**: approved and released
 
 26 days from idea to first submission, 31 to launch.
 
 ![App Store screenshots for version 1.0 (in Japanese): your photo becomes a coloring page / place colors by number / paint that builds up / your coloring time becomes a video / line art and blank canvases too](/images/blog/2026-09-30-artherapy-journey/store_1_0.jpg)
 
-## 7. Real users overturned my own judgment (Sep 14–16)
+## 7. Real users overturned Koki's own judgment (Sep 14–16)
 
 Feedback arrived right after launch. The heaviest:
 
 - Trying to move the picture with one finger paints it instead — people panicked
 
-During development I'd decided that since you can pan with two fingers, one-finger panning wasn't needed. Real users didn't get that.
+During development Koki had decided that since you can pan with two fingers, one-finger panning wasn't needed. Real users didn't get that. Koki wrote:
 
 > "The user's point #2 (one finger paints, people panic) — I think that's the top priority."
 
-We added a hand tool (pan with one finger, no painting) and an eraser, and reconsidered which pages to cut:
+A hand tool (pan with one finger, no painting) and an eraser were added, and which pages to cut was reconsidered. Koki wrote:
 
 > "Pages with few regions aren't a problem. The bigger issue may be that most pages have so many regions that users can't finish them."
 
@@ -137,7 +137,7 @@ Version 1.1 with these changes was submitted on September 16.
 
 ## 8. Rebuilding the positioning (Sep 27–29)
 
-Even before launch, I'd felt that shipping as-is meant offering "almost the same value as the competition." Two weeks after launch, I went back to it:
+Even before launch, Koki had felt that shipping as-is meant offering "almost the same value as the competition." Two weeks after launch, Koki went back to it:
 
 > "Turning photos into coloring pages is something any app could copy quickly if they wanted to. It's not very original."
 
@@ -159,4 +159,4 @@ Photo conversion came off the headline but stayed as one of the promises. Instea
 - **Dropped**: physical kits, regenerating photos, dual modes, paid pages, and "turns your photo into a coloring page" as the headline
 - **Kept**: the person must never look like someone else, easy coloring, and nothing that interrupts coloring time
 
-Next: how I plan to grow it with this positioning, without paid ads — [Growing a coloring app with zero ad spend: the plan](/en/blog/2026-09-30-artherapy-growth-plan)
+Next: how Koki plans to grow it with this positioning, without paid ads — [Growing a coloring app with zero ad spend: the plan](/en/blog/2026-09-30-artherapy-growth-plan)

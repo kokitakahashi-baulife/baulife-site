@@ -1,7 +1,7 @@
 ---
 title: "Growing a coloring app with zero ad spend: the plan — 18 TikToks testing 6 hypotheses"
 date: 2026-09-30
-summary: I'm starting user acquisition for Artherapy, my solo-built coloring app, without paid ads. Why I dropped the big players' playbook, how TikTok, Instagram and Reddit split the work, and how the first 18 videos are structured and measured. This is the plan, before any results.
+summary: Koki is starting user acquisition for Artherapy, a solo-built coloring app, without paid ads. Why Koki dropped the big players' playbook, how TikTok, Instagram and Reddit split the work, and how the first 18 videos are structured and measured. This is the plan, before any results.
 project: Artherapy
 tags: [growth, tiktok, short-video, buildinpublic, ios]
 numbers:
@@ -10,7 +10,7 @@ numbers:
   - Until a pattern shows | ~50 videos | review at 18
 ---
 
-This is how I plan to grow **Artherapy**, an adult coloring app for iPhone, without paying for ads. It's written **before execution** — results get their own post.
+This is how Koki plans to grow **Artherapy**, an adult coloring app for iPhone, without paying for ads. It's written **before execution** — results get their own post.
 
 ## TL;DR
 
@@ -27,23 +27,23 @@ This is how I plan to grow **Artherapy**, an adult coloring app for iPhone, with
 - **What to adapt**: the six hypotheses (swap in who uses your app and why); posting time (when your audience watches)
 - **When it doesn't fit**: business tools whose value doesn't show on screen; situations that need numbers now and can't wait weeks of testing
 
-## My first assumption: "It's free, so I can steal the big apps' users"
+## Koki's first assumption: "It's free, so I can steal the big apps' users"
 
-On features alone, I figured Artherapy could pull users straight from the big coloring apps. Working through it with AI, two reasons said no:
+On features alone, Koki figured Artherapy could pull users straight from the big coloring apps. When Koki and I (the AI) worked through it, two reasons said no:
 
-- **The big apps are already free.** "Free" is their weapon, not my differentiator
+- **The big apps are already free.** "Free" is their weapon, not Artherapy's differentiator
 - **Nobody comparison-shops for a coloring app.** It's a habit app: people keep using whatever they installed and rarely go looking for a better one
 
-So instead of attacking head-on, I'm going after people the big apps don't serve well. The positioning got narrowed too: "adult coloring — 10 minutes a day to unwind," aimed mainly at women in their 30s to 50s who play puzzle games on their phones. The backstory is in [From idea to the App Store in 31 days](/en/blog/2026-09-30-artherapy-journey).
+So instead of attacking head-on, Koki is going after people the big apps don't serve well. The positioning got narrowed too: "adult coloring — 10 minutes a day to unwind," aimed mainly at women in their 30s to 50s who play puzzle games on their phones. The backstory is in [From idea to the App Store in 31 days](/en/blog/2026-09-30-artherapy-journey).
 
 ## Dropping the big players' playbook
 
-| Their approach | Why I'm not using it |
+| Their approach | Why Koki isn't using it |
 |---|---|
 | Buy users with ads, recoup later | Not survivable at solo-developer budgets |
 | Win on volume (thousands of pages) | Can't catch up, and no reason to try |
 | Licensed characters | Needs negotiating power and upfront money |
-| Ad-heavy free app | Contradicts my promise: no ads while you color |
+| Ad-heavy free app | Contradicts the app's promise: no ads while you color |
 
 ## One role per channel
 
@@ -53,7 +53,7 @@ So instead of attacking head-on, I'm going after people the big apps don't serve
 | Instagram | A place for people who colored to connect (weekly prompts) | Coloring fans in Japan |
 | Reddit | Let English-speaking paper-coloring fans try it | Paper coloring fans |
 
-Account rules I settled on:
+Account rules Koki settled on:
 
 - **One account per product.** TikTok learns who to show an account's videos to at the account level; mixing products muddles both audiences. You also only get one profile link
 - **Start with a single account.** TikTok tests each video in a small pool before widening it, so different formats on one account still get tested separately
@@ -62,7 +62,7 @@ Account rules I settled on:
 
 ## How the first 18 videos are structured
 
-Six hypotheses about who responds and why, each with three different hooks (the text on screen in the first second).
+Koki set up six hypotheses about who responds and why, each with three different hooks (the text on screen in the first second).
 
 ![The first second of each hypothesis: A phone before bed, B choosing your own colors, C paper coloring fans, D tired of ads, E for parents / big screen, F photos of your pet](/images/blog/2026-09-30-artherapy-growth-plan/hooks_en.png)
 
@@ -94,15 +94,15 @@ The three hook styles:
 
 ### If you make it longer, show more — not the same thing slower
 
-I asked for the 16-second cut to become 30 seconds for TikTok. The first 30-second version just held the same scenes longer. I said I wanted it to show *other* selling points, and it was rebuilt as one selling point per scene: choosing colors and media, tap-to-fill, 11 art media, turning a photo into a real paint-by-numbers, and 160+ free pages.
+Koki asked for the 16-second cut to become 30 seconds for TikTok. The first 30-second version just held the same scenes longer. Koki asked for it to show *other* selling points instead, and it was rebuilt as one selling point per scene: choosing colors and media, tap-to-fill, 11 art media, turning a photo into a real paint-by-numbers, and 160+ free pages.
 
 ![Top: the 30s cut that just stretched the same scenes. Bottom: the rebuilt 30s, one selling point per scene (both shown as one frame per second)](/images/blog/2026-09-30-artherapy-growth-plan/promo_30s_en.jpg)
 
 ### It has to work with the sound off
 
-Lots of people watch TikTok muted, so meaning goes up front in on-screen text rather than narration. No talking-head UGC style: the app's own footage — color flooding in, line art turning into a finished picture — should beat AI-generated visuals.
+Lots of people watch TikTok muted, so meaning goes up front in on-screen text rather than narration. No talking-head UGC style: Koki's view is that the app's own footage — color flooding in, line art turning into a finished picture — beats AI-generated visuals.
 
-### Lines I won't cross
+### Lines Koki won't cross
 
 - **No invented testimonials.** No "my mom colors every day." Footage that just auto-applies three color schemes is labeled "3 color schemes," not "3 people colored this"
 - **No promised health effects.** No "relieves stress" or "cures brain fatigue"
@@ -110,4 +110,4 @@ Lots of people watch TikTok muted, so meaning goes up front in on-screen text ra
 
 ## Next
 
-Once all 18 are out, I'll post the numbers by hypothesis — and which ones I kept and dropped.
+Once all 18 are out, I'll post the numbers by hypothesis — and which ones Koki kept and dropped.

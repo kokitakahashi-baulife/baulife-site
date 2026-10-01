@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { inquiryTypes, type InquiryType } from "@/data/home";
+import { inquiryLabels, type HomeLang, type InquiryType } from "@/data/home";
 import s from "./home.module.css";
 
 const PICK_EVENT = "home:inquiry-pick";
@@ -90,15 +90,91 @@ export function InquiryLink({
   );
 }
 
-const doors: { type: InquiryType; who: string; label: string }[] = [
-  { type: "biz", who: "For Business", label: "AI活用・新規事業のご相談" },
-  { type: "brand", who: "For Sellers", label: "物販のブランド化のご相談" },
-  { type: "other", who: "Others", label: "取材・各事業・その他" },
-];
+const LANG_KEY = "baulife:lang";
+
+/// 日本語のページで、まだ言語を選んだことがなく、ブラウザが日本語でない人だけ英語版へ移す。
+/// サーバーは使わない(ブラウザの中だけで判断する)
+export function LangAutoSwitch({ to }: { to: string }) {
+  useEffect(() => {
+    let chosen: string | null = null;
+    try {
+      chosen = localStorage.getItem(LANG_KEY);
+    } catch {}
+    if (chosen) return;
+    const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
+    if (langs.some((l) => l?.toLowerCase().startsWith("ja"))) return;
+    if (/bot|crawl|spider|lighthouse/i.test(navigator.userAgent)) return;
+    location.replace(to + location.search + location.hash);
+  }, [to]);
+  return null;
+}
+
+/// 言語の切り替えリンク。選んだ言語を覚えて、次から自動で移さない
+export function LangLink({ href, lang, children }: { href: string; lang: HomeLang; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      hrefLang={lang}
+      onClick={() => {
+        try {
+          localStorage.setItem(LANG_KEY, lang);
+        } catch {}
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+const DOORS: Record<HomeLang, { type: InquiryType; who: string; label: string }[]> = {
+  ja: [
+    { type: "biz", who: "For Business", label: "AI活用・新規事業のご相談" },
+    { type: "brand", who: "For Sellers", label: "物販のブランド化のご相談" },
+    { type: "other", who: "Others", label: "取材・各事業・その他" },
+  ],
+  en: [
+    { type: "biz", who: "For Business", label: "AI adoption & new businesses" },
+    { type: "brand", who: "For Sellers", label: "Building your shop into a brand" },
+    { type: "other", who: "Others", label: "Press, our businesses & other" },
+  ],
+};
+
+const FORM_T = {
+  ja: {
+    failed: "送信できませんでした。時間をおいてもう一度お試しください。",
+    offline: "通信できませんでした。電波の良い場所でもう一度お試しください。",
+    sentH: "お問い合わせを送信しました。",
+    sentP: "内容を確認のうえ、担当者からご連絡します。",
+    website: "ウェブサイト",
+    type: "ご用件",
+    name: "お名前",
+    company: "会社名・屋号（任意）",
+    email: "メールアドレス",
+    message: "内容",
+    sending: "送信しています…",
+    send: "送信する →",
+  },
+  en: {
+    failed: "We couldn't send your message. Please try again in a little while.",
+    offline: "We couldn't connect. Please check your connection and try again.",
+    sentH: "Your message has been sent.",
+    sentP: "We'll read it and get back to you. Replies may be in Japanese or English.",
+    website: "Website",
+    type: "Topic",
+    name: "Name",
+    company: "Company (optional)",
+    email: "Email",
+    message: "Message",
+    sending: "Sending…",
+    send: "Send →",
+  },
+} as const;
 
 type Status = "idle" | "sending" | "sent" | "error";
 
-export function ContactForm() {
+export function ContactForm({ lang = "ja" }: { lang?: HomeLang }) {
+  const t = FORM_T[lang];
+  const doors = DOORS[lang];
   const [type, setType] = useState<InquiryType>("biz");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
@@ -130,17 +206,17 @@ export function ContactForm() {
         form.reset();
       } else {
         setStatus("error");
-        setError(json.error || "送信できませんでした。時間をおいてもう一度お試しください。");
+        setError((lang === "ja" && json.error) || t.failed);
       }
     } catch {
       setStatus("error");
-      setError("通信できませんでした。電波の良い場所でもう一度お試しください。");
+      setError(t.offline);
     }
   }
 
   return (
     <>
-      <div className={`${s.doors} ${s.rv}`} role="group" aria-label="ご用件" data-reveal="">
+      <div className={`${s.doors} ${s.rv}`} role="group" aria-label={t.type} data-reveal="">
         {doors.map((d) => (
           <button
             key={d.type}
@@ -164,27 +240,27 @@ export function ContactForm() {
       {status === "sent" ? (
         <div className={s.form}>
           <div className={s.done} role="status">
-            <strong>お問い合わせを送信しました。</strong>
-            <p>内容を確認のうえ、担当者からご連絡します。</p>
+            <strong>{t.sentH}</strong>
+            <p>{t.sentP}</p>
           </div>
         </div>
       ) : (
         <form className={s.form} onSubmit={submit}>
           <div className={s.honeypot} aria-hidden="true">
             <label>
-              ウェブサイト
+              {t.website}
               <input type="text" name="website" tabIndex={-1} autoComplete="off" />
             </label>
           </div>
           <label>
-            ご用件
+            {t.type}
             <select
               ref={selectRef}
               name="type"
               value={type}
               onChange={(e) => setType(e.target.value as InquiryType)}
             >
-              {Object.entries(inquiryTypes).map(([v, label]) => (
+              {Object.entries(inquiryLabels[lang]).map(([v, label]) => (
                 <option key={v} value={v}>
                   {label}
                 </option>
@@ -193,20 +269,20 @@ export function ContactForm() {
           </label>
           <div className={s.row}>
             <label>
-              お名前
+              {t.name}
               <input name="name" autoComplete="name" required />
             </label>
             <label>
-              会社名・屋号（任意）
+              {t.company}
               <input name="company" autoComplete="organization" />
             </label>
           </div>
           <label>
-            メールアドレス
+            {t.email}
             <input name="email" type="email" autoComplete="email" required />
           </label>
           <label>
-            内容
+            {t.message}
             <textarea name="message" required />
           </label>
           {status === "error" && (
@@ -215,7 +291,7 @@ export function ContactForm() {
             </p>
           )}
           <button className={s.send} disabled={status === "sending"}>
-            {status === "sending" ? "送信しています…" : "送信する →"}
+            {status === "sending" ? t.sending : t.send}
           </button>
         </form>
       )}
