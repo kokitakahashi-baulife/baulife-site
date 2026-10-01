@@ -1,9 +1,8 @@
-# 毎日1回、前回の公開から変更があれば、公開の目印を付けた空コミットを送る(scripts/ci/ignore-build.sh と対)
-# Vercel の保存容量を抑えるため。push は自由、本番のビルドは1日1回(2026-10-01)
+# 前回の公開から変更があれば、公開の目印を付けた空コミットを送る(scripts/ci/ignore-build.sh と対)
+# 定期の公開はしない。Koki が「公開して」と言ったときだけ公開する(2026-10-01 Koki)。
+# 手で動かすときは GitHub の Actions 画面か `gh workflow run daily-deploy`
 name: daily-deploy
 on:
-  schedule:
-    - cron: "0 19 * * *" # 毎日 4:00(日本時間)
   workflow_dispatch: {}
 permissions:
   contents: write
