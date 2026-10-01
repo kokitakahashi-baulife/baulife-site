@@ -8,11 +8,11 @@ export default function ArtherapyTerms() {
   return (
     <main className="max-w-[720px] mx-auto px-6 py-14 pb-24">
       <h1 className="text-[28px] font-bold mb-2">利用規約</h1>
-      <p className="text-sm text-[#8B8B95] mb-10">
+      <p className="text-sm text-[#6E6875] mb-10">
         Artherapy（アーセラピー）／ 最終更新日: 2026年9月3日
       </p>
 
-      <div className="space-y-5 text-[15px] text-[#B8B8C2] leading-[1.95] [&_h2]:text-[18px] [&_h2]:font-bold [&_h2]:text-[#EDEDF2] [&_h2]:mt-10 [&_h2]:mb-3 [&_ul]:pl-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_strong]:text-[#EDEDF2] [&_strong]:font-bold">
+      <div className="space-y-5 text-[15px] text-[#4A4552] leading-[1.95] [&_h2]:text-[18px] [&_h2]:font-bold [&_h2]:text-[#2A2630] [&_h2]:mt-10 [&_h2]:mb-3 [&_ul]:pl-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_strong]:text-[#2A2630] [&_strong]:font-bold">
         <h2>1. この規約について</h2>
         <p>
           この規約は、株式会社BAULIFE（以下「当社」）が提供するアプリ <strong>Artherapy</strong>（以下「本アプリ」）の利用条件を定めるものです。本アプリをご利用いただいた時点で、この規約に同意いただいたものとします。
@@ -115,7 +115,7 @@ export default function ArtherapyTerms() {
           <strong>株式会社BAULIFE</strong>
           <br />
           メール:{" "}
-          <a href="mailto:koki.takahashi@baulife.world" className="text-[#EC4899] hover:underline">
+          <a href="mailto:koki.takahashi@baulife.world" className="text-[#E0559E] hover:underline">
             koki.takahashi@baulife.world
           </a>
         </p>

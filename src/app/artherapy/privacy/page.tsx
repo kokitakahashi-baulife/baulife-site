@@ -8,11 +8,11 @@ export default function ArtherapyPrivacy() {
   return (
     <main className="max-w-[720px] mx-auto px-6 py-14 pb-24">
       <h1 className="text-[28px] font-bold mb-2">プライバシーポリシー</h1>
-      <p className="text-sm text-[#8B8B95] mb-10">
+      <p className="text-sm text-[#6E6875] mb-10">
         Artherapy（アーセラピー）／ 最終更新日: 2026年9月8日
       </p>
 
-      <div className="space-y-5 text-[15px] text-[#B8B8C2] leading-[1.95] [&_h2]:text-[18px] [&_h2]:font-bold [&_h2]:text-[#EDEDF2] [&_h2]:mt-10 [&_h2]:mb-3 [&_h3]:text-[15px] [&_h3]:font-bold [&_h3]:text-[#EDEDF2] [&_h3]:mt-7 [&_h3]:mb-2 [&_ul]:pl-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_strong]:text-[#EDEDF2] [&_strong]:font-bold [&_a]:text-[#EC4899] [&_a]:hover:underline">
+      <div className="space-y-5 text-[15px] text-[#4A4552] leading-[1.95] [&_h2]:text-[18px] [&_h2]:font-bold [&_h2]:text-[#2A2630] [&_h2]:mt-10 [&_h2]:mb-3 [&_h3]:text-[15px] [&_h3]:font-bold [&_h3]:text-[#2A2630] [&_h3]:mt-7 [&_h3]:mb-2 [&_ul]:pl-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_strong]:text-[#2A2630] [&_strong]:font-bold [&_a]:text-[#E0559E] [&_a]:hover:underline">
         <p>
           Artherapy は、あなたの写真を塗り絵に変換し、塗って楽しむためのアプリです。
         </p>
