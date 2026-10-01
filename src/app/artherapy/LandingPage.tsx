@@ -199,8 +199,8 @@ export default function LandingPage({ lang }: { lang: ArtLang }) {
           <div className="w-full max-w-[460px] mx-auto lg:w-[460px] justify-self-center">
             <div className="relative aspect-square rounded-[28px] overflow-hidden shadow-[0_30px_80px_-20px_rgba(60,50,80,0.35)] ring-1 ring-black/[0.04]">
               <video
-                src="/home/artherapy.mp4"
-                poster="/home/artherapy-poster.jpg"
+                src={en ? "/home/artherapy-en.mp4" : "/home/artherapy.mp4"}
+                poster={en ? "/home/artherapy-en-poster.jpg" : "/home/artherapy-poster.jpg"}
                 autoPlay
                 muted
                 loop

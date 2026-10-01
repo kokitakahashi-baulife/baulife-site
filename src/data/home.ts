@@ -137,7 +137,16 @@ export function worksFor(lang: HomeLang): (Work & { devStatus: boolean })[] {
     const dev = w.status === "開発中";
     if (lang === "ja") return { ...w, devStatus: dev };
     const e = WORKS_EN[w.id as keyof typeof works];
-    const media = w.media.kind === "video" && e.label ? { ...w.media, label: e.label } : w.media;
+    // 動画は英語版(アプリを英語にして撮った録画・英語の見出し)。/home/<名前>-en.mp4 と -en-poster.jpg
+    const media =
+      w.media.kind === "video"
+        ? {
+            ...w.media,
+            src: w.media.src.replace(/\.mp4$/, "-en.mp4"),
+            poster: w.media.poster.replace(/-poster\.jpg$/, "-en-poster.jpg"),
+            label: e.label ?? w.media.label,
+          }
+        : w.media;
     const href = w.href === "/artherapy" ? "/artherapy/en" : w.href === "/sealcraft" ? "/sealcraft/en" : w.href;
     return { ...w, kind: e.kind, status: e.status as Work["status"], tags: e.tags, cta: e.cta, href, media, devStatus: dev };
   });
