@@ -46,8 +46,8 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
     cta: "紹介ページへ",
     media: {
       kind: "video",
-      src: "/home/art.mp4",
-      poster: "/home/art-poster.jpg",
+      src: "/home/artherapy.mp4",
+      poster: "/home/artherapy-poster.jpg",
       label: "夜空の街の線画が、Artherapyで塗り上がっていく様子",
     },
   },
