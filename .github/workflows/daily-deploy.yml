@@ -1,0 +1,27 @@
+# 毎日1回、前回の公開から変更があれば、公開の目印を付けた空コミットを送る(scripts/ci/ignore-build.sh と対)
+# Vercel の保存容量を抑えるため。push は自由、本番のビルドは1日1回(2026-10-01)
+name: daily-deploy
+on:
+  schedule:
+    - cron: "0 19 * * *" # 毎日 4:00(日本時間)
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 前回の公開から変更があれば目印のコミットを送る
+        run: |
+          LAST=$(git log origin/main --grep='\[deploy\]' -1 --pretty=%H)
+          CURRENT=$(git rev-parse origin/main)
+          if [ "$LAST" = "$CURRENT" ]; then
+            echo "前回の公開から変更なし。今日は公開しません"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: 1日1回の公開 $(date -u +%Y-%m-%d) [deploy]"
+          git push
