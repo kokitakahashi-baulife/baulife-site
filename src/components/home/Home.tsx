@@ -50,7 +50,7 @@ function WorkCard({ work, className, sizes }: { work: Work; className: string; s
       <Media work={work} sizes={sizes} />
       <div className={s.meta}>
         <div>
-          <h3>{work.name}</h3>
+          <h3 style={work.nameFont ? { fontFamily: work.nameFont, fontWeight: 700, letterSpacing: "0.04em" } : undefined}>{work.name}</h3>
           <p className={s.kind}>{work.kind}</p>
         </div>
         <span className={`${s.st} ${work.status === "開発中" ? s.stDev : ""}`}>{work.status}</span>

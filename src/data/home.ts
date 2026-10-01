@@ -14,6 +14,7 @@ export type Work = {
   status: "販売中" | "公開中" | "近日公開" | "開発中";
   tags: string[];
   href?: string;
+  nameFont?: string; // ブランドのロゴと同じ書体で名前を出すとき
   media: Media;
 };
 
@@ -21,6 +22,7 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
   homu: {
     id: "homu",
     name: "HOMU",
+    nameFont: '"Gill Sans", "Gill Sans MT", "Gill Sans Nova", "Lato", sans-serif', // HOMUのロゴの書体(Gill Sans Bold)
     kind: "シーリングスタンプ専門店",
     status: "販売中",
     tags: ["物販", "D2C", "商品企画", "クリエイターコラボ"],
@@ -48,11 +50,11 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
   },
   sealcraft: {
     id: "sealcraft",
-    name: "SEALCRAFT",
+    name: "Sealcraft",
     kind: "シーリングスタンプのスマホゲーム",
     status: "開発中",
     tags: ["ゲーム", "iOS"],
-    media: { kind: "pan", src: "/home/seal-town.jpg", alt: "SEALCRAFTの街のマップ" },
+    media: { kind: "video", src: "/home/sealcraft.mp4", poster: "/home/sealcraft-poster.jpg", label: "Sealcraftの紹介動画" },
   },
   baudog: {
     id: "baudog",
