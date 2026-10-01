@@ -31,8 +31,8 @@ export const works: Record<"homu" | "artherapy" | "sealcraft" | "baudog", Work> 
     cta: "オンラインストアへ",
     media: {
       kind: "video",
-      src: "/home/homu.mp4",
-      poster: "/home/homu-poster.jpg",
+      src: "/home/homu-brand.mp4",
+      poster: "/home/homu-brand-poster.jpg",
       label: "HOMUの定期便を開封し、ワックスを溶かしてスタンプを押し、封蝋ができあがるまで",
     },
   },
